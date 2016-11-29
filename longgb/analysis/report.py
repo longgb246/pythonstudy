@@ -3,6 +3,7 @@ __author__ = 'sunwenxiu'
 import docx
 from docx import Document
 from docx.shared import Inches
+from docx.shared import RGBColor
 from pyh import *
 import os
 
@@ -171,6 +172,10 @@ class ReportWord:
         self.document.add_paragraph(u"\t3）期间总销量为0的sku数量为：%d" % self.sim_screen.total_sales.sum())
         self.document.add_paragraph(u"\t以上情况至少出现一次的sku数量为{0}个，满足筛选条件sku个数为{1}个（占总数{2:.2f}%）用于仿真。".format(
             self.sim_screen.three_conditions.sum(), self.tempnum, self.tempnum / self.total_sku * 100))
+        runname = self.document.add_paragraph().add_run(u'\t注. 1）为展现该三级品类库存基本情况，采用{0}个SKU进行分析；2）为满足仿真条件，仅采用958个SKU进行仿真对比。'.format(self.screen_sku, self.tempnum))
+        fontname = runname.font
+        fontname.italic = True
+        fontname.color.rgb = RGBColor(54, 95, 145)
         self.count_supp_num = self.data[self.data.supp_brevity_cd.isnull() == False]["supp_brevity_cd"].drop_duplicates().count()
         self.count_caigou = self.data[self.data.pur_bill_id.isnull() == False]["pur_bill_id"].count()
         self.document.add_heading(u'b) 品类描述性统计', 1)
@@ -190,11 +195,15 @@ class ReportWord:
             self.document.add_picture(name_path + os.sep + each, height=Inches(2.88),width=Inches(5.76))
         self.document.add_paragraph(word2)
 
-    def kpianalysis(self, kpi_cr_str, kpi_ito_str):
+    def kpianalysis(self, kpi_cr_str, kpi_ito_str, sim_date_range):
         self.document.add_heading(u'B KPI分析', 0)
-        temp_text = u'\t目前库存系统的主要KPI 是现货率和库存周转天数。下面我们对“储物/置物架”类SKU 的这两个指标进行分析。\n\t注：KPI的分析当中会用到中位数。中位数顾名思义，处于中间位置的数，其可将数值集合划分为相等的上下两部分，中位数不会受到少量异常值的影响，而如果存在异常值，均值的变化会比较明显，受异常值影响较大。'
-        self.document.add_paragraph(temp_text)
+        self.document.add_paragraph(u'\t目前库存系统的主要KPI 是现货率和库存周转天数。下面我们对“储物/置物架”类SKU 的这两个指标进行分析。')
+        self.document.add_paragraph(u'\t注：KPI的分析当中会用到中位数。中位数顾名思义，处于中间位置的数，其可将数值集合划分为相等的上下两部分，中位数不会受到少量异常值的影响，而如果存在异常值，均值的变化会比较明显，受异常值影响较大。')
         self.document.add_heading(u'a) KPI计算口径', 1)
+        runname = self.document.add_paragraph().add_run(u'\t注. 1)以上平均值期间为{0}至{1}。'.format(sim_date_range[0],sim_date_range[1]))
+        fontname = runname.font
+        fontname.italic = True
+        fontname.color.rgb = RGBColor(54, 95, 145)
         self.document.add_heading(u'b) 现货率', 1)
         self.document.add_paragraph(u'\t下图展示了所有SKU 的现货率频数分布。')
         self.document.add_picture(self.file_path + os.sep + 'cr2.png', height=Inches(3.84),width=Inches(5.76))
@@ -206,8 +215,13 @@ class ReportWord:
         self.document.add_heading(u'd) 现货率、周转天数联合分析', 1)
         self.document.add_paragraph(u'\t根据每个SKU周转天数（横轴）和现货率（纵轴）所作出的散点图。如下图所示：')
         self.document.add_picture(self.file_path + os.sep + 'cr_td.png', height=Inches(3.84),width=Inches(5.76))
-        temp_text = u'\t图中横轴是0.8，纵轴是60。从图中，我们可以看出，库存周转天数跟现货率呈现出明显的正相关性，即库存周转率越高，现货率越低。\n\t根据现货率的高低和库存周转天数的大小，我们将图中分为4个区域：\n\t（1）现货率高，周转低的SKU\n\t（2）现货率高，周转高的SKU\n\t（3）现货率低，周转低的SKU\n\t（4）现货率低，周转高的SKU\n\t主要优化空间在（2）、（3）和（4）。（2）区域适当降低周转，（3）区域适当提高现货率，（4）区域周转和现货率都有优化空间。'
-        self.document.add_paragraph(temp_text)
+        self.document.add_paragraph(u'\t图中横轴是0.8，纵轴是60。从图中，我们可以看出，库存周转天数跟现货率呈现出明显的正相关性，即库存周转率越高，现货率越低。')
+        self.document.add_paragraph(u'\t根据现货率的高低和库存周转天数的大小，我们将图中分为4个区域：')
+        self.document.add_paragraph(u'\t（1）现货率高，周转低的SKU')
+        self.document.add_paragraph(u'\t（2）现货率高，周转高的SKU')
+        self.document.add_paragraph(u'\t（3）现货率低，周转低的SKU')
+        self.document.add_paragraph(u'\t（4）现货率低，周转高的SKU')
+        self.document.add_paragraph(u'\t主要优化空间在（2）、（3）和（4）。（2）区域适当降低周转，（3）区域适当提高现货率，（4）区域周转和现货率都有优化空间。')
         self.document.add_heading(u'e) 现货率、周转天数case study', 1)
         self.document.add_paragraph(u'\t实例说明：下面对这四个区域的SKU逐一进行分析。')
         self.skuget(u'high_cr_low_td', u'（1）现货率高，周转低的SKU', u'\t这部分SKU以较低的周转实现了较高的现货率。下面给出几个此类SKU代表。', u'\t这部分SKU以较低的周转实现了较高的现货率。')
@@ -245,7 +259,7 @@ class ReportWord:
         self.document.add_heading(u'E 供应商分析', 0)
         self.document.add_paragraph(u'\t供应商的稳定性是影响库存情况的一个重要因素。下面从供应商的vlt、满足率两个方面来分析。总共有{0}个供应商。'.format(self.count_supp_num))
         self.document.add_paragraph(u'\t我们为每个供应商的表现（采购单量，VLT平均天数，标准差，变异系数，订单满足率，订单满足率标准差）从0到10打分，结果如下表所示。(在任一指标上，表现最好的供应商为10分，最差的供应商为1分，其余供应商分数根据线性插值确定。)')
-        self.document.add_paragraph(u'\t注：\t1.VLT（Vendor lead time）：供应商送货提前期\n\t2.订单满足率口径：实际满足率=实际到货量/原始采购量\n\t3.变异系数主要应用在评价数据的波动性，避免量纲带来的影响')
+        self.document.add_paragraph(u'\t注：\n\t1.VLT（Vendor lead time）：供应商送货提前期\n\t2.订单满足率口径：实际满足率=实际到货量/原始采购量\n\t3.变异系数主要应用在评价数据的波动性，避免量纲带来的影响')
         self.document.add_heading(u'a) VLT变异系数', 1)
         self.document.add_paragraph(u'\t下图为供应商维度vlt的变异系数(CV)分布：')
         self.document.add_picture(self.file_path + os.sep + 'vltcv.png', height=Inches(3.84), width=Inches(5.76))
@@ -255,7 +269,10 @@ class ReportWord:
         self.document.add_picture(self.file_path + os.sep + 'manzu2.png', height=Inches(3.84), width=Inches(5.76))
         self.document.add_heading(u'c) VLT变异系数、满足率联合分析', 1)
         self.document.add_picture(self.file_path + os.sep + 'vltcv_manzu.png', height=Inches(3.84), width=Inches(5.76))
-        self.document.add_paragraph(u'\t区域（1）：供应商波动性小，满足率高。供应商在波动性和满足率上表现最好的。\n\t区域（2）：供应商波动性大，满足率高。为避免供应商波动性带来的服务水平下降，提早采购则有周转变高的风险。\n\t区域（3）：供应商波动性小，满足率小。供应商在波动性上表现很好，满足率很低，容易造成服务水平降低。\n\t区域（4）：供应商波动性大，满足率低。供应商在波动性和满足率上表现最差的，极易造成低服务水平，同时如果为了避免供应商波动性，提早采购则有造成高周转的风险。')
+        self.document.add_paragraph(u'\t区域（1）：供应商波动性小，满足率高。供应商在波动性和满足率上表现最好的。')
+        self.document.add_paragraph(u'\t区域（2）：供应商波动性大，满足率高。为避免供应商波动性带来的服务水平下降，提早采购则有周转变高的风险。')
+        self.document.add_paragraph(u'\t区域（3）：供应商波动性小，满足率小。供应商在波动性上表现很好，满足率很低，容易造成服务水平降低。')
+        self.document.add_paragraph(u'\t区域（4）：供应商波动性大，满足率低。供应商在波动性和满足率上表现最差的，极易造成低服务水平，同时如果为了避免供应商波动性，提早采购则有造成高周转的风险。')
 
     def simanalysis(self):
         self.document.add_heading(u'F 模拟仿真', 0)
@@ -283,32 +300,6 @@ class ReportWord:
 # reportword1 = ReportWord('11977', ['2016-07-01', '2016-10-24'], r'D:\Lgb\ReadData\RealityAnalysis\report')
 # reportword1.generateword()
 
-
-def reportword(report_name, period, file_path):
-    document = Document()
-    document.add_heading('Document Title', 0)
-    p = document.add_paragraph('A plain paragraph having some ')
-    p.add_run('bold').bold = True
-    p.add_run(' and some ')
-    p.add_run('italic.').italic = True
-    document.add_heading(u'这里是中文', level=1)
-    document.add_paragraph('Intense quote', style='IntenseQuote')
-    document.add_paragraph('first item in unordered list', style='ListBullet')
-    document.add_paragraph('first item in ordered list', style='ListNumber')
-    document.add_picture(r'D:\Lgb\ReadData\RealityAnalysis\report\bp2.png',height=Inches(3.84),width=Inches(5.76))
-    table = document.add_table(rows=1, cols=3)
-
-    hdr_cells = table.rows[0].cells
-    hdr_cells[0].text = 'Qty'
-    hdr_cells[1].text = 'Id'
-    hdr_cells[2].text = 'Desc'
-    row_cells = table.add_row().cells
-    row_cells[0].text = '1'
-    row_cells[1].text = '2'
-    row_cells[2].text = '33'
-    document.add_page_break()
-    document.save(file_path + os.sep + 'report_word.docx')
-    pass
 
 
 

@@ -1,12 +1,20 @@
 # coding=utf-8
 import os
+import sys
 from sys import path
 pth=os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath("")))))
 path.append(pth)
 print pth
 import numpy as np
-from com.jd.pbs.simulation.SkuSimulation import SkuSimulation
-from com.jd.pbs.utils.MixtureGaussian import MixtureGaussian
+# test包路径导入
+sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(r'D:\Lgb\pythonstudy\longgb')
+# from com.jd.pbs.simulation.SkuSimulation import SkuSimulation
+# from com.jd.pbs.utils.MixtureGaussian import MixtureGaussian
+from simulation.SkuSimulation import SkuSimulation
+from utils.MixtureGaussian import MixtureGaussian
+
 import math
 from scipy.stats import rv_discrete,norm
 class SkuSimulationBp25(SkuSimulation):

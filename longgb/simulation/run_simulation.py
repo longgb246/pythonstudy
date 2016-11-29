@@ -1,8 +1,12 @@
 # coding: utf-8
 import os
+import sys
 from sys import path
 pth=os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath("")))))
 path.append(pth)
+# test包路径导入
+sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 print pth
 import ast
 import datetime
@@ -12,13 +16,25 @@ import pickle
 import numpy as np
 import pandas as pd
 from scipy.stats import itemfreq
-# from com.jd.pbs.simulation.SkuSimulationModify import SkuSimulationPbs
-from com.jd.pbs.simulation.SkuSimulation import SkuSimulation
-from com.jd.pbs.simulation.SkuSimulationModify import MaxVlt_Times_Demand,SkuSimulationBp25,SkuSimulationMg,SkuSimulationPbs,SkuSimulationSalesCorrection,SkuSimulationSequential,HisSkuBpMeanSimulation
-from com.jd.pbs.simulation import configServer
+sys.path.append(r'D:\Lgb\pythonstudy\longgb')
+# from com.jd.pbs.simulation.SkuSimulation import SkuSimulation
+# from com.jd.pbs.simulation.SkuSimulationModify import MaxVlt_Times_Demand,SkuSimulationBp25,SkuSimulationMg,SkuSimulationPbs,SkuSimulationSalesCorrection,SkuSimulationSequential,HisSkuBpMeanSimulation
+# from com.jd.pbs.simulation import configServer
+from simulation.SkuSimulation import SkuSimulation
+from simulation.SkuSimulationModify import MaxVlt_Times_Demand,SkuSimulationBp25,SkuSimulationMg,SkuSimulationPbs,SkuSimulationSalesCorrection,HisSkuBpMeanSimulation
+# from simulation.SkuSimulationModify import SkuSimulationSequential
+from simulation import configServer
+
 import time
 
-import sys
+
+
+
+
+
+time.strftime('%Y-%m-%d_%H-%M-%S',time.localtime())
+time.ctime() # 当前时间的字符串形式
+time.strptime('2016-11-29_17-57-51', '%Y-%m-%d_%H-%M-%S')
 # 配置信息
 workingfolderName=time.strftime('%Y-%m-%d_%H-%M-%S',time.localtime(time.time()))
 choice=configServer.start_point(workingfolderName)
