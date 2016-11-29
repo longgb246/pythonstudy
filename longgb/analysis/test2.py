@@ -10,7 +10,7 @@ def uppath(n=1):
 print uppath(4)
 
 
-aa = data_origin.loc[:,["supp_brevity_cd","pur_bill_id"]]
+
 
 data_origin = pd.DataFrame()
 data_origin["supp_brevity_cd"].drop_duplicates().count()

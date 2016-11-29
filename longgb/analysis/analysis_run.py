@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def uppath(n=1):
-    # __file__ = r'D:\Lgb\ipc_inv_opt\src\com\jd\pbs\analysis\test.py'
+    # __file__ = r'D:\Lgb\ipc_inv_opt\src\com\jd\pbs\analysis\test2.py'
     if n == 0:
         return os.path.abspath(os.path.dirname(__file__))
     return os.path.abspath(os.path.join(os.path.dirname(__file__), (os.pardir + os.sep) * (n - 1) + os.pardir))
