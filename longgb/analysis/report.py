@@ -200,6 +200,20 @@ class ReportWord:
         self.document.add_paragraph(u'\t目前库存系统的主要KPI 是现货率和库存周转天数。下面我们对“储物/置物架”类SKU 的这两个指标进行分析。')
         self.document.add_paragraph(u'\t注：KPI的分析当中会用到中位数。中位数顾名思义，处于中间位置的数，其可将数值集合划分为相等的上下两部分，中位数不会受到少量异常值的影响，而如果存在异常值，均值的变化会比较明显，受异常值影响较大。')
         self.document.add_heading(u'a) KPI计算口径', 1)
+        table = self.document.add_table(1, 3)
+        # table.style = 'Light Shading Accent 1'
+        # 标题
+        heading_cells = table.rows[0].cells
+        heading_cells[0].text = u'颗粒度'
+        heading_cells[1].text = u'现货率(CR)'
+        heading_cells[2].text = u'周转(ITO)'
+        # 添加内容
+        items = [[u'SKU',u'可售天数/总天数',u'平均现货库存/日均销量'],[u'三级品类',u'可售SKU数/上柜SKU总数\n可售SKU数：上柜有货或上柜可预订',u'平均现货库存/日均销量']]
+        for item in items:
+            cells = table.add_row().cells
+            cells[0].text = item[0]
+            cells[1].text = item[1]
+            cells[2].text = item[2]
         runname = self.document.add_paragraph().add_run(u'\t注. 1)以上平均值期间为{0}至{1}。'.format(sim_date_range[0],sim_date_range[1]))
         fontname = runname.font
         fontname.italic = True

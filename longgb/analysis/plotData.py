@@ -527,6 +527,14 @@ def plotsupp2(supp_value_frame, analysis_path):
 
 
 def calcallback(func, sim_data, his_name, sim_name):
+    '''
+    获取不同band的数据
+    :param func: 回调函数 用于计算的指标，如：np.nanmean
+    :param sim_data: pd.DataFrame 仿真的数据sim_data
+    :param his_name: string 历史字段名
+    :param sim_name: string 仿真字段名
+    :return: 表格的list
+    '''
     his_zon = func(sim_data[his_name])
     pbs_zon = func(sim_data[sim_name])
     his_ad = func(sim_data[map(lambda x: x in list('ABCD'), sim_data["org_nation_sale_num_band"].values)][his_name])
@@ -542,10 +550,23 @@ def calcallback(func, sim_data, his_name, sim_name):
 
 
 def getdata(sim_data, name_str):
+    '''
+    获得name_str的band数据
+    :param sim_data: pd.DataFrame 仿真的数据sim_data
+    :param name_str: string band的名称
+    :return:
+    '''
     return sim_data[map(lambda x: x in list(name_str), sim_data["org_nation_sale_num_band"].values)]
 
 
 def plotsim(sim_path, analysis_path, sim_num_zon):
+    '''
+    画仿真的图
+    :param sim_path: string 仿真report的路径
+    :param analysis_path: string 分析路径
+    :param sim_num_zon: numeric 用于仿真的sku数量
+    :return: None 仅用于作图
+    '''
     sim_data_path = sim_path + os.sep + 'sample_data_base_policy_kpi.csv'
     sim_data = pd.read_table(sim_data_path)
     sim_data2 = sim_data[sim_data["ito_sim"] != np.inf]

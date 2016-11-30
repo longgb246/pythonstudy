@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def uppath(n=1):
-    # __file__ = r'D:\Lgb\ipc_inv_opt\src\com\jd\pbs\analysis\test2.py'
+    # __file__ = r'D:\Lgb\ipc_inv_opt\src\com\jd\pbs\analysis\test.py'
     if n == 0:
         return os.path.abspath(os.path.dirname(__file__))
     return os.path.abspath(os.path.join(os.path.dirname(__file__), (os.pardir + os.sep) * (n - 1) + os.pardir))
@@ -190,13 +190,13 @@ file_path = analysis_path + '\\report'
 reportword = rep.ReportWord(report_name, period, file_path, data, sim_screen, total_sku, screen_sku)
 # 生成报告
 reportword.pinleianalysis(pinlei, pinleiid)
-reportword.kpianalysis(kpi_cr_str, kpi_ito_str)
+reportword.kpianalysis(kpi_cr_str, kpi_ito_str, sim_date_range)
 reportword.buhuoanalysis()
 reportword.bpanalysis()
 reportword.suppanalysis()
 reportword.simanalysis()
 reportword.closeword()
 # reportword.generateword(pinlei, pinleiid, kpi_cr_str, kpi_ito_str)
-
+# test the upload author.
 
 
