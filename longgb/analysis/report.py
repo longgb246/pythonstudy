@@ -201,6 +201,7 @@ class ReportWord:
         self.document.add_paragraph(u'\t注：KPI的分析当中会用到中位数。中位数顾名思义，处于中间位置的数，其可将数值集合划分为相等的上下两部分，中位数不会受到少量异常值的影响，而如果存在异常值，均值的变化会比较明显，受异常值影响较大。')
         self.document.add_heading(u'a) KPI计算口径', 1)
         table = self.document.add_table(1, 3)
+        table.style = 'Light Shading Accent 1'
         # table.style = 'Light Shading Accent 1'
         # 标题
         heading_cells = table.rows[0].cells
@@ -250,29 +251,87 @@ class ReportWord:
             self.document.add_paragraph(u'\tSKU:{0}'.format(each[:-4]))
             self.document.add_picture(name_path + os.sep + each, height=Inches(2.88),width=Inches(5.76))
 
-    def buhuoanalysis(self):
+    def buhuoanalysis(self, this_path, z_output, z_output2):
         self.document.add_heading(u'C 补货时间分析', 0)
         self.document.add_heading(u'a) 评判指标Z引入', 1)
         self.document.add_paragraph(u'\t在这部分，我们设计量化指标评价采购下单时间。对于每一个采购单，我们用s表示补货点，Q表示补货量（即s+Q是目标库存）。我们按照如下公式定义Z指标：')
+        self.document.add_picture(this_path + os.sep + 'gongshi.png')
         self.document.add_paragraph(u'\t其中，d为VLT期间日均销量预测（报告中的结果使用的是历史28天平均销量；我们也尝试了使用未来7/14/28天实际平均销量，订单当天对未来销量的预测值，得到的结果一致），σ为日销量的标准差，L为VLT天数（假设采销对于每一个采购单的VLT有较准确的估计；如果VLT波动过大，可以略微修改Z指标来包括随机VLT的影响）。')
         self.document.add_heading(u'b) 评判指标Z值分析', 1)
         self.document.add_paragraph(u'\t共有{0}个有效采购单，对于每一个采购单/SKU组合计算Z指标，其分布如下：'.format(self.count_caigou))
         self.document.add_picture(self.file_path + os.sep + 'z.png', height=Inches(3.84), width=Inches(5.76))
+        table = self.document.add_table(1, 11)
+        # 标题
+        heading_cells = table.rows[0].cells
+        for i, each in enumerate(z_output[0]):
+            heading_cells[i].text = each
+        # 添加内容
+        for item in z_output[1:]:
+            cells = table.add_row().cells
+            for i,each in enumerate(item):
+                cells[i].text = each
         self.document.add_paragraph(u'\tZ指标能够较好的衡量补货时间点的早晚。对于一次补货来讲，可以用这批货到货的前一天是否缺货来衡量补货时间的早晚。')
+        self.document.add_paragraph(z_output2)
         self.document.add_heading(u'c) 评判指标Z case study', 1)
         self.document.add_paragraph(u'\t实例说明。')
         self.zcaseget()
 
-    def bpanalysis(self):
+    def bpanalysis(self, bp1_output, bp1_output2, bp2_output, bp2_output2):
         self.document.add_heading(u'D 补货量（BP）分析', 0)
         self.document.add_picture(self.file_path + os.sep + 'bp2.png', height=Inches(3.84), width=Inches(5.76))
+        table = self.document.add_table(1, 9)
+        # 标题
+        heading_cells = table.rows[0].cells
+        for i, each in enumerate(bp1_output[0]):
+            heading_cells[i].text = each
+        # 添加内容
+        for item in bp1_output[1:]:
+            cells = table.add_row().cells
+            for i,each in enumerate(item):
+                cells[i].text = each
+        self.document.add_paragraph(bp1_output2)
         self.document.add_heading(u'A-D band的BP值分析', 1)
         self.document.add_picture(self.file_path + os.sep + 'bp3.png', height=Inches(3.84), width=Inches(5.76))
+        table = self.document.add_table(1, 9)
+        # 标题
+        heading_cells = table.rows[0].cells
+        for i, each in enumerate(bp2_output[0]):
+            heading_cells[i].text = each
+        # 添加内容
+        for item in bp2_output[1:]:
+            cells = table.add_row().cells
+            for i,each in enumerate(item):
+                cells[i].text = each
+        self.document.add_paragraph(bp2_output2)
 
-    def suppanalysis(self):
+    def suppanalysis(self, table2,manzu_output1,manzu_output2):
         self.document.add_heading(u'E 供应商分析', 0)
         self.document.add_paragraph(u'\t供应商的稳定性是影响库存情况的一个重要因素。下面从供应商的vlt、满足率两个方面来分析。总共有{0}个供应商。'.format(self.count_supp_num))
         self.document.add_paragraph(u'\t我们为每个供应商的表现（采购单量，VLT平均天数，标准差，变异系数，订单满足率，订单满足率标准差）从0到10打分，结果如下表所示。(在任一指标上，表现最好的供应商为10分，最差的供应商为1分，其余供应商分数根据线性插值确定。)')
+        # table
+        table = self.document.add_table(1, 8)
+        # 标题
+        heading_cells = table.rows[0].cells
+        for i, each in enumerate(table2.columns):
+            heading_cells[i].text = each
+        # 添加内容
+        table2.index = range(len(table2))
+        for i in range(len(table2)):
+            cells = table.add_row().cells
+            for j in range(len(table2.columns)):
+                if (j==0):
+                    cells[j].text = unicode(table2.iloc[i, j].decode('gbk'))
+                    # i = 0; j =0
+                    # print repr(unicode(repr(table2.iloc[i, j]).encode('utf-8').decode()))
+                if (j==1 or j==2):
+                    cells[j].text = u'{0:.0f}'.format(table2.iloc[i, j])
+                    # print repr(u'{0:.0f}'.format(table2.iloc[i, j]))
+                if (j==3 or j==4 or j==5 or j==7):
+                    cells[j].text = u'{0:.2f}'.format(table2.iloc[i, j])
+                    # print repr(u'{0:.2f}'.format(table2.iloc[i, j]))
+                if (j==6):
+                    cells[j].text = u'{0:.2f}%'.format(table2.iloc[i, j]*100)
+                    # print repr(u'{0:.2f}%'.format(table2.iloc[i, j]*100))
         self.document.add_paragraph(u'\t注：\n\t1.VLT（Vendor lead time）：供应商送货提前期\n\t2.订单满足率口径：实际满足率=实际到货量/原始采购量\n\t3.变异系数主要应用在评价数据的波动性，避免量纲带来的影响')
         self.document.add_heading(u'a) VLT变异系数', 1)
         self.document.add_paragraph(u'\t下图为供应商维度vlt的变异系数(CV)分布：')
@@ -280,7 +339,9 @@ class ReportWord:
         self.document.add_heading(u'b) 满足率', 1)
         self.document.add_paragraph(u'\t供应商维度满足率计算口径：实际满足率=实际到货量/原始采购量\n\t下面两图为供应商两种口径的满足率分布。分别为实际满足率和实际相对回告满足率')
         self.document.add_picture(self.file_path + os.sep + 'manzu.png', height=Inches(3.84), width=Inches(5.76))
+        self.document.add_paragraph(manzu_output1)
         self.document.add_picture(self.file_path + os.sep + 'manzu2.png', height=Inches(3.84), width=Inches(5.76))
+        self.document.add_paragraph(manzu_output2)
         self.document.add_heading(u'c) VLT变异系数、满足率联合分析', 1)
         self.document.add_picture(self.file_path + os.sep + 'vltcv_manzu.png', height=Inches(3.84), width=Inches(5.76))
         self.document.add_paragraph(u'\t区域（1）：供应商波动性小，满足率高。供应商在波动性和满足率上表现最好的。')
@@ -288,9 +349,31 @@ class ReportWord:
         self.document.add_paragraph(u'\t区域（3）：供应商波动性小，满足率小。供应商在波动性上表现很好，满足率很低，容易造成服务水平降低。')
         self.document.add_paragraph(u'\t区域（4）：供应商波动性大，满足率低。供应商在波动性和满足率上表现最差的，极易造成低服务水平，同时如果为了避免供应商波动性，提早采购则有造成高周转的风险。')
 
-    def simanalysis(self):
+    def simanalysis(self, table3):
         self.document.add_heading(u'F 模拟仿真', 0)
         self.document.add_paragraph(u'\t最终同时满足三条仿真条件的sku共计{0}个。占满足分析条件{1}个sku的{2:.2f}%。'.format(self.tempnum, self.screen_sku, self.tempnum/self.screen_sku * 100))
+        # table
+        table = self.document.add_table(1, 6)
+        # 标题
+        heading_cells = table.rows[0].cells
+        heading_name = [u'',u'分band',u'现货率',u'周转（中位数）',u'周转（均值）',u'金额维度',]
+        for i, each in enumerate(heading_name):
+            heading_cells[i].text = each
+        # 添加内容
+        for i in range(len(table3)):
+            cells = table.add_row().cells
+            for j in range(len(table3.columns)):
+                if (j==0 or j==1):
+                    cells[j].text = unicode(repr(table3.iloc[i, j]).encode('utf-8'))
+                    # print repr(unicode(repr(table2.iloc[i, j]).encode('utf-8')))
+                if (j==2):
+                    cells[j].text = u'{0:.2f}%'.format(table3.iloc[i, j]*100)
+                    # print repr(u'{0:.0f}'.format(table2.iloc[i, j]))
+                if (j==3 or j==4):
+                    cells[j].text = u'{0:.2f}'.format(table3.iloc[i, j])
+                    # print repr(u'{0:.2f}'.format(table2.iloc[i, j]))
+                if (j==5):
+                    cells[j].text = u'{0:.1f}'.format(table3.iloc[i, j]*100)
         self.document.add_picture(self.file_path + os.sep + 'ito_his_sim.png', height=Inches(3.84), width=Inches(5.76))
         self.document.add_paragraph(u'\t图中两个数字分别为在红线上下两部分的sku个数。红线上部分代表周转变大的情况，红线下部分代表周转变小的情况。')
         self.document.add_picture(self.file_path + os.sep + 'cr_his_sim.png', height=Inches(3.84), width=Inches(5.76))
@@ -301,13 +384,13 @@ class ReportWord:
         # self.document.add_page_break()
         self.document.save(self.file_path + os.sep + 'report_word_{0}.docx'.format(self.report_name))
 
-    def generateword(self, pinlei, pinleiid, kpi_cr_str, kpi_ito_str):
+    def generateword(self, pinlei, pinleiid, kpi_cr_str, kpi_ito_str, sim_date_range, this_path, z_output, z_output2, bp1_output, bp1_output2, bp2_output, bp2_output2, table2, manzu_output1, manzu_output2, table3):
         self.pinleianalysis(pinlei, pinleiid)
-        self.kpianalysis(kpi_cr_str, kpi_ito_str)
-        self.buhuoanalysis()
-        self.bpanalysis()
-        self.suppanalysis()
-        self.simanalysis()
+        self.kpianalysis(kpi_cr_str, kpi_ito_str, sim_date_range)
+        self.buhuoanalysis(this_path, z_output, z_output2)
+        self.bpanalysis(bp1_output, bp1_output2, bp2_output, bp2_output2)
+        self.suppanalysis(table2, manzu_output1, manzu_output2)
+        self.simanalysis(table3)
         self.closeword()
 
 

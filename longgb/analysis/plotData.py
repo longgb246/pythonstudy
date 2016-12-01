@@ -124,7 +124,15 @@ def plotZ(z_value_frame, filePath):
     # rst_path = r'D:\Lgb\ReadData\RealityAnalysis\report'
     # save_path = r'D:\Lgb\ReadData\RealityAnalysis\report\tet'
     plothistper(z_value_frame.z_value, [-np.inf, 0, 2, 4, 6, 8, 10, 12, 14, np.inf], u'z值', u'频数', u"Z值分布图", rst_path + '\\z')
-
+    reta = plt.hist(z_value_frame.z_value, bins=[-np.inf, 0, 2, 4, 6, 8, 10, 12, 14, np.inf], label='Z', color='#0070C0',histtype='bar', rwidth=0.6)
+    retb = plt.hist(z_value_frame.z_value, bins=[-np.inf, 100, np.inf], label='Z', color='#0070C0',histtype='bar', rwidth=0.6)
+    countsa, binsa, patchesa = reta[0], reta[1], reta[2]
+    countsb, binsb, patchesb = retb[0], retb[1], retb[2]
+    countsa_all = np.sum(countsa)
+    z_output = [[u'Z值范围',u'[-Inf,0)',u'[0,2)',u'[2,4)',u'[4,6)',u'[6,8)',u'[8,10)',u'[10,12)',u'[12,14)',u'[14,Inf)',u'总数']]
+    z_output.append([u'数量']+map(lambda x: unicode('{0:.0f}'.format(x)),np.append(countsa,countsa_all)))
+    z_output.append([u'比例']+map(lambda x: unicode('{0:.2f}%'.format(x/countsa_all*100)),np.append(countsa,countsa_all)))
+    z_output2 = u'\t1、Z值大于14的采购次数为{0:.0f}，Z值大于100的采购次数为{1:.0f}。这部分采购过早，造成高周转。\n\t2、Z值小于0的采购次数为{2:.0f}。这部分采购过晚，造成服务水平低。'.format(countsa[-1],countsb[1],countsa[0])
     # 画 BP 图
     # 1、原版
     fig2 = plt.figure()
@@ -176,6 +184,11 @@ def plotZ(z_value_frame, filePath):
         print "{0:6.2f}% | ".format(each/np.sum(counts_sum_1)*100),
     print " total: 100%"
     print "大于{0:.0f}天的sku占{1:.2f}%。".format(binsn[3], np.sum(counts_sum_1[3:])/np.sum(counts_sum_1)*100)
+    # table
+    bp1_output = [[u'BP值范围',u'小于10天',u'10-20天',u'20-30天',u'30-40天',u'40-50天',u'50-60天',u'大于60天',u'总数']]
+    bp1_output.append([u'数量']+map(lambda x: unicode('{0:.0f}'.format(x)),np.append(counts_sum_1,np.sum(counts_sum_1))))
+    bp1_output.append([u'比例']+map(lambda x: unicode('{0:.2f}%'.format(x/np.sum(counts_sum_1)*100)),np.append(counts_sum_1,np.sum(counts_sum_1))))
+    bp1_output2 = u"大于{0:.0f}天的sku占{1:.2f}%。".format(binsn[3], np.sum(counts_sum_1[3:])/np.sum(counts_sum_1)*100)
     # 2.2、第三版：仅ABCD
     label_name_2 = ['A', 'B', 'C', 'D']
     ret2 = plt.hist([z_value_frame[(z_value_frame.band == 'A')].bp,
@@ -206,6 +219,12 @@ def plotZ(z_value_frame, filePath):
         print "{0:6.2f}% | ".format(each/np.sum(counts_sum_2)*100),
     print " total: 100%"
     print "大于{0:.0f}天的sku占{1:.2f}%。".format(binsn[3], np.sum(counts_sum_2[3:])/np.sum(counts_sum_2)*100)
+    # table
+    bp2_output = [[u'BP值范围',u'小于10天',u'10-20天',u'20-30天',u'30-40天',u'40-50天',u'50-60天',u'大于60天',u'总数']]
+    bp2_output.append([u'数量']+map(lambda x: unicode('{0:.0f}'.format(x)),np.append(counts_sum_2,np.sum(counts_sum_2))))
+    bp2_output.append([u'比例']+map(lambda x: unicode('{0:.2f}%'.format(x/np.sum(counts_sum_2)*100)),np.append(counts_sum_2,np.sum(counts_sum_2))))
+    bp2_output2 = u"大于{0:.0f}天的sku占{1:.2f}%。".format(binsn[3], np.sum(counts_sum_2[3:])/np.sum(counts_sum_2)*100)
+    return z_output, z_output2, bp1_output, bp1_output2, bp2_output, bp2_output2
 
 
 def plotQuantile(df, kpi, filePath):
@@ -474,11 +493,11 @@ def plotsupp2(supp_value_frame, analysis_path):
         vltcv = vltstd / vltmean
         manzu = np.sum(group["actual_pur_qtty"]) / np.sum(group["originalnum"])
         manzu2 = np.nansum(group["actual_pur_qtty"]) / np.nansum(group["plan_pur_qtty"])
-        summary.append({'supp_name':supp_name, 'caigousum': caigousum,
-                        'skusum': skusum, 'vltmean': vltmean, 'vltstd': vltstd,
-                        'vltcv': vltcv, 'manzu':manzu, 'manzu2': manzu2})
+        summary.append({'supp_name':supp_name, 'buy_sum': caigousum,
+                        'sku_sum': skusum, 'vlt_mean': vltmean, 'vlt_std': vltstd,
+                        'vlt_cv': vltcv, 'full_rate':manzu, 'manzu2': manzu2})
     table1 = pd.DataFrame.from_dict(summary)
-    calname = ['caigousum','skusum','vltmean','vltstd','vltcv','manzu']
+    calname = ['buy_sum','sku_sum','vlt_mean','vlt_std','vlt_cv','full_rate']
     for i, colname in enumerate(calname):
         min_num = np.min(table1[colname])
         max_num = np.max(table1[colname])
@@ -488,26 +507,27 @@ def plotsupp2(supp_value_frame, analysis_path):
         else:
             sum_val += cal_val
     sum_val /= 6
-    table2 = pd.concat([table1, pd.DataFrame(sum_val.T, columns=["rank"])], axis=1)
-    table2 = table2.loc[:,['supp_name','caigousum','skusum','vltmean','vltstd','vltcv','manzu', 'rank']]
-    table2 = table2.sort_values(['rank'], ascending=False)
+    table2 = pd.concat([table1, pd.DataFrame(sum_val.T, columns=["score_rank"])], axis=1)
+    table2 = table2.loc[:,['supp_name','buy_sum','sku_sum','vlt_mean','vlt_std','vlt_cv','full_rate', 'score_rank']]
+    table2 = table2.sort_values(['score_rank'], ascending=False)
     table2.to_csv(analysis_path + os.sep + 'supp_info.csv')
 
     # 画vlt图
     binsn = np.append(np.arange(0, 0.6, 0.05), 1)
-    plothistper(table2['vltcv'], binsn, u'vltcv', u'个数', u'vltcv分布', analysis_path + '//report//vltcv', intshu=False)
+    plothistper(table2['vlt_cv'], binsn, u'vltcv', u'个数', u'vltcv分布', analysis_path + '//report//vltcv', intshu=False)
 
     # 画满足率
     binsn2 = np.arange(0.3, 1.1, 0.1)
-    plothistper(table1['manzu'], binsn2, u'满足率', u'个数', u'实际满足率分布', analysis_path + '//report//manzu', intshu=False)
+    plothistper(table1['full_rate'], binsn2, u'满足率', u'个数', u'实际满足率分布', analysis_path + '//report//manzu', intshu=False)
     plothistper(table1[table1['manzu2'].notnull()]["manzu2"], binsn2, u'满足率', u'个数', u'实际相对回告满足率分布', analysis_path + '//report//manzu2', intshu=False)
-    print "实际满足率的基本统计信息，最小值:{0:.2f}%,中位数:{1:.2f}%,均值:{2:.2f}%,最大值:{3:.2f}%。".format(
-        np.nanmin(table1[table1['manzu']>0.01]['manzu'].values),np.nanmedian(table1['manzu'].values),
-        np.nanmean(table1['manzu'].values),np.nanmax(table1['manzu'].values))
-    print "实际相对回告满足率分布的基本统计信息，最小值:{0:.2f}%,中位数:{1:.2f}%,均值:{2:.2f}%,最大值:{3:.2f}%。".format(
-        np.nanmin(table1[table1['manzu2']>0.01]['manzu2'].values),np.nanmedian(table1['manzu2'].values),
-        np.nanmean(table1['manzu2'].values),np.nanmax(table1['manzu2'].values))
-
+    manzu_output1 = u"\t实际满足率的基本统计信息，最小值:{0:.2f}%,中位数:{1:.2f}%,均值:{2:.2f}%,最大值:{3:.2f}%。".format(
+        np.nanmin(table1[table1['full_rate']>0.01]['full_rate'].values)*100,np.nanmedian(table1['full_rate'].values)*100,
+        np.nanmean(table1['full_rate'].values)*100,np.nanmax(table1['full_rate'].values)*100)
+    print manzu_output1
+    manzu_output2 = u"\t实际相对回告满足率分布的基本统计信息，最小值:{0:.2f}%,中位数:{1:.2f}%,均值:{2:.2f}%,最大值:{3:.2f}%。".format(
+        np.nanmin(table1[table1['manzu2']>0.01]['manzu2'].values)*100,np.nanmedian(table1['manzu2'].values)*100,
+        np.nanmean(table1['manzu2'].values)*100,np.nanmax(table1['manzu2'].values)*100)
+    print manzu_output2
     # 画 vltcv * 满足率 图
     fig, ax = plt.subplots(figsize=(12, 8))
     # ax.grid()
@@ -515,7 +535,7 @@ def plotsupp2(supp_value_frame, analysis_path):
     ax.set_ylabel(u"平均满足率")
     ax.set_xlim(0.05, 0.5)
     ax.set_ylim(0.2, 1.1)
-    plt.scatter(table1['vltcv'], table1['manzu'], color='#0070C0')
+    plt.scatter(table1['vlt_cv'], table1['full_rate'], color='#0070C0')
     plt.plot([0.3, 0.3], [0.2, 1.1], '--', color='red')
     plt.plot([0.05, 0.5], [0.8, 0.8], '--', color='red')
     plt.annotate('(1)', xy=(0.16, 0.9), fontsize=20, color='red')
@@ -524,6 +544,7 @@ def plotsupp2(supp_value_frame, analysis_path):
     plt.annotate('(4)', xy=(0.39, 0.5), fontsize=20, color='red')
     plt.title(u'vlt稳定性与订单满足率散点图')
     plt.savefig(analysis_path + '//report//vltcv_manzu')
+    return table2,manzu_output1,manzu_output2
 
 
 def calcallback(func, sim_data, his_name, sim_name):
@@ -582,10 +603,10 @@ def plotsim(sim_path, analysis_path, sim_num_zon):
     # 金额维度
     row_5 = calcallback(np.sum, sim_data2, "gmv_his", "gmv_sim")
     table_data = [row_1,row_2,row_3,row_4,row_5]
-    table1 = pd.DataFrame(table_data, columns=["his_zon","pbs_zon","his_ad","sim_ad","his_e","sim_e",
+    table1 = pd.DataFrame(table_data, columns=["his_total","pbs_total","his_ad","sim_ad","his_e","sim_e",
                                                "his_l","sim_l","his_z","sim_z"])
     table1.to_csv(analysis_path + os.sep + 'pbs_table1.csv')
-
+    table3 = table1.T.reset_index()
     str_tmp = '应用PBS策略，两者总体情况对比发现：现货率和金额维度分别提升{0}%和2.34%。周转中位数相比实际情况下降19.98%，均值下降10.53%。'
     # 1、画周转变化图
     fig, ax1 = plt.subplots(figsize=(12, 8))
@@ -623,5 +644,6 @@ def plotsim(sim_path, analysis_path, sim_num_zon):
     plt.annotate(u'sku:{0:.0f}个'.format(sim_ito_num), xy=(0.8, 0.3), fontsize=15, color='red')
     plt.title(u'现货率变化情况')
     plt.savefig(analysis_path + '//report//cr_his_sim')
+    return table3
 
 

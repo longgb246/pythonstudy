@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def uppath(n=1):
-    # __file__ = r'D:\Lgb\ipc_inv_opt\src\com\jd\pbs\analysis\test.py'
+    # __file__ = r'D:\Lgb\pythonstudy\longgb\analysis\analysis_run.py'
     if n == 0:
         return os.path.abspath(os.path.dirname(__file__))
     return os.path.abspath(os.path.join(os.path.dirname(__file__), (os.pardir + os.sep) * (n - 1) + os.pardir))
@@ -41,11 +41,14 @@ from analysis import report as rep
 # ===============================================================================
 # =                                 0、参数设置                                  =
 # ===============================================================================
-file_path = r'D:\Lgb\ReadData\new'
+file_path = r'D:\Lgb\ReadData\01_analysis_report'
 data_name = 'data11977.csv'
 sim_date_range = ['2016-07-01', '2016-10-24']
 pinlei = [u'厨具',u'厨房配件',u'储物/置物架']
 pinleiid = 11977
+# 仿真
+sim_path = r'D:\tmp\simulatePrograme\SkuSimulationPbs\2016-11-23_17-45-52\simulation_results'
+this_path = uppath(0)
 
 # 读入数据
 data_origin = pd.read_csv(file_path + '\\' + data_name, sep='\t')
@@ -157,20 +160,25 @@ supp_value_frame = calKpi.calcsupp(data, analysis_path)
 # =                                 5、统一画图                                  =
 # ===============================================================================
 # 采购
+print "plot 采购图..."
 plotData.plotcaigou(data, analysis_path)
 # KPI
 # reload(plotData)
+print "plot KPI..."
 plotData.plotkpi(kpi_frame, analysis_path)
 # Z值
-plotData.plotZ(z_value_frame, analysis_path)
+print "plot Z值..."
+z_output, z_output2, bp1_output, bp1_output2, bp2_output, bp2_output2= plotData.plotZ(z_value_frame, analysis_path)
 plotData.plotzcase(data, z_value_frame, analysis_path)
 plotData.plotQuantile(data, kpi_frame, analysis_path)
 # 供应商
+print "plot 供应商..."
 plotData.plot_supp(z_value_frame[z_value_frame.actual_origin_rate > 0], analysis_path)  # 供应商-sku维度的vlt
-plotData.plotsupp2(supp_value_frame, analysis_path)
+table2,manzu_output1,manzu_output2 = plotData.plotsupp2(supp_value_frame, analysis_path)
 # 仿真
-sim_path = r'D:\tmp\simulatePrograme\SkuSimulationPbs\2016-11-23_17-45-52\simulation_results'
-plotData.plotsim(sim_path, analysis_path, data.item_sku_id.unique().size - sim_screen.three_conditions.sum())
+# sim_path = r'D:\tmp\simulatePrograme\SkuSimulationPbs\2016-11-23_17-45-52\simulation_results'
+print "plot 仿真图..."
+table3 = plotData.plotsim(sim_path, analysis_path, data.item_sku_id.unique().size - sim_screen.three_conditions.sum())
 
 
 # ===============================================================================
@@ -191,10 +199,10 @@ reportword = rep.ReportWord(report_name, period, file_path, data, sim_screen, to
 # 生成报告
 reportword.pinleianalysis(pinlei, pinleiid)
 reportword.kpianalysis(kpi_cr_str, kpi_ito_str, sim_date_range)
-reportword.buhuoanalysis()
-reportword.bpanalysis()
-reportword.suppanalysis()
-reportword.simanalysis()
+reportword.buhuoanalysis(this_path, z_output, z_output2)
+reportword.bpanalysis(bp1_output, bp1_output2, bp2_output, bp2_output2)
+reportword.suppanalysis(table2,manzu_output1,manzu_output2)
+reportword.simanalysis(table3)
 reportword.closeword()
 # reportword.generateword(pinlei, pinleiid, kpi_cr_str, kpi_ito_str)
 # test the upload author.
