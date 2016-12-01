@@ -41,14 +41,16 @@ from analysis import report as rep
 # ===============================================================================
 # =                                 0、参数设置                                  =
 # ===============================================================================
-file_path = r'D:\Lgb\ReadData\01_analysis_report'
+this_path = uppath(0)
+# file_path = r'D:\Lgb\ReadData\01_analysis_report'
+file_path = uppath(1) + os.sep + 'wenjian2'
 data_name = 'data11977.csv'
 sim_date_range = ['2016-07-01', '2016-10-24']
 pinlei = [u'厨具',u'厨房配件',u'储物/置物架']
 pinleiid = 11977
 # 仿真
-sim_path = r'D:\tmp\simulatePrograme\SkuSimulationPbs\2016-11-23_17-45-52\simulation_results'
-this_path = uppath(0)
+# sim_path = r'D:\tmp\simulatePrograme\SkuSimulationPbs\2016-11-23_17-45-52\simulation_results'
+sim_path = file_path
 
 # 读入数据
 data_origin = pd.read_csv(file_path + '\\' + data_name, sep='\t')
