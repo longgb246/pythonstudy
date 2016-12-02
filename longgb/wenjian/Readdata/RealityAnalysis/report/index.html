@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"><head><title>simulation report</title>
+</head>
+<body><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<style>
+		<!--
+		.mytable{
+		 font-size:12px;
+		 border:1px solid rgb(221, 221, 221);
+		 border-collapse:collapse;
+		}
+		.mytable th{
+			border:1px solid rgb(221, 221, 221);
+			height:38px;
+			text-align:center;
+			background:rgb(250, 250, 250);
+			white-space: nowrap;
+			transition: 0.2s;
+			cursor: default;
+		}
+		.mytable td{
+			border:1px solid rgb(221, 221, 221);
+			height:38px;
+			text-align:center;
+			white-space: nowrap;
+			transition: 0.2s;
+			cursor: default;
+		}
+		-->
+		</style>
+		<h1>模拟分析报告（11977）</h1>
+<p>分析时间： 2016-07-01,2016-10-24</p>
+<p>SKU总数：1317</p>
+<p>SKU上架时间早于2016-07-01的SKU数：1129</p>
+<h2>KPI相关的图</h2>
+<table id="analysis_table" class="mytable"><tr><td width="30%"><img src="cr.PNG" width="100%" />
+<p>服务水平 = 库存（inv>0）天数 / 统计天数</p>
+</td>
+<td width="30%"><img src="td.PNG" width="100%" />
+<p>周转天数=平均库存/平均销量</p>
+</td>
+<td width="30%"><img src="cr_td.PNG" width="100%" />
+</td>
+</tr>
+<tr><td width="30%"><img src="z.PNG" width="100%" />
+</td>
+<td width="30%"><img src="bp.PNG" width="100%" />
+</td>
+<td width="30%"><img src="vlt.PNG" width="100%" />
+</td>
+</tr>
+<tr><td width="30%"><img src="actual_origin_rate.PNG" width="100%" />
+</td>
+<td width="30%"><img src="actual_plan_rate.PNG" width="100%" />
+</td>
+</tr>
+</table>
+<h2>补货案例分析</h2>
+<h3 src="inv.PNG"></h3>
+<h3>低周转，高现货</h3>
+<img src=".\high_cr_low_td\1119059.png" />
+<h3>高周转，高现货</h3>
+<img src=".\high_cr_high_td\1072948.png" />
+<h3>高周转，低现货</h3>
+<img src=".\low_cr_high_td\1035015.png" />
+<h3>低周转，低现货</h3>
+<img src=".\low_cr_low_td\1076908.png" />
+</body>
+</html>
