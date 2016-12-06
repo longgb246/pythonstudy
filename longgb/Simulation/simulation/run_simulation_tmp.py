@@ -1,13 +1,15 @@
 # coding: utf-8
 
 import ast
-import math
 import datetime
 import logging
-import pandas as pd
-import numpy as np
-from scipy.stats import itemfreq
+import math
 import sys
+
+import numpy as np
+import pandas as pd
+from scipy.stats import itemfreq
+
 sys.path.append("/home/cmo_ipc/stockPlan/ipc_inv_opt/src/")
 import config, SkuSimulation
 
