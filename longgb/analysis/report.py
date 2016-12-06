@@ -201,7 +201,7 @@ class ReportWord:
         self.document.add_paragraph(u'\t注：KPI的分析当中会用到中位数。中位数顾名思义，处于中间位置的数，其可将数值集合划分为相等的上下两部分，中位数不会受到少量异常值的影响，而如果存在异常值，均值的变化会比较明显，受异常值影响较大。')
         self.document.add_heading(u'a) KPI计算口径', 1)
         table = self.document.add_table(1, 3)
-        table.style = 'Light Shading Accent 1'
+        table.style = 'Light List Accent 1'
         # table.style = 'Light Shading Accent 1'
         # 标题
         heading_cells = table.rows[0].cells

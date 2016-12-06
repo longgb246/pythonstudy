@@ -43,7 +43,7 @@ from analysis import report as rep
 # ===============================================================================
 this_path = uppath(0)
 # file_path = r'D:\Lgb\ReadData\01_analysis_report'
-file_path = uppath(1) + os.sep + 'wenjian2'
+file_path = uppath(1) + os.sep + 'wenjian' + os.sep + 'Readdata'
 data_name = 'data11977.csv'
 sim_date_range = ['2016-07-01', '2016-10-24']
 pinlei = [u'厨具',u'厨房配件',u'储物/置物架']
