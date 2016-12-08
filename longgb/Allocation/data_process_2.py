@@ -128,7 +128,7 @@ fdc_forecast_std=fdc_forecast_std.set_index('id')['forecast_std'].to_dict()
 
 # fdc_data [2表]
 # (3)fdc_alt:(dict){ (date|dc_id|sku_id) : alt([list]) }
-# (3)fdc_alt: 日期_FDC(RDC)_SKU -- alt分布
+# (3)fdc_alt: 日期_FDC(RDC) -- alt分布
 #RDC-->FDC时长分布,{fdc:[days]}}
 fdc_alt=pd.concat([allocation_fdc_data['date'].astype('str')+allocation_fdc_data['dc_id'].astype('str'),
         allocation_fdc_data['alt']],axis=1)

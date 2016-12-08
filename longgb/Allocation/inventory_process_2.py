@@ -67,18 +67,32 @@ def a__init__(fdc_forecast_sales,fdc_forecast_std,fdc_alt,fdc_alt_prob,fdc_inv,w
 
 def gene_whitelist(date_s):
     # date_s = d
+    # date_s = '20161104'
     '''获取该时间点的白名单'''
     white_list=defaultdict(list)
     for f in fdc:
-        # f = fdc[0]
-        for i in white_list_dict[f]:
-            if i[0]<date_s:
-                white_list[f].append(i[1])
+        # f = fdc[1]
+        # for i in white_list_dict[f]:
+        date_s_time = time.strptime(date_s, '%Y%m%d')
+        for i in white_list_dict.items():
+            this_time = time.strptime(i[0], '%Y/%m/%d')
+            # if i[0]<date_s:
+            #     print i[0]
+            if this_time <= date_s_time:
+                # white_list[f].append(i[1][f])
+                white_list[f].extend(i[1][f])
+
 def cacl_rdc_inv(date_s):
     '''   #更新RDC库存,RDC库存的更新按照实际订单情况进行更新'''
+    # date_s = d
     for s in all_sku_list:
+        # s = all_sku_list[0]
         index=gene_index('rdc',s,date_s)
-        rdc_inv[index]=rdc_inv[index]+order_list[date_s][s]
+        # rdc_inv[index]=rdc_inv[index]+order_list[date_s][s]
+        # order_list.keys()
+        temp_date = time.strptime(date_s, '%Y%m%d')
+        date_s_time = str(temp_date.tm_year)+'/'+str(temp_date.tm_mon)+'/'+str(temp_date.tm_mday)
+        rdc_inv[index]=rdc_inv[index]+order_list[date_s_time][s]
 
 def calc_lop(sku,fdc,date_s,cr=0.99):
     '''    #计算某个FDC的某个SKU的补货点'''
@@ -186,18 +200,22 @@ def calc_fdc_allocation(date_s,fdc):
     @arrive_quantity:当日到达量
     '''
     #计算补货点，判断补货量
-
-    for s in white_list:
-        index=gene_index(date_s,s,fdc)
+    f = 1
+    for s in white_list:        # 【这里有问题】
+        # s1 = white_list[8]
+        # s = s1[0]
+        # index=gene_index(date_s,s,fdc)
+        index=gene_index(f,s,date_s)
         #获取当前库存，当前库存已在订单循环部分完成
-        #获取调拨量,从调拨字典中获取调拨量
+        #获取调拨量,从调拨字典中获取调拨量             # 【 fdc_inv 的日期有问题,索引有问题】
         fdc_inv[index]['inv']=fdc_inv[index]['inv']+fdc_inv[index]['arrive_quantity']
         fdc_inv[index]['allocation']=fdc_allocation[index]
-        alt=gene_alt(fdc)
+        # alt=gene_alt(fdc)
+        alt=gene_alt(f)                              # 【传参数不对，有问题】
         #更新在途量,c为标记变量
         c=0
         format_date='%Y%m%d'
-        while c<alt:
+        while c<alt:                                # 【这里的逻辑】
             date_tmp=datetime.datetime.strptime(date_s,format_date)+datetime.timedelta(c)
             date_s_c=date_tmp.strftime('%Y%m%d')
             index_tmp=gene_index(s,fdc,date_s_c)
@@ -211,20 +229,24 @@ def calc_fdc_allocation(date_s,fdc):
 
 def OrdersSimulation(self):
     for d in date_range:
-        d = date_range[0]
+        # d = date_range[0]
+        # d = '20161101'
         #更新获取当天白名单`
         gene_whitelist(d)
         for f in fdc:
+            # f = fdc[0]
             #增加RDC当天库存，并针对FDC进行调拨
 
             cacl_rdc_inv(d)
 
             calc_fdc_allocation(d,f)
+            # for o in orders_retail[str(f)].items():  o = orders_retail[str(f)].items()[0]
             for o in orders_retail[f].items():
                 #遍历订单,尽量按照时间顺序进行遍历
                 #标记订单类型，第一位：1为FDC发货，0为内配驱动，9为RDC代发；第二位是否包含白名单 y包括白名单商品 n不包括白名单商品
                 sku_state=[]
                 for s in o[1].items():
+                    # s = o[1].items()[0]
                     #遍历sku
                     index=gene_index(f,s[0],d)
                     index_rdc=gene_index('rdc',s[0],d)
