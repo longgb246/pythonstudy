@@ -12,6 +12,7 @@ import configServer as conf
 path = conf.data_path
 total_path = path + os.sep + 'data_total3'
 total_path_sku = total_path + os.sep + 'total_sku'
+total_path_sale = total_path + os.sep + 'total_sale'
 NaN = 'NaN'
 
 def data_get(x):
@@ -33,11 +34,13 @@ def data_trans2(x):
     '''
     数据转化函数 2
     '''
-    x = str(x)
-    if (',' in x) and ('[' in x) and (']' in x):
-        data = x.split(',')
-        dataset = [data[0][1:]] + data[1:7]
-        return dataset
+    var,rdc_sales,fdc_sales = str(x).split(';')
+    if (',' in rdc_sales) and ('[' in rdc_sales) and (']' in rdc_sales):
+        rdc_sales = np.array(eval(rdc_sales))
+        var = np.array(eval(var))
+        fdc_sales=np.array(eval(fdc_sales))
+        std = (var/rdc_sales)*fdc_sales
+        return std[0:7]
     else:
         return np.nan
 
@@ -98,8 +101,13 @@ def transfer_sku(path):
                             # read_data_tmp_select.loc[read_data_tmp_select["ofdsales"].isnull(), ["ofdsales"]] = '\N'
                             # read_data_tmp_select['variance'] = map(data_get,read_data_tmp_select["variance"].values)
                             # read_data_tmp_select['ofdsales'] = map(data_get,read_data_tmp_select["ofdsales"].values)
-                            read_data_tmp['variance'] = map(data_trans2, read_data_tmp["variance"].values)
-                            read_data_tmp['ofdsales'] = map(data_trans2, read_data_tmp["ofdsales"].values)
+                            # read_data_tmp['variance'] = map(data_trans2, read_data_tmp["variance"].values)
+                            # read_data_tmp['ofdsales'] = map(data_trans2, read_data_tmp["ofdsales"].values)
+                            read_data_tmp['variance_ofdsales']=(read_data_tmp['variance']).astype(str)\
+                                                               +';'+(read_data_tmp['ofdsales']).astype(str)+';'+\
+                                                               (read_data_tmp['forecast_daily_override_sales'])
+                            read_data_tmp['std']= map(data_trans2, read_data_tmp["variance_ofdsales"].values)
+                            del read_data_tmp[['variance_ofdsales','variance','ofdsales']]
                             sku_data_list.append(read_data_tmp)
                             # if flag == 0:
                             #     read_data = read_data_tmp
@@ -153,10 +161,10 @@ def transfer_sale(path):
                     'item_second_cate_cd', 'shelves_dt', 'shelves_tm', 'date_s', 'dc_id']
     # 1、遍历日期 date
     flag = 0
-    sale_data_list=[]
     for each_date in os.listdir(read_data_path):
         print each_date
         file_name_date = each_date.split('=')
+        sale_data_list=[]
         if os.path.isdir(read_data_path + os.sep + each_date):
             read_data_path_date = read_data_path + os.sep + each_date
             # 2、遍历 dc_id
@@ -173,13 +181,9 @@ def transfer_sale(path):
                             read_data_tmp[data_columns[-2]] = file_name_date[1]
                             read_data_tmp[data_columns[-1]] = file_name_dcid[1]
                             sale_data_list.append(read_data_tmp)
-                            # if flag == 0:
-                            #     read_data = read_data_tmp
-                            #     flag += 1
-                            # else:
-    read_data = pd.concat(sale_data_list)
-    with open(total_path + os.sep + 'sale_data.pkl', 'wb') as f:
-        pickle.dump(read_data, f)
+        read_data = pd.concat(sale_data_list)
+        with open(total_path_sale + os.sep + '{0}.pkl'.format(file_name_date[1]), 'wb') as f:
+            pickle.dump(read_data, f)
 
 
 def test():
@@ -258,7 +262,6 @@ def transfer_sku_byday(path):
         read_data = pd.concat(sku_data_list)
         with open(total_path_sku + os.sep + '{0}.pkl'.format(file_name_date[1]), 'wb') as f:
             pickle.dump(read_data, f)
-    return read_data
 
 
 if __name__ == '__main__':
@@ -301,4 +304,4 @@ if __name__ == '__main__':
 # path2 = r'D:\Lgb\rz_sz\fdc_data.pkl'
 # pkl_file = open(path2, 'rb')
 # data1 = pickle.load(pkl_file)
-# pkl_file.close()
+
