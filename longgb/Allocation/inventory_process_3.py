@@ -16,10 +16,8 @@ class inventory_proess:
         self.fdc_forecast_sales=fdc_forecast_sales
         self.fdc_forecast_std=fdc_forecast_std
         #RDC-->FDC时长分布,{fdc:[days]}}
-        self.fdc_alt=defaultdict(list)
-        self.fdc_alt.update(fdc_alt)
-        self.fdc_alt_prob=defaultdict(list)
-        self.fdc_alt_prob.update(fdc_alt_prob)
+        self.fdc_alt=fdc_alt
+        self.fdc_alt_prob=fdc_alt_prob
         #defaultdict(lamda:defaultdict(int))
         self.fdc_inv=fdc_inv
         #白名单,不同日期的白名单不同{fdc:{date_s:[]}}
@@ -54,7 +52,7 @@ class inventory_proess:
         for f in self.fdc:
             for i in self.white_list_dict[f]:
                 if i[0]<date_s:
-                    self.white_list[f].append(i[1])#list[]
+                    self.white_list[f].append(i[1])
     def cacl_rdc_inv(self,date_s):
         '''   #更新RDC库存,RDC库存的更新按照实际订单情况进行更新'''
         for s in self.all_sku_list:
@@ -149,9 +147,6 @@ class inventory_proess:
         '''
         fdc_vlt=self.fdc_alt[fdc]
         fdc_vlt_porb=self.fdc_alt_prob[fdc]
-        #如果没有对应的调拨时长，默认为3天
-        if len(fdc_vlt)==0:
-            return 3
         alt_distribution = rv_discrete(values=(fdc_vlt, fdc_vlt_porb))
         return alt_distribution.rvs()
 
@@ -186,7 +181,6 @@ class inventory_proess:
                 date_s_c=date_tmp.strftime('%Y%m%d')
                 index_tmp=self.gene_index(s,fdc,date_s_c)
                 self.fdc_inv[index_tmp]['open_po']=self.fdc_inv[index_tmp]['open_po']+self.fdc_inv[index_tmp]['open_po']
-                c+=1
             date_alt=datetime.datetime.strptime(date_s,format_date)+datetime.timedelta(alt)
             date_s_alt=date_alt.strftime(format_date)
             index_1=self.gene_index(s,fdc,date_s_alt)
@@ -269,7 +263,6 @@ class inventory_proess:
                     else:
                         pass
             #更新下一天库存，将当天剩余库存标记为第二天库存,第二天到达库存会在开始增加上
-
             for f in self.fdc:
                 for s in self.white_list[f]:
                     format_date='%Y%m%d'

@@ -3,10 +3,12 @@ import os
 from string import Template
 import time
 
+# sh allocation_sku_data.sh  2016-07-01 2016-11-01 630/628/658 316
+
 def pyhive(com_str, log_str):
-    os.system('echo "{0}" >> {1} 2>&1;'.format('*'*30, log_str))
+    os.system('echo "{0}" >> {1} 2>&1;'.format('*'*50, log_str))
     os.system('echo "{0}" >> {1} 2>&1;'.format(' '*15 + log_str, log_str))
-    os.system('echo "{0}" >> {1} 2>&1;'.format('*'*30, log_str))
+    os.system('echo "{0}" >> {1} 2>&1;'.format('*'*50, log_str))
     os.system('hive -e "{0}" >> {1} 2>&1;'.format(com_str, log_str))
     os.system('echo "" >> {0} 2>&1;'.format(log_str))
 
@@ -96,7 +98,7 @@ hive_04 = '''DROP TABLE IF EXISTS dev.tmp_app_sfs_rdc_forecast_result_01_${dc_id
 CREATE TABLE dev.tmp_app_sfs_rdc_forecast_result_01_${dc_id}
 AS
 SELECT
-      dt,
+        dt,
         wid as sku_id,
         dcid,
         variance,
@@ -109,7 +111,11 @@ SELECT
 '''
 hive_04 = Template(hive_04)
 
-hive_05 = '''INSERT OVERWRITE table dev.dev_allocation_sku_data_${dc_id}  partition(date_s,dc_id)
+hive_05 = '''set hive.exec.dynamic.partition=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+SET hive.exec.max.dynamic.partitions=100000;
+SET hive.exec.max.dynamic.partitions.pernode=100000;
+INSERT OVERWRITE table dev.dev_allocation_sku_data_${dc_id}  partition(date_s,dc_id)
 SELECT
     a.sku_id,
     b.forecast_begin_date,
@@ -123,7 +129,9 @@ SELECT
     a.inv,
     0 as arrive_quantity, --这个会在程序中更新
     a.open_po,
-    case when c.modify_time<a.dt then 1 else 0 end as white_flag,
+    case when c.modify_time is not null and c.modify_time<='2016-10-11' then 1
+         when c.modify_time is not null and a.dt>c.modify_time then 1
+         else 0 end as white_flag,
     a.dt as date_s,
     b.dc_id
 FROM
@@ -178,3 +186,14 @@ for each in dc_id_list:
 
 
 
+# # test
+# path = r'D:\Lgb\rz_sz\000000_0'
+# import pandas as pd
+# data = pd.read_table(path, sep='\001', header=None)
+# def getvalue_map(x):
+#     data = x.split('\002')
+#     data2 = np.array(map(lambda x: float(x),data))
+#     return data2
+# data3 = map(getvalue_map,data[3].values)
+# mm = data[3][0].split('\002')
+# mm2 = data[3][0].split('\x02')
