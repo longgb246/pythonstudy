@@ -17,7 +17,7 @@ CREATE TABLE dev.dev_allocation_fdc_data
 	Select
 		org_from,
 		org_to,
-		actiontime_max,
+		actiontime_max, 
 		alt_max,
 		count(distinct id)  as alt_cnt
 	from	

@@ -20,12 +20,11 @@ hive -e"set hive.exec.dynamic.partition=true;
 			arrive_quantity	string	-- 实际到达量
 		)
 		PARTITIONED by (rdc_id string);
-		
 	INSERT overwrite table dev.dev_allocation_order_data partition(rdc_id)
 		SELECT
-			to_date(t2.complete_dt) as arrive_time,
+			to_date(t2.complete_dt) as arrive_time, 		-- 完成时间为到达时间
 			t2.sku_id as item_sku_id,
-			sum(t2.actual_pur_qtty) as arrive_quantity,
+			sum(t2.actual_pur_qtty) as arrive_quantity,		
 			t2.int_org_num as rdc_id
 	    FROM 
 	        gdm.gdm_m04_pur_det_basic_sum t2

@@ -343,14 +343,17 @@ end_date = '2016-11-01'
 org_id = '316'
 dc_id_list = ['630','628','658']
 drop_table = 0      # 为 0 的时候，表示不删除表， 为 1 ，删除表
-istest = '_test'    # 为 ' ' 的时候，表示正式插入表，有任何字符表示创建 test 的表
-ispre = 1           # 为 0 的时候，不用再跑 pre 表。额……多余了。
+# istest = '_test'    # 为 ' ' 的时候，表示正式插入表，有任何字符表示创建 test 的表
+istest = ' '
+ispre = 0           # 为 0 的时候，不用再跑 pre 表。额……多余了。
 
 
 if __name__ == '__main__':
     if ispre == 1:
+        print "Pre ...."
         os.system('hive -e "{0}";'.format(hive_pre.substitute(start_date=start_date,end_date=end_date,test=istest)))
     if drop_table == 1:
+        print "Drop Table ...."
         os.system('hive -e "{0}";'.format(hive_drop.substitute(test=istest)))
     for each in dc_id_list:
         i = 1
