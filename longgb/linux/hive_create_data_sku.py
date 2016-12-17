@@ -9,7 +9,7 @@ def printruntime(t1):
     d = time.time() - t1
     min_d = int(d / 60)
     sec_d = d % 60
-    print 'Run Time is : {0}min {1:.4f}s'.format(min_d, sec_d)
+    print 'Run Time is : {0} min {1:.4f} s'.format(min_d, sec_d)
 
 def pyhive(com_str, log_str):
     os.system('echo "{0}" >> {1} 2>&1;'.format('*'*50, log_str))
@@ -320,7 +320,9 @@ if __name__ == '__main__':
         print "{0} ...".format(each)
         t1 = time.time()
         pyhive(hive_final.substitute(start_date=start_date, end_date=end_date, dc_id=each, org_dc_id=org_dc_id), 'sku_final.log')
+        pyhive(hive_select.substitute(table='dev_allocation_sku_data', dc_id='', test=''), 'sku_final_select.log')
         printruntime(t1)
+
         # t1 = time.time()
         # print 'Table:tmp_allocation_order_pre_mid02_01_{0}{1}   '.format(each, istest),
         # pyhive(hive_01.substitute(start_date=start_date,end_date=end_date,dc_id=each,org_dc_id=316,test=istest), 'sku_data_{0}.log'.format(each))

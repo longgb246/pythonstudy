@@ -16,6 +16,7 @@ echo 'create mid table dev.tmp_allocation_order_data_mid01'
 hive -e"DROP TABLE IF EXISTS dev.tmp_allocation_order_data_mid01;
 	create table dev.tmp_allocation_order_data_mid01
 	as
+	-- 【1】rdc、fdc、每天、每城市 的 单子（子母）、销量、品类、上架
  	select distinct
         f.org_dc_id,
         f.dc_id,
@@ -39,7 +40,7 @@ hive -e"DROP TABLE IF EXISTS dev.tmp_allocation_order_data_mid01;
         b.item_sku_id = t4.item_sku_id
     join
         (
-        -- 3、仓分类，取最全的
+        -- （1）仓分类，取最全的
         select
             *
         from
@@ -83,7 +84,7 @@ create table dev.tmp_allocation_order_data_mid02
         b.item_sku_id = t4.item_sku_id
     join
         (
-        -- 这个地方与 mid01 的区别
+        -- （2）这个地方与 mid01 的区别。取RDC
         select
             *
         from
@@ -137,18 +138,18 @@ echo 'create mid table dev.tmp_allocation_order_data_mid04'
 hive -e"DROP TABLE IF EXISTS dev.tmp_allocation_order_data_mid04;
 	create table dev.tmp_allocation_order_data_mid04
 		as
-							select distinct
-								f.org_dc_id,
-								f.dc_id,
-								f.city_id,
-                b.dt,
-								b.sale_ord_id,
-								b.item_sku_id,
-								b.sale_qtty,
-								b.sale_ord_tm,
-								t4.item_third_cate_cd,
-                t4.item_second_cate_cd,
-                w.white_flag	
+		select distinct
+			f.org_dc_id,
+			f.dc_id,
+			f.city_id,
+            b.dt,
+			b.sale_ord_id,
+			b.item_sku_id,
+			b.sale_qtty,
+			b.sale_ord_tm,
+			t4.item_third_cate_cd,
+            t4.item_second_cate_cd,
+            w.white_flag	
         from
             (select 
             	* 
@@ -159,12 +160,12 @@ hive -e"DROP TABLE IF EXISTS dev.tmp_allocation_order_data_mid04;
 				and date_s >= '${start_date}'
 			) w
         join
-      dev.tmp_allocation_order_pre_mid01 b
+      		dev.tmp_allocation_order_pre_mid01 b
         on  
         	w.sku_id = b.item_sku_id 
         	and w.date_s=b.dt
         join
-         dev.tmp_allocation_order_pre_mid02 t4
+         	dev.tmp_allocation_order_pre_mid02 t4
         on
             b.item_sku_id = t4.item_sku_id
         join
@@ -180,7 +181,7 @@ hive -e"DROP TABLE IF EXISTS dev.tmp_allocation_order_data_mid04;
         on
             b.delv_center_num = e.delv_center_num
             and b.store_id    = e.store_id
-	   join (select * from dev.tmp_allocation_order_pre_mid03 where org_dc_id='${org_id}' and dc_id='${dc_id}') f 
+	   	join (select * from dev.tmp_allocation_order_pre_mid03 where org_dc_id='${org_id}' and dc_id='${dc_id}') f 
 		on
 	        b.rev_addr_city_id = f.dim_city_id;"
 
@@ -209,20 +210,20 @@ insert overwrite table dev.dev_allocation_sale_data partition(date_s,dc_id)
 	select
 	 	a.org_dc_id,
 		a.sale_ord_det_id,	
-    a.sale_ord_id,		
-    a.parent_sale_ord_id,
-    a.item_sku_id,
+	    a.sale_ord_id,		
+	    a.parent_sale_ord_id,
+	    a.item_sku_id,
 		a.sale_qtty,
 		a.sale_ord_tm	,
 	  	case when b.sale_ord_id is not null then 'rdc'
-	  when c.sale_ord_id is not null then 'fdc_rdc'
-	  when d.sale_ord_id is not null then 'fdc'
-	  	else 'other' end,
+			  when c.sale_ord_id is not null then 'fdc_rdc'
+			  when d.sale_ord_id is not null then 'fdc'
+	  		  else 'other' end,
 	  	d.white_flag,
 	    a.item_third_cate_cd,
-      a.item_second_cate_cd,
-      a.shelves_dt,
-      a.shelves_tm,	
+		a.item_second_cate_cd,
+		a.shelves_dt,
+		a.shelves_tm,	
 	  	a.dt as date_s,
 	  	a.dc_id
 	from 

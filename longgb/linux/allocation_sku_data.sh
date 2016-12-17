@@ -15,7 +15,9 @@ org_dc_id=$4
 	hive -e"set hive.exec.dynamic.partition=true;
 	set hive.exec.dynamic.partition.mode=nonstrict;
 	CREATE TABLE IF Not EXISTS dev.dev_allocation_sku_data
-	( sku_id	 string,
+	( 	
+		-- 【1】每天、每个fdc、每个sku的 预测数据、白名单等
+		sku_id	 string,
 		forecast_begin_date	 string,
 		forecast_days	int,
 		forecast_daily_override_sales	array<double>,
@@ -60,11 +62,11 @@ org_dc_id=$4
 			sum(in_transit_qtty) AS open_po,
 			sum(stock_qtty) AS inv --库存数量	
 		FROM 
-			gdm.gdm_m08_item_stock_day_sum	-- 商品库存日汇总
+			gdm.gdm_m08_item_stock_day_sum	     	-- 【主表】商品库存日汇总
 		WHERE 
-			dt>=${start_date} AND 
-			dt<=${end_date} AND
-			delv_center_num=${org_dc_id}
+			dt>='${start_date}' AND 
+			dt<='${end_date}' AND
+			delv_center_num='${org_dc_id}'
 		group by 
 			delv_center_num,		
 			dt,
@@ -83,11 +85,11 @@ org_dc_id=$4
 			forecast_weekly_std,
 			forecast_daily_std--新增每日
 		FROM
-		    app.app_pf_forecast_result_fdc_di	-- 预测信息
+		    app.app_pf_forecast_result_fdc_di		-- 预测信息
 		WHERE
-		    dt >= ${start_date} AND 
-		    dt <=${end_date}  And
-		    dc_id=${dc_id}
+		    dt >= '${start_date}' AND 
+		    dt <='${end_date}'  And
+		    dc_id='${dc_id}'
 	    ) b
 	ON
 		a.sku_id=b.sku_id AND
@@ -100,12 +102,12 @@ org_dc_id=$4
 			wid, 		-- sku_id 的信息
 			fdcid
 		FROM 
-			fdm.fdm_fdc_whitelist_chain 
+			fdm.fdm_fdc_whitelist_chain 			-- 白名单表
 		WHERE  
-			start_date<=${end_date} AND 	-- 开始日期在 11-01 之前
-			end_date>=${end_date} AND 		-- 结束日期在 11-01 之后
+			start_date<='${end_date}' AND 	-- 开始日期在 11-01 之前
+			end_date>='${end_date}' AND 		-- 结束日期在 11-01 之后
 			yn= 1 AND
-			fdcid=${dc_id}
+			fdcid='${dc_id}'
 		) c
 	ON
 		a.sku_id=c.wid
@@ -120,9 +122,9 @@ org_dc_id=$4
 		from 
 			app.app_sfs_rdc_forecast_result 
 		WHERE
-		    dt >= ${start_date} AND 
-		    dt <=${end_date}  And
-		    dcid=${org_dc_id}
+		    dt >= '${start_date}' AND 
+		    dt <='${end_date}'  And
+		    dcid='${org_dc_id}'
 	    ) d
     on 		
 	    a.sku_id=d.sku_id AND

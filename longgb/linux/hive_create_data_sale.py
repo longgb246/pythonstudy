@@ -6,9 +6,9 @@ import time
 # sh allocation_sku_data.sh  2016-07-01 2016-11-01 630/628/658 316
 
 def pyhive(com_str, log_str):
-    os.system('echo "{0}" >> {1} 2>&1;'.format('*'*30, log_str))
+    os.system('echo "{0}" >> {1} 2>&1;'.format('*'*50, log_str))
     os.system('echo "{0}" >> {1} 2>&1;'.format(' '*15 + log_str, log_str))
-    os.system('echo "{0}" >> {1} 2>&1;'.format('*'*30, log_str))
+    os.system('echo "{0}" >> {1} 2>&1;'.format('*'*50, log_str))
     os.system('hive -e "{0}" >> {1} 2>&1;'.format(com_str, log_str))
     os.system('echo "" >> {0} 2>&1;'.format(log_str))
 
@@ -16,7 +16,7 @@ def printruntime(t1):
     d = time.time() - t1
     min_d = int(d / 60)
     sec_d = d % 60
-    print 'Run Time is : {0}min {1:.4f}s'.format(min_d, sec_d)
+    print 'Run Time is : {0} min {1:.4f} s'.format(min_d, sec_d)
 
 hive_pre = '''DROP TABLE IF EXISTS dev.tmp_allocation_order_pre_mid01${test};
     create table dev.tmp_allocation_order_pre_mid01${test}
@@ -274,11 +274,12 @@ hive_05 = '''CREATE TABLE IF NOT EXISTS dev.dev_allocation_sale_data${test}
 		sale_qtty				  int,		-- 销售数量
 		sale_ord_tm				string,		-- 销售订单订购时间
 		sale_ord_type 			string,		-- 订单配送类型
-		sale_ord_white_flag		string, 		-- 是否包括白名单
-		item_third_cate_cd  string,   --sku所属三级分类
-		item_second_cate_cd  string,	  --sku所属二级分类
-		shelves_dt  string, --上架日期
-        shelves_tm   string --上架时间
+		sale_ord_white_flag		string, 	-- 是否包括白名单
+		white_flag_02           string,     -- 是够包括白名单2
+		item_third_cate_cd  string,         --sku所属三级分类
+		item_second_cate_cd  string,	    --sku所属二级分类
+		shelves_dt  string,                 --上架日期
+        shelves_tm   string                 --上架时间
 	)
 	PARTITIONED by (date_s string,dc_id int);
 set hive.exec.dynamic.partition=true;
@@ -299,6 +300,7 @@ insert overwrite table dev.dev_allocation_sale_data${test}  partition(date_s,dc_
               when d.sale_ord_id is not null then 'fdc'
 	  	      else 'other' end,
 	  	e.white_flag,
+	  	e.white_flag_02,
 	    a.item_third_cate_cd,
         a.item_second_cate_cd,
         a.shelves_dt,
@@ -338,7 +340,7 @@ hive_drop = '''DROP TABLE IF EXISTS dev.dev_allocation_sale_data${test};
 '''
 hive_drop = Template(hive_drop)
 
-start_date = '2016-07-01'
+start_date = '2016-10-01'
 end_date = '2016-11-01'
 org_id = '316'
 dc_id_list = ['630','628','658']
