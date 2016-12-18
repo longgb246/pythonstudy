@@ -40,5 +40,7 @@ cells[0].text = list_a[0]
 cells[1].text = list_a[1]
 cells[2].text = list_a[2]
 
+
+# test the blue
 document.save(r'C:\Users\longgb246\Desktop\test\demo.docx')
 
