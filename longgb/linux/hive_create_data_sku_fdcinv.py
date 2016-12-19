@@ -49,6 +49,39 @@ CREATE TABLE IF Not EXISTS dev.dev_allocation_sku_data_fdcinv${test}
 hive_skuinv = Template(hive_skuinv)
 
 
+# 按照 2 个分区，时间太长了
+hive_skuinv_2 = '''set hive.exec.dynamic.partition=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+set hive.exec.max.dynamic.partitions=20000;
+set hive.exec.max.dynamic.partitions.pernode=20000;
+CREATE TABLE IF Not EXISTS dev.dev_allocation_sku_data_fdcinv${test}
+	(
+		sku_id	 		string,
+		open_po_fdc  	int,
+		inv_fdc			int,
+		dc_id int)
+		PARTITIONED by (date_s  string);
+	insert OVERWRITE table dev.dev_allocation_sku_data_fdcinv${test}   partition(date_s)
+	SELECT
+		sku_id,
+		sum(in_transit_qtty) AS open_po_fdc,
+		sum(stock_qtty) AS inv_fdc, --库存数量
+		delv_center_num,
+		dt  as date_s
+	FROM
+		gdm.gdm_m08_item_stock_day_sum	     	-- 【主表】商品库存日汇总
+	WHERE
+		dt>='${start_date}' AND
+		dt<='${end_date}' AND
+		delv_center_num='${dc_id}'
+	group by
+		delv_center_num,
+		dt,
+		sku_id
+'''
+hive_skuinv_2 = Template(hive_skuinv_2)
+
+
 hive_drop = '''DROP TABLE IF EXISTS dev.dev_allocation_sku_data${test};
 '''
 hive_drop = Template(hive_drop)

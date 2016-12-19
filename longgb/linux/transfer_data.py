@@ -13,6 +13,7 @@ path = conf.data_path
 total_path = path + os.sep + 'data_total3'
 total_path_sku = total_path + os.sep + 'total_sku'
 total_path_sale = total_path + os.sep + 'total_sale'
+total_path_fdcinv = total_path + os.sep + 'total_fdcinv'
 NaN = 'NaN'
 
 def data_get(x):
@@ -35,12 +36,34 @@ def data_trans2(x):
     数据转化函数 2
     '''
     var,rdc_sales,fdc_sales = str(x).split(';')
-    if (',' in rdc_sales) and ('[' in rdc_sales) and (']' in rdc_sales):
+    #print fdc_sales
+    if (',' in rdc_sales) and ('[' in rdc_sales) and (']' in rdc_sales) and len(var)>7:
+        var=var.replace('NaN','0')
+        rdc_sales=rdc_sales.replace('NaN','0')
         rdc_sales = np.array(eval(rdc_sales))
         var = np.array(eval(var))
-        fdc_sales=np.array(eval(fdc_sales))
-        std = (var/rdc_sales)*fdc_sales
-        return std[0:7]
+        #print fdc_sales.split('\x02')
+        fdc_sales=np.array(map(eval,fdc_sales.split('\x02')))
+        #print rdc_sales[0:7]
+        if rdc_sales.dtype!='float64':
+            rdc_sales=np.array(map(eval,rdc_sales[0:7]))
+        if var.dtype!='float64':
+            var=np.array(map(eval,var[0:7]))
+        # try:
+        #     np.any(np.isnan(np.array(var)))
+        # except:
+        #     print var
+        #     print var.dtype
+        #     print str(var)
+        #     var[np.isnan(var)]=0
+        try:
+            std = (var[0:7]/rdc_sales[0:7])*fdc_sales
+        except:
+            print var
+            print 'rdc_sales',rdc_sales
+            print fdc_sales
+            print str(x).split(';')
+        return str(std[0:7])# change
     else:
         return np.nan
 
@@ -53,17 +76,22 @@ def mkdirpath(total_path):
         os.mkdir(total_path)
 
 
-def transfer_fdc(path):
+def mkdirpath_sku(total_path_sku):
     '''
-    转化 fdc 的数据
+    创建 sku 总文件夹
     '''
-    read_data_path = path + os.sep + 'fdc_datasets' + os.sep + 'dev_allocation_fdc_data'
-    read_data_file = read_data_path + os.sep + '000000_0'
-    read_data = pd.read_table(read_data_file, sep='\001', header=None)
-    read_data.columns = ['org_from', 'org_to', 'actiontime_max', 'alt_max', 'alt_cnt']
-    with open(total_path + os.sep + 'fdc_data.pkl', 'wb') as f:
-        pickle.dump(read_data, f)
-    return read_data
+    if os.path.exists(total_path_sku) == False:
+        os.mkdir(total_path_sku)
+
+
+def mkdirpath_sale(total_path_sale):
+    if os.path.exists(total_path_sale) == False:
+        os.mkdir(total_path_sale)
+
+
+def mkdirpath_fdcinv(total_path_fdcinv):
+    if os.path.exists(total_path_fdcinv) == False:
+        os.mkdir(total_path_fdcinv)
 
 
 def transfer_sku(path):
@@ -73,8 +101,8 @@ def transfer_sku(path):
     read_data_path = path + os.sep + 'sku_datasets' + os.sep + 'dev_allocation_sku_data'
     data_columns = ['sku_id', 'forecast_begin_date', 'forecast_days', 'forecast_daily_override_sales',
                     'forecast_weekly_override_sales', 'forecast_weekly_std', 'forecast_daily_std', 'variance',
-                    'ofdsales' , 'inv', 'arrive_quantity', 'open_po', 'white_flag', 'date_s', 'dc_id']
-    select_columns = ['sku_id','forecast_daily_override_sales','variance','ofdsales','white_flag','date_s','dc_id']
+                    'ofdsales' , 'inv', 'arrive_quantity', 'open_po', 'white_flag','white_flag_01', 'date_s', 'dc_id']
+    select_columns = ['sku_id','forecast_daily_override_sales','variance','ofdsales','inv','white_flag','date_s','dc_id']
     # 1、遍历日期 date
     flag = 0
     sku_data_list=[]
@@ -103,11 +131,11 @@ def transfer_sku(path):
                             # read_data_tmp_select['ofdsales'] = map(data_get,read_data_tmp_select["ofdsales"].values)
                             # read_data_tmp['variance'] = map(data_trans2, read_data_tmp["variance"].values)
                             # read_data_tmp['ofdsales'] = map(data_trans2, read_data_tmp["ofdsales"].values)
-                            read_data_tmp['variance_ofdsales']=(read_data_tmp['variance']).astype(str)\
-                                                               +';'+(read_data_tmp['ofdsales']).astype(str)+';'+\
+                            read_data_tmp['variance_ofdsales']=(read_data_tmp['variance']).astype(str) \
+                                                               +';'+(read_data_tmp['ofdsales']).astype(str)+';'+ \
                                                                (read_data_tmp['forecast_daily_override_sales'])
                             read_data_tmp['std']= map(data_trans2, read_data_tmp["variance_ofdsales"].values)
-                            del read_data_tmp[['variance_ofdsales','variance','ofdsales']]
+                            #del read_data_tmp[['variance_ofdsales','variance','ofdsales']]
                             sku_data_list.append(read_data_tmp)
                             # if flag == 0:
                             #     read_data = read_data_tmp
@@ -115,6 +143,65 @@ def transfer_sku(path):
                             # else:
     read_data = pd.concat(sku_data_list)
     with open(total_path + os.sep + 'sku_data_select_2.pkl', 'wb') as f:
+        pickle.dump(read_data, f)
+    return read_data
+
+
+def transfer_sku_byday(path):
+    '''
+    转化 sku 的数据
+    '''
+    read_data_path = path + os.sep + 'sku_datasets' + os.sep + 'dev_allocation_sku_data'
+    data_columns = ['sku_id', 'forecast_begin_date', 'forecast_days', 'forecast_daily_override_sales',
+                    'forecast_weekly_override_sales', 'forecast_weekly_std', 'forecast_daily_std', 'variance',
+                    'ofdsales' , 'inv', 'arrive_quantity', 'open_po', 'white_flag','white_flag_01','date_s', 'dc_id']
+    select_columns = ['sku_id','forecast_daily_override_sales','variance','ofdsales','inv','white_flag','white_flag_01','date_s','dc_id']
+    # 1、遍历日期 date
+    flag = 0
+    # sku_data_list=[]
+    for each_date in os.listdir(read_data_path):
+        print each_date
+        file_name_date = each_date.split('=')
+        sku_data_list = []
+        if os.path.isdir(read_data_path + os.sep + each_date):
+            read_data_path_date = read_data_path + os.sep + each_date
+            # 2、遍历 dc_id
+            for each_dcid in os.listdir(read_data_path_date):
+                file_name_dcid = each_dcid.split('=')
+                if (os.path.isdir(read_data_path_date + os.sep + each_dcid)) and (len(file_name_dcid[1]) < 5):
+                    read_data_path_dcid = read_data_path_date + os.sep + each_dcid
+                    # 3、遍历文件 files
+                    for each_file in os.listdir(read_data_path_dcid):
+                        data_path_this = read_data_path_dcid + os.sep + each_file
+                        if os.path.isfile(data_path_this):
+                            read_data_tmp = pd.read_table(data_path_this, sep='\001', header=None)
+                            read_data_tmp.columns = data_columns[:-2]
+                            read_data_tmp[data_columns[-2]] = file_name_date[1]
+                            read_data_tmp[data_columns[-1]] = file_name_dcid[1]
+                            read_data_tmp = read_data_tmp.loc[:,select_columns]
+                            # read_data_tmp['variance'] = map(data_trans2, read_data_tmp["variance"].values)
+                            # read_data_tmp['ofdsales'] = map(data_trans2, read_data_tmp["ofdsales"].values)
+                            # sku_data_list.append(read_data_tmp)
+                            read_data_tmp['variance_ofdsales']=(read_data_tmp['variance']).astype(str) \
+                                                               +';'+(read_data_tmp['ofdsales']).astype(str)+';'+ \
+                                                               (read_data_tmp['forecast_daily_override_sales'])
+                            read_data_tmp['std']= map(data_trans2, read_data_tmp["variance_ofdsales"].values)
+                            #del read_data_tmp[['variance_ofdsales','variance','ofdsales']]
+                            sku_data_list.append(read_data_tmp)
+        read_data = pd.concat(sku_data_list)
+        with open(total_path_sku + os.sep + '{0}.pkl'.format(file_name_date[1]), 'wb') as f:
+            pickle.dump(read_data, f)
+
+
+def transfer_fdc(path):
+    '''
+    转化 fdc 的数据
+    '''
+    read_data_path = path + os.sep + 'fdc_datasets' + os.sep + 'dev_allocation_fdc_data'
+    read_data_file = read_data_path + os.sep + '000000_0'
+    read_data = pd.read_table(read_data_file, sep='\001', header=None)
+    read_data.columns = ['org_from', 'org_to', 'actiontime_max', 'alt_max', 'alt_cnt']
+    with open(total_path + os.sep + 'fdc_data.pkl', 'wb') as f:
         pickle.dump(read_data, f)
     return read_data
 
@@ -139,7 +226,7 @@ def transfer_order(path):
                 if os.path.isfile(data_path_this):
                     read_data_tmp = pd.read_table(data_path_this, sep='\001', header=None)
                     read_data_tmp.columns = data_columns[:-1]
-                    read_data_tmp[data_columns[-2]] = file_name_rdcid[1]
+                    read_data_tmp[data_columns[-1]] = file_name_rdcid[1]
                     order_data_list.append(read_data_tmp)
                     # if flag == 0:
                     #     read_data = read_data_tmp
@@ -157,10 +244,42 @@ def transfer_sale(path):
     '''
     read_data_path = path + os.sep + 'sale_datasets' + os.sep + 'dev_allocation_sale_data'
     data_columns = ['org_dc_id', 'sale_ord_det_id', 'sale_ord_id', 'parent_sale_ord_id','item_sku_id',
-                    'sale_qtty', 'sale_ord_tm', 'sale_ord_type', 'sale_ord_white_flag', 'item_third_cate_cd',
+                    'sale_qtty', 'sale_ord_tm', 'sale_ord_type', 'sale_ord_white_flag','white_flag_01', 'item_third_cate_cd',
                     'item_second_cate_cd', 'shelves_dt', 'shelves_tm', 'date_s', 'dc_id']
     # 1、遍历日期 date
     flag = 0
+    for each_date in os.listdir(read_data_path):
+        print each_date
+        file_name_date = each_date.split('=')
+        sale_data_list=[]
+        if os.path.isdir(read_data_path + os.sep + each_date):
+            read_data_path_date = read_data_path + os.sep + each_date
+            # 2、遍历 dc_id
+            for each_dcid in os.listdir(read_data_path_date):
+                file_name_dcid = each_dcid.split('=')
+                if (os.path.isdir(read_data_path_date + os.sep + each_dcid)) and (len(file_name_dcid[1]) < 5):
+                    read_data_path_dcid = read_data_path_date + os.sep + each_dcid
+                    # 3、遍历文件 files
+                    for each_file in os.listdir(read_data_path_dcid):
+                        data_path_this = read_data_path_dcid + os.sep + each_file
+                        if os.path.isfile(data_path_this):
+                            read_data_tmp = pd.read_table(data_path_this, sep='\001', header=None)
+                            read_data_tmp.columns = data_columns[:-2]
+                            read_data_tmp[data_columns[-2]] = file_name_date[1]
+                            read_data_tmp[data_columns[-1]] = file_name_dcid[1]
+                            sale_data_list.append(read_data_tmp)
+        read_data = pd.concat(sale_data_list)
+        with open(total_path_sale + os.sep + '{0}.pkl'.format(file_name_date[1]), 'wb') as f:
+            pickle.dump(read_data, f)
+
+
+def transfer_fdcinv(path):
+    '''
+    转化 fdcinv 的数据
+    '''
+    read_data_path = path + os.sep + 'datasets_fdcinv' + os.sep + 'dev_allocation_sku_data_fdcinv'
+    data_columns = ['sku_id', 'open_po_fdc', 'inv_fdc', 'date_s','dc_id']
+    # 1、遍历日期 date
     for each_date in os.listdir(read_data_path):
         print each_date
         file_name_date = each_date.split('=')
@@ -216,68 +335,32 @@ def test():
             sku_data_list.append(read_data_tmp_select)
 
 
-def mkdirpath_sku(total_path_sku):
-    '''
-    创建 sku 总文件夹
-    '''
-    if os.path.exists(total_path_sku) == False:
-        os.mkdir(total_path_sku)
-
-
-def transfer_sku_byday(path):
-    '''
-    转化 sku 的数据
-    '''
-    read_data_path = path + os.sep + 'sku_datasets' + os.sep + 'dev_allocation_sku_data'
-    data_columns = ['sku_id', 'forecast_begin_date', 'forecast_days', 'forecast_daily_override_sales',
-                    'forecast_weekly_override_sales', 'forecast_weekly_std', 'forecast_daily_std', 'variance',
-                    'ofdsales' , 'inv', 'arrive_quantity', 'open_po', 'white_flag', 'date_s', 'dc_id']
-    select_columns = ['sku_id','forecast_daily_override_sales','variance','ofdsales','white_flag','date_s','dc_id']
-    # 1、遍历日期 date
-    flag = 0
-    # sku_data_list=[]
-    for each_date in os.listdir(read_data_path):
-        print each_date
-        file_name_date = each_date.split('=')
-        sku_data_list = []
-        if os.path.isdir(read_data_path + os.sep + each_date):
-            read_data_path_date = read_data_path + os.sep + each_date
-            # 2、遍历 dc_id
-            for each_dcid in os.listdir(read_data_path_date):
-                file_name_dcid = each_dcid.split('=')
-                if (os.path.isdir(read_data_path_date + os.sep + each_dcid)) and (len(file_name_dcid[1]) < 5):
-                    read_data_path_dcid = read_data_path_date + os.sep + each_dcid
-                    # 3、遍历文件 files
-                    for each_file in os.listdir(read_data_path_dcid):
-                        data_path_this = read_data_path_dcid + os.sep + each_file
-                        if os.path.isfile(data_path_this):
-                            read_data_tmp = pd.read_table(data_path_this, sep='\001', header=None)
-                            read_data_tmp.columns = data_columns[:-2]
-                            read_data_tmp[data_columns[-2]] = file_name_date[1]
-                            read_data_tmp[data_columns[-1]] = file_name_dcid[1]
-                            read_data_tmp = read_data_tmp.loc[:,select_columns]
-                            read_data_tmp['variance'] = map(data_trans2, read_data_tmp["variance"].values)
-                            read_data_tmp['ofdsales'] = map(data_trans2, read_data_tmp["ofdsales"].values)
-                            sku_data_list.append(read_data_tmp)
-        read_data = pd.concat(sku_data_list)
-        with open(total_path_sku + os.sep + '{0}.pkl'.format(file_name_date[1]), 'wb') as f:
-            pickle.dump(read_data, f)
-
-
 if __name__ == '__main__':
     mkdirpath(total_path)
     mkdirpath_sku(total_path_sku)
+    mkdirpath_sale(total_path_sale)
+    mkdirpath_fdcinv(total_path_fdcinv)
     # print "transfer_fdc..."
     #transfer_fdc(path)
-    print "transfer_sku..."
+    # print "transfer_sku..."
     # test()
-    transfer_sku_byday(path)
+    # transfer_sku_byday(path)
     # print "transfer_order..."
     # transfer_order(path)
     # print "transfer_sale..."
     # transfer_sale(path)
+    print "transfer_fdcinv..."
+    transfer_fdcinv(path)
     # f = open(r'/home/cmo_ipc/Allocation_shell/datasets/data_total/fdc_data.pkl','rb')
     # data = pickle.load(f)
+
+a = pd.DataFrame([12,3,4,5,3])
+a.columns = ["a"]
+b = list(a["a"].drop_duplicates()["a"].values)
+date_range_a = pd.date_range('2016-01-01','2016-02-01')
+date_list = map(lambda x: str(x)[:10],date_range_a)
+for each in date_list:
+    print str(each)[:10]
 
 
 # data_trans2

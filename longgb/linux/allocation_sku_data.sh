@@ -30,7 +30,7 @@ org_dc_id=$4
 		arrive_quantity	int,
 		open_po	 int,
 		white_flag	 int,
-		white_flag_02  int)
+		white_flag_01  int)
 		PARTITIONED by (date_s  string,dc_id int);
 		
 	insert OVERWRITE table dev.dev_allocation_sku_data partition(date_s,dc_id)
@@ -50,7 +50,7 @@ org_dc_id=$4
 		case when c.modify_time is not null and c.modify_time<='2016-10-11' then 1 
 	     	when c.modify_time is not null and a.dt>c.modify_time then 1
 			else 0 end as white_flag,
-		case when c.create_time is not null and a.dt>c.create_time then 1 else 0 end as white_flag_02,
+		case when c.create_time is not null and a.dt>c.create_time then 1 else 0 end as white_flag_01,
 		a.dt as date_s,
 		b.dc_id  		  	
 	FROM
