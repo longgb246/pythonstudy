@@ -1,0 +1,36 @@
+2016-12-21 14:15:56,841 - allocation .. logger - INFO - 开始读取sku数据并转化
+2016-12-21 14:16:06,278 - allocation .. logger - INFO - SKU数据读取完成
+2016-12-21 14:16:18,572 - allocation .. logger - INFO - 开始读取fdc数据并转化
+2016-12-21 14:41:15,286 - allocation .. logger - INFO - fdc数据读取完成
+2016-12-21 14:42:34,724 - allocation .. logger - INFO - fdc初始化库存数据读取
+2016-12-21 14:42:35,233 - allocation .. logger - INFO - fdc初始化库存数据读取完成
+2016-12-21 14:42:41,598 - allocation .. logger - INFO - 开始读取order数据并转化
+2016-12-21 14:42:42,009 - allocation .. logger - INFO - order数据读取完成
+2016-12-21 14:42:47,184 - allocation .. logger - INFO - 开始读取详单明细数据
+2016-12-21 14:42:59,851 - allocation .. logger - INFO - 详单明细数据读取完成
+2016-12-21 14:43:30,115 - allocation .. logger - INFO - 开始读取sku预测数据并转化
+2016-12-21 14:44:14,798 - allocation .. logger - INFO - 开始读取sku预测数据并转化
+2016-12-21 14:45:46,538 - allocation .. logger - INFO - sku预测数据转化完成
+2016-12-21 14:51:46,858 - allocation .. logger - INFO - 开始生成白名单字典
+2016-12-21 14:55:38,700 - allocation .. logger - INFO - 白名单生成完成
+2016-12-21 14:58:54,954 - allocation .. logger - INFO - 开始处理采购单数据
+2016-12-21 14:59:01,599 - allocation .. logger - INFO - 进行字典推导更新
+2016-12-21 15:03:22,700 - allocation .. logger - INFO - order字典更新完成
+2016-12-21 15:03:22,701 - allocation .. logger - INFO - 遍历中间字典，更新采购单字典
+2016-12-21 15:03:22,701 - allocation .. logger - INFO - 采购单数据处理完成
+2016-12-21 15:03:27,565 - allocation .. logger - INFO - 开始处理订单明细数据并转化
+2016-12-21 15:15:11,207 - allocation .. logger - INFO - 订单明细数据处理完成
+2016-12-21 15:15:42,017 - allocation .. logger - INFO - 开始进行仿真运算
+2016-12-21 15:36:07,653 - allocation .. logger - INFO - 开始进行仿真运算
+2016-12-21 16:00:48,030 - allocation .. logger - INFO - begin to deal with 2016-10-01
+2016-12-21 16:00:49,405 - allocation .. logger - INFO - 更新白名单信息
+2016-12-21 16:16:26,013 - allocation .. logger - INFO - 当前日期--2016-10-01当前FDC--628拥有的白名单数量为：100000
+2016-12-21 16:16:26,013 - allocation .. logger - INFO - 当前日期--2016-10-01当前FDC--630拥有的白名单数量为：0
+2016-12-21 16:16:26,013 - allocation .. logger - INFO - 当前日期--2016-10-01当前FDC--658拥有的白名单数量为：0
+2016-12-21 16:18:13,338 - allocation .. logger - INFO - 更新当天rdc库存
+2016-12-21 16:37:08,292 - allocation .. logger - INFO - 计算每个SKU的调拨量
+2016-12-21 17:28:44,441 - allocation .. logger - INFO - 开始读取fdc数据并转化
+2016-12-21 17:29:07,148 - allocation .. logger - INFO - fdc数据读取完成
+2016-12-21 17:35:04,559 - allocation .. logger - INFO - 开始读取fdc数据并转化
+2016-12-21 17:35:04,640 - allocation .. logger - INFO - fdc数据读取完成
+2016-12-21 18:07:40,720 - allocation .. logger - INFO - begin to deal with :2016-10-01...fdc:628
