@@ -12,9 +12,24 @@ import datetime
 from collections import defaultdict,OrderedDict
 import cPickle as pickle
 import numpy as np
-from inventory_process_batch import inventory_proess
-import configServer
+from inventory_process_batch_my_linux import inventory_proess
+import configServer_my_linux as configServer
 import  logging
+import time
+
+
+def printruntime(t1, name):
+    '''
+    性能测试，运行时间
+    '''
+    d = time.time() - t1
+    min_d = np.floor(d / 60)
+    sec_d = d % 60
+    hor_d = np.floor(min_d / 60)
+    if hor_d >0:
+        print 'Run Time ({3}) is : {2} hours {0} min {1:.4f} s'.format(min_d, sec_d, hor_d, name)
+    else:
+        print 'Run Time ({2}) is : {0} min {1:.4f} s'.format(min_d, sec_d, name)
 
 
 def datelist(start, end):
@@ -39,7 +54,7 @@ def gene_index(fdc,sku,date_s=''):
 # ================================================================================
 # =                                 （1）日志信息设置                             =
 # ================================================================================
-#日志记录部分
+# 日志记录部分
 # 创建一个logger
 logger = logging.getLogger('allocation .. logger')
 logger.setLevel(logging.DEBUG)
@@ -63,7 +78,7 @@ logger.addHandler(ch)
 # ================================================================================
 ##标记仿真的开始和结束日期
 start_date='2016-10-01'#'2016-10-01'
-end_date='2016-10-02'
+end_date='2016-10-03'
 
 # 指定数据相关路径，数据加载分批加载清除操作，sale数据与sku数据按照三天的频次进行更新，即对应的字典中只保存三天的数据
 # sku： 10-01：一天数据
@@ -88,6 +103,8 @@ save_data_path=configServer.save_data_path
 # ================================================================================
 # =                                 （3）数据读取                                 =
 # ================================================================================
+test_t2 = time.time()
+test_t1 = time.time()
 # （1）SKU 数据读取， 10-01
 logger.info('开始读取sku数据并转化')
 pkl_sku=open(sku_data_path)
@@ -98,13 +115,69 @@ pkl_sku.close()
 allocation_sku_data.columns= ['sku_id','mean_sales','variance','ofdsales','inv','white_flag',
                               'white_flag_01','date_s','dc_id','variance_ofdsales','std']
 logger.info('SKU数据读取完成')
+printruntime(test_t1, 'SKU表数据读取')
 
+test_t1 = time.time()
 # （2）FDC 数据读取， 全量
 logger.info('开始读取fdc数据并转化')
 pkl_fdc=open(fdc_data_path)
 allocation_fdc_data=pickle.load(pkl_fdc)
 pkl_fdc.close()
 allocation_fdc_data.columns=['org_from','org_to','actiontime_max','alt','alt_cnt']
+logger.info('fdc数据读取完成')
+printruntime(test_t1, 'fdc表数据读取')
+
+test_t1 = time.time()
+# （3）fdcinv 数据读取， 10-01
+logger.info('fdc初始化库存数据读取')
+pkl_fdc_initialization=open(fdc_initialization_inv)
+allocation_fdc_initialization=pickle.load(pkl_fdc_initialization)
+pkl_sku.close()
+allocation_fdc_initialization.columns=['sku_id','open_po_fdc','inv','date_s','dc_id']
+logger.info('fdc初始化库存数据读取完成')
+printruntime(test_t1, 'fdcinv表数据读取')
+
+test_t1 = time.time()
+# （4）fdcinv 数据读取， 10-01
+logger.info('开始读取order数据并转化')
+pkl_order=open(order_data_path)
+allocation_order_data=pickle.load(pkl_order)
+pkl_order.close()
+allocation_order_data.columns=['arrive_time','item_sku_id','arrive_quantity','dc_id']
+logger.info('order数据读取完成')
+printruntime(test_t1, 'order表数据读取')
+
+test_t1 = time.time()
+# （5）date_range 生成
+#仿真的时间窗口 时间格式如下：2016-11-29
+date_range=datelist(start_date,end_date)
+logger.info('开始读取详单明细数据')
+
+# （5）sale 数据读取
+pkl_sale=[]
+for p in date_range:
+    pkl_sale_mid=open(sale_data_path+p+'.pkl')
+    mid_allocation_sale_data=pickle.load(pkl_sale_mid)
+    pkl_sale.append(mid_allocation_sale_data)
+    pkl_sale_mid.close()
+allocation_sale_data=pd.concat(pkl_sale)
+# pkl_sale = open(sale_data_path)
+# allocation_sale_data = pickle.load(pkl_sale)
+# pkl_sale.close()
+allocation_sale_data.columns=['org_dc_id', 'sale_ord_det_id', 'sale_ord_id', 'parent_sale_ord_id','item_sku_id',
+                              'sale_qtty', 'sale_ord_tm', 'sale_ord_type', 'sale_ord_white_flag','white_flag_01',
+                              'item_third_cate_cd', 'item_second_cate_cd', 'shelves_dt', 'shelves_tm', 'date_s', 'dc_id']
+logger.info('详单明细数据读取完成')
+printruntime(test_t1, 'sale表数据读取')
+printruntime(test_t2, '读取数据总耗时')
+
+
+# ================================================================================
+# =                                 （4）生成 dict 数据                           =
+# ================================================================================
+test_t2 = time.time()
+test_t1 = time.time()
+# （0）fdc_alt、fdc_alt_prob 的转换
 # 由原始数据转化为 alt 数据
 # 2.1 某个 RDC -> FDC 的某个 alt时长 的频数累计。
 fdc_01=allocation_fdc_data.groupby(['org_from','org_to','alt']).sum()
@@ -149,49 +222,9 @@ for index,row in allocation_fdc_data.iterrows():        # 遍历每一行，新�
             fdc_alt_prob[row['dc_id']]=[tmp]
         except:
             pass
-logger.info('fdc数据读取完成')
+printruntime(test_t1, 'fdc_alt、fdc_alt_prob的转换')
 
-# （3）fdcinv 数据读取， 10-01
-logger.info('fdc初始化库存数据读取')
-pkl_fdc_initialization=open(fdc_initialization_inv)
-allocation_fdc_initialization=pickle.load(pkl_fdc_initialization)
-pkl_sku.close()
-allocation_fdc_initialization.columns=['sku_id','open_po_fdc','inv','date_s','dc_id']
-logger.info('fdc初始化库存数据读取完成')
-
-# （4）fdcinv 数据读取， 10-01
-logger.info('开始读取order数据并转化')
-pkl_order=open(order_data_path)
-allocation_order_data=pickle.load(pkl_order)
-pkl_order.close()
-allocation_order_data.columns=['arrive_time','item_sku_id','arrive_quantity','dc_id']
-logger.info('order数据读取完成')
-
-# （5）date_range 生成
-#仿真的时间窗口 时间格式如下：2016-11-29
-date_range=datelist(start_date,end_date)
-logger.info('开始读取详单明细数据')
-
-# （5）sale 数据读取
-pkl_sale=[]
-for p in date_range:
-    pkl_sale_mid=open(sale_data_path+p+'.pkl')
-    mid_allocation_sale_data=pickle.load(pkl_sale_mid)
-    pkl_sale.append(mid_allocation_sale_data)
-    pkl_sale_mid.close()
-allocation_sale_data=pd.concat(pkl_sale)
-# pkl_sale = open(sale_data_path)
-# allocation_sale_data = pickle.load(pkl_sale)
-# pkl_sale.close()
-allocation_sale_data.columns=['org_dc_id', 'sale_ord_det_id', 'sale_ord_id', 'parent_sale_ord_id','item_sku_id',
-                              'sale_qtty', 'sale_ord_tm', 'sale_ord_type', 'sale_ord_white_flag','white_flag_01',
-                              'item_third_cate_cd', 'item_second_cate_cd', 'shelves_dt', 'shelves_tm', 'date_s', 'dc_id']
-logger.info('详单明细数据读取完成')
-
-
-# ================================================================================
-# =                                 （4）生成 dict 数据                           =
-# ================================================================================
+test_t1 = time.time()
 # （1）预测数据：均值            【fdc_forecast_sales】
 # 预测数据相关信息{fdc_sku_date:[7 days sales]},{fdc_sku_data:[7 days cv]}
 # 该部分只考虑白名单的数据即可
@@ -202,7 +235,9 @@ fdc_forecast_sales=pd.concat([allocation_sku_data['date_s'].astype('str')+alloca
                               allocation_sku_data['mean_sales']],axis=1)
 fdc_forecast_sales.columns=['id','forecast_value']
 fdc_forecast_sales=fdc_forecast_sales.set_index('id')['forecast_value'].to_dict()
+printruntime(test_t1, 'fdc_forecast_sales的转换to_dict()')
 
+test_t1 = time.time()
 # （2）预测数据：标准差           【fdc_forecast_std】
 # 【结构】：dict：{'id'(date_s+dc_id+sku_id):'forecast_std'(std)}
 fdc_forecast_std=pd.concat([allocation_sku_data['date_s'].astype('str')+allocation_sku_data['dc_id'].astype('str')
@@ -211,7 +246,9 @@ fdc_forecast_std=pd.concat([allocation_sku_data['date_s'].astype('str')+allocati
 fdc_forecast_std.columns=['id','forecast_std']
 fdc_forecast_std=fdc_forecast_std.set_index('id')['forecast_std'].to_dict()
 logger.info('sku预测数据转化完成')
+printruntime(test_t1, 'fdc_forecast_std的转换to_dict()')
 
+test_t1 = time.time()
 # （3）fdcinv 数据              【fdc_inv】
 # 【结构】：dict：{'id'(date_s+dc_id+sku_id):{'k':'inv'(inv)}}
 # defaultdict(lamda:defaultdict(int)),FDC只需要一个初始化库存即可,直接从FDC初始化库存中读取即可
@@ -225,7 +262,9 @@ mid_fdc_inv=mid_fdc_inv.drop_duplicates()
 mid_fdc_inv=mid_fdc_inv.set_index('id')['inv'].to_dict()
 for k,v in mid_fdc_inv.items():         # 【】
     fdc_inv[k]['inv']=v
+printruntime(test_t1, 'fdc_inv的转换to_dict()')
 
+test_t1 = time.time()
 # （4）白名单数据              【white_list_dict】
 logger.info('开始生成白名单字典')
 # 白名单,不同日期的白名单不同
@@ -235,7 +274,9 @@ tmp_df=allocation_sku_data[allocation_sku_data['white_flag']==1][['date_s','sku_
 for k,v in tmp_df['sku_id'].groupby([tmp_df['date_s'],tmp_df['dc_id']]):        # 【】
     white_list_dict[k[1]][k[0]]=list(v)
 logger.info('白名单生成完成')
+printruntime(test_t1, 'white_list_dict的转换to_dict()')
 
+test_t1 = time.time()
 # （5）初始化RDC库存，第一天   【rdc_inv】
 fdc_allocation=''
 fdc=['628','630','658']
@@ -248,7 +289,9 @@ mid_rdc_inv.columns=['id','inv']
 mid_rdc_inv=mid_rdc_inv.drop_duplicates()
 mid_rdc_inv=mid_rdc_inv.set_index('id')['inv'].to_dict()
 rdc_inv.update(mid_rdc_inv)             # 【】
+printruntime(test_t1, 'rdc_inv的转换to_dict()')
 
+test_t1 = time.time()
 # （6）order 数据处理         【order_list】
 # 【结构】：{'date':{'sku':'arrive_quantity'}}
 # 采购单数据，采购ID，SKU，实际到达量，到达时间,将其转换为{到达时间:{SKU：到达量}}形式的字典，defaultdict(lambda :defaultdict(int))
@@ -272,7 +315,10 @@ logger.info('遍历中间字典，更新采购单字典')
 logger.info('采购单数据处理完成')
 #订单数据：{fdc_订单时间_订单id:{SKU：数量}},当前的存储会造成的空间浪费应当剔除大小为0的SKU
 logger.info('开始处理订单明细数据并转化')
+# Run Time (order_list的转换to_dict()) is : 2.0 min 21.7833 s          【重点优化】
+printruntime(test_t1, 'order_list的转换to_dict()')
 
+test_t1 = time.time()
 # （7）orders_retail FDC+某天 ： 销售时间+某订单id ： sku-id ： 销售量
 # 【结构】：{'dc_date_id'(dc_id+date_s):{'id'(sale_ord_tm+sale_ord_id):{'item_sku_id':'sale_qtty'}}}
 tmp_df=allocation_sale_data[['dc_id','date_s','item_sku_id','sale_ord_id','sale_ord_tm','sale_qtty']]
@@ -298,7 +344,8 @@ sku_fdc_sales=defaultdict(int)
 sku_rdc_sales=defaultdict(int)
 #全量SKU列表
 all_sku_list=list(set(allocation_sku_data['sku_id'].values))
-
+printruntime(test_t1, 'orders_retail的转换to_dict()')
+printruntime(test_t2, '转换总耗时')
 
 # ================================================================================
 # =                                 （5）开始仿真                                 =
@@ -314,24 +361,24 @@ logger.info('仿真运算完成，开始进行数据保存与KPI计算')
 # ================================================================================
 # =                                 （6）保存数据                                 =
 # ================================================================================
-#保持关键仿真数据
+# 保存关键仿真数据
 logger.info('开始保存仿真数据......')
-pickle.dump(fdc_forecast_sales,open(save_data_path+'fdc_forecast_sales','w'))
-pickle.dump(fdc_forecast_std,open(save_data_path+'fdc_forecast_std','w'))
-pickle.dump(fdc_alt,open(save_data_path+'fdc_alt','w'))
-pickle.dump(fdc_alt_prob,open(save_data_path+'fdc_alt_prob','w'))
-pickle.dump(all_sku_list,open(save_data_path+'all_sku_list','w'))
-pickle.dump(dict(allocation.fdc_inv),open(save_data_path+'fdc_inv','w'))
+pickle.dump(fdc_forecast_sales,open(save_data_path+'fdc_forecast_sales.pkl','w'))
+pickle.dump(fdc_forecast_std,open(save_data_path+'fdc_forecast_std.pkl','w'))
+pickle.dump(fdc_alt,open(save_data_path+'fdc_alt.pkl','w'))
+pickle.dump(fdc_alt_prob,open(save_data_path+'fdc_alt_prob.pkl','w'))
+pickle.dump(all_sku_list,open(save_data_path+'all_sku_list.pkl','w'))
+pickle.dump(dict(allocation.fdc_inv),open(save_data_path+'fdc_inv.pkl','w'))
 # pickle.dump(white_list_dict,open(save_data_path+'white_list_dict','w'))
-pickle.dump(dict(allocation.fdc_allocation),open(save_data_path+'fdc_allocation','w'))
-pickle.dump(dict(allocation.rdc_inv),open(save_data_path+'rdc_inv','w'))
+pickle.dump(dict(allocation.fdc_allocation),open(save_data_path+'fdc_allocation.pkl','w'))
+pickle.dump(dict(allocation.rdc_inv),open(save_data_path+'rdc_inv.pkl','w'))
 # pickle.dump(dict(allocation.order_list),open(save_data_path+'order_list','w'))
 # pickle.dump(dict(allocation.orders_retail),open(save_data_path+'orders_retail','w'))
 # pickle.dump(dict(allocation.simu_orders_retail),open(save_data_path+'simu_orders_retail','w'))
 # pickle.dump(dict(allocation.fdc_simu_orders_retail),open(save_data_path+'fdc_simu_orders_retail','w'))
 
-####保持嵌套的字典#####
-with open(save_data_path+'white_list_dict','w') as white:
+####保存嵌套的字典#####
+with open(save_data_path+'white_list_dict.txt','w') as white:
     for k,v in white_list_dict.items():
         for k1,v1 in v.items():
             white.write(str(k))
@@ -340,10 +387,10 @@ with open(save_data_path+'white_list_dict','w') as white:
             white.write('\t')
             white.write(str(v1))
         white.write('\n')
-pickle.dump(dict(allocation.fdc_allocation),open(save_data_path+'fdc_allocation','w'))
-pickle.dump(dict(allocation.rdc_inv),open(save_data_path+'rdc_inv','w'))
+pickle.dump(dict(allocation.fdc_allocation),open(save_data_path+'fdc_allocation.pkl','w'))
+pickle.dump(dict(allocation.rdc_inv),open(save_data_path+'rdc_inv.pkl','w'))
 
-with open(save_data_path+'order_list','w') as ol:
+with open(save_data_path+'order_list.txt','w') as ol:
     for k,v in allocation.order_list.items():
         for k1,v1 in v.items():
             ol.write(str(k))
@@ -353,7 +400,7 @@ with open(save_data_path+'order_list','w') as ol:
             ol.write(str(v1))
         ol.write('\n')
 
-with open(save_data_path+'orders_retail','w') as orl:
+with open(save_data_path+'orders_retail.txt','w') as orl:
     for k,v in allocation.orders_retail.items():
         for k1,v1 in v.items():
             for k2,v2 in v1.items():
@@ -367,7 +414,7 @@ with open(save_data_path+'orders_retail','w') as orl:
         orl.write('\n')
 
 try:
-    with open(save_data_path+'simu_orders_retail','w') as orl:
+    with open(save_data_path+'simu_orders_retail.txt','w') as orl:
         print allocation.simu_orders_retail.items()
         for k,v in allocation.simu_orders_retail.items():
             for k1,v1 in v.items():
@@ -383,7 +430,7 @@ try:
 except:
     print 'simu order  in the except'
 try:
-    with open(save_data_path+'fdc_simu_orders_retail','w') as orl:
+    with open(save_data_path+'fdc_simu_orders_retail.txt','w') as orl:
         for k,v in allocation.fdc_simu_orders_retail.items():
             print allocation.fdc_simu_orders_retail.items()
             for k1,v1 in v.items():
@@ -434,10 +481,10 @@ for k,v in allocation.fdc_simu_orders_retail.items():
 inv_orders_retail_sku_cnt=defaultdict(lambda :defaultdict(lambda :defaultdict(int)))
 for k,v in allocation.fdc_inv.items():
     print k
-    k1,k2,k3=k[:11],k[11:14],k[14:] #仅针对三位数的FDC，如果采用其他的则需要考虑把FDC编码映射成三位或增加分隔符
+    k1,k2,k3=k[:11],k[11:14],k[14:]     # 仅针对三位数的FDC，如果采用其他的则需要考虑把FDC编码映射成三位或增加分隔符
     inv_orders_retail_sku_cnt[k1][k2][k3]=v['inv']
 
-#遍历fdc,遍历日期，遍历sku,计算周转情况,ot_sku的数据格式：(fdc_sku_date:周转天数)
+# 遍历fdc,遍历日期，遍历sku,计算周转情况,ot_sku的数据格式：(fdc_sku_date:周转天数)
 ot_sku=defaultdict(int)
 
 for f in fdc:

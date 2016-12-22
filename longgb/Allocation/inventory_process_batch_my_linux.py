@@ -10,6 +10,20 @@ import pickle
 import logging
 import os
 
+def printruntime(t1, name):
+    '''
+    性能测试，运行时间
+    '''
+    d = time.time() - t1
+    min_d = np.floor(d / 60)
+    sec_d = d % 60
+    hor_d = np.floor(min_d / 60)
+    if hor_d >0:
+        print 'Run Time ({3}) is : {2} hours {0} min {1:.4f} s'.format(min_d, sec_d, hor_d, name)
+    else:
+        print 'Run Time ({2}) is : {0} min {1:.4f} s'.format(min_d, sec_d, name)
+
+
 class inventory_proess:
 
     def __init__(self,fdc_forecast_sales,fdc_forecast_std,fdc_alt,fdc_alt_prob,fdc_inv,white_list_dict,fdc_allocation,fdc,rdc_inv,
@@ -54,6 +68,7 @@ class inventory_proess:
         self.logger=logger
         self.save_data_path=save_data_path
 
+
     def gene_whitelist(self,date_s):
         '''获取该时间点的白名单,调用户一次刷新一次，只保存最新的白名单列表'''
         self.white_list=defaultdict(list)
@@ -65,16 +80,16 @@ class inventory_proess:
                     self.union_white_list.extend(v)
             self.logger.info('当前日期--'+date_s+'当前FDC--'+f+'拥有的白名单数量为：'+str(len(self.white_list[f])))
         self.union_white_list=list(set(self.union_white_list))
+
+
     def cacl_rdc_inv(self,date_s):
         '''  补货逻辑 #更新RDC库存,RDC库存的更新按照实际订单情况进行更新，rdc{index:库存量}'''
         for s in self.all_sku_list:
             if len(str(s))<3:
                 continue
             index=self.gene_index('rdc',s,date_s)
-            # print s
-            # print self.order_list[date_s]
-            # print index
             self.rdc_inv[index]=self.rdc_inv[index]+self.order_list[date_s].get(s,0)
+
 
     def calc_lop(self,sku,fdc,date_s,cr=0.99):
         '''    #计算某个FDC的某个SKU的补货点'''
@@ -116,6 +131,7 @@ class inventory_proess:
         lop = np.ceil(part1 + norm.ppf(cr) * math.sqrt(part21 + part22 + 0.1))
         return lop
 
+
     def calc_replacement(self,sku,fdc,date_s,sku_lop,bp=10,cr=0.99):
         '''
         #计算某个FDC的SKU的补货量
@@ -139,6 +155,7 @@ class inventory_proess:
                inv- \
                open_on
 
+
     def calc_sku_allocation(self,date_s):
         '''
         首先将当日到达量加到当日库存中
@@ -150,7 +167,7 @@ class inventory_proess:
         @fdc:fdc
         @allocation：调拨量
         '''
-        for s  in self.union_white_list:
+        for s in self.union_white_list:
             fdc_replacement=defaultdict(int)
             for f in self.fdc:
                 if s not in self.white_list[f]:
@@ -162,29 +179,31 @@ class inventory_proess:
                         fdc_replacement[f]=self.calc_replacement(s,f,date_s,lop_tmp)
                     else:
                         fdc_replacement[f]=0
-            #rdc的索引应该是与日期相关的此处需要修改
+            # rdc的索引应该是与日期相关的此处需要修改
             need_replacement=sum(fdc_replacement.values())
             index=self.gene_index('rdc',s,date_s)
             if need_replacement>self.rdc_inv[index]:
-                #采用同比例缩放，亦可设置评判函数，采用贪心算法进行分类，可能存在非整数解，次数需要转换为整数解，待处理
+                # 采用同比例缩放，亦可设置评判函数，采用贪心算法进行分类，可能存在非整数解，次数需要转换为整数解，待处理
                 tmp_inv_sum=0
                 for f in self.fdc[:-1]:
                     tmp=np.floor(fdc_replacement[f]/need_replacement*self.rdc_inv[index])
                     fdc_replacement[f]=tmp
                     tmp_inv_sum+=tmp
                 fdc_replacement[self.fdc[-1]]=self.rdc_inv[index]-tmp_inv_sum
-            #更新调拨量，同时更新RDC库存
+            # 更新调拨量，同时更新RDC库存
             for f in self.fdc:
                 index=self.gene_index(f,s,date_s)
                 self.fdc_allocation[index]=fdc_replacement[f]
                 rdc_index = self.gene_index('rdc', s, date_s)
                 self.rdc_inv[rdc_index]=self.rdc_inv[rdc_index]-sum(fdc_replacement.values())
 
+
     def gene_index(self,fdc,sku,date_s=''):
         '''
         #生成调用索引,将在多个地方调用该函数
         '''
         return str(date_s)+str(fdc)+str(sku)
+
 
     def gene_alt(self,fdc):
         '''
@@ -197,6 +216,7 @@ class inventory_proess:
             return 3
         alt_distribution = rv_discrete(values=(fdc_vlt, fdc_vlt_porb))
         return alt_distribution.rvs()
+
 
     def calc_fdc_allocation(self,date_s,fdc):
         '''
@@ -212,16 +232,15 @@ class inventory_proess:
         @open_po:在途量
         @arrive_quantity:当日到达量
         '''
-        #计算补货点，判断补货量
-
+        # 计算补货点，判断补货量
         for s in self.union_white_list:
             index=self.gene_index(fdc,s,date_s)
-            #获取当前库存，当前库存已在订单循环部分完成
-            #获取调拨量,从调拨字典中获取调拨量
+            # 获取当前库存，当前库存已在订单循环部分完成
+            # 获取调拨量,从调拨字典中获取调拨量
             self.fdc_inv[index]['inv']=self.fdc_inv[index]['inv']+self.fdc_inv[index]['arrive_quantity']
             self.fdc_inv[index]['allocation']=self.fdc_allocation[index]
             alt=self.gene_alt(fdc)
-            #更新在途量,c为标记变量
+            # 更新在途量,c为标记变量
             c=0
             format_date='%Y-%m-%d'
             while c<alt:
@@ -233,8 +252,9 @@ class inventory_proess:
             date_alt=datetime.datetime.strptime(date_s,format_date)+datetime.timedelta(alt)
             date_s_alt=date_alt.strftime(format_date)
             index_1=self.gene_index(fdc,s,date_s_alt)
-            #更新当日到达量
+            # 更新当日到达量
             self.fdc_inv[index_1]['arrive_quantity']=self.fdc_inv[index]['allocation']+self.fdc_inv[index_1]['arrive_quantity']
+
 
     # def save_result(self):
     #     pickle.dump(dict(self.fdc_inv),
@@ -339,27 +359,29 @@ class inventory_proess:
 
 
     def OrdersSimulation(self):
-        self.mkdir_save()
+        # self.mkdir_save()
         for d in self.date_range:
-            #更新获取当天白名单`
+            # 更新获取当天白名单`
             self.logger.info('begin to deal with '+d)
             self.logger.info('更新白名单信息')
+            t1 = time.time()
             self.gene_whitelist(d)
-            #更新RDC库存
+            printruntime(t1, 'gene_whitelist')
+            # 更新RDC库存
             self.logger.info('更新当天rdc库存')
             self.cacl_rdc_inv(d)
             self.logger.info('计算每个SKU的调拨量')
             self.calc_sku_allocation(d)
             for f in self.fdc:
-                #增加RDC当天库存，并针对FDC进行调拨
+                # 增加RDC当天库存，并针对FDC进行调拨
                 self.logger.info('begin to deal with :'+d+'...fdc:'+f)
                 self.calc_fdc_allocation(d,f)
                 tmp_order_retail=self.orders_retail[f+d]
                 sorted_order_reatil=OrderedDict(sorted(tmp_order_retail.items(),key=lambda d:d[0]))
                 print 'the number of retail ...of ',f,'..fdc..',len(sorted_order_reatil.items())
                 for o in sorted_order_reatil.items():
-                    #遍历订单,尽量按照时间顺序进行遍历
-                    #标记订单类型，第一位：1为FDC发货，0为内配驱动，9为RDC代发；第二位是否包含白名单 y包括白名单商品 n不包括白名单商品
+                    # 遍历订单,尽量按照时间顺序进行遍历
+                    # 标记订单类型，第一位：1为FDC发货，0为内配驱动，9为RDC代发；第二位是否包含白名单 y包括白名单商品 n不包括白名单商品
                     # self.logger.info('该订单信息如下：...')
                     # print o
                     # print o[0]
@@ -410,7 +432,7 @@ class inventory_proess:
                             if s[1]<=self.rdc_inv[index_rdc]:
                                 tmp['rdc']=1
                         sku_state.append(tmp)
-                    #标记订单类型,更新RDC库存，更新FDC库存
+                    # 标记订单类型,更新RDC库存，更新FDC库存
                     flag_fdc=min([c['fdc'] for c in sku_state])
                     flag_rdc=min([c['rdc'] for c in sku_state])
                     flag_fdc_rdc=min([c['fdc_rdc'] for c in sku_state])
@@ -434,7 +456,6 @@ class inventory_proess:
                     else:
                         pass
             #更新下一天库存，将当天剩余库存标记为第二天库存,第二天到达库存会在开始增加上
-
             for f in self.fdc:
                 for s in self.white_list[f]:
                     format_date='%Y-%m-%d'
@@ -448,7 +469,6 @@ class inventory_proess:
                 index_next=self.gene_index('rdc',s,d)
                 index=self.gene_index('rdc',s,d)
                 self.rdc_inv[index_next]=self.rdc_inv[index]
-
                 #此处对 预测数据和明细数据进行更新self.fdc_forecast_std,self.fdc_forecast_sales,self.orders_retail
                 #删除已经使用的数据
             for f in self.fdc:
@@ -481,8 +501,6 @@ class inventory_proess:
             tmp_fdc_forecast_sales.columns=['id','forecast_value']
             tmp_fdc_forecast_sales=tmp_fdc_forecast_sales.set_index('id')['forecast_value'].to_dict()
             self.fdc_forecast_sales.update(copy.deepcopy(tmp_fdc_forecast_sales))
-
-
             tmp_fdc_forecast_std=pd.concat([sku_day_data['date_s'].astype('str')+sku_day_data['dc_id'].astype('str')
                                             +sku_day_data['sku_id'].astype('str'),
                                             sku_day_data['std']],axis=1)
@@ -497,7 +515,7 @@ class inventory_proess:
                 self.white_list_dict[k[1]][k[0]]=list(v)#
             self.logger.info('日sku数据更新完成')
             # 保存每天数据
-            self.save_oneday(d)
+            # self.save_oneday(d)
             #订单数据量不是太大，所以一次性全部加载到内存中
             '''
             # 下面更新订单明细数据
