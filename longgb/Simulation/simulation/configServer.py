@@ -23,6 +23,15 @@ if pt == 'Windows':
     data_dir        = windows_data_dir
     output_dir      = windows_output_dir
     # logging_file    = windows_logging_file
+category={
+    1:"longTail_stable",
+    99:"normal",
+}
+category_longTail_stable_DaysThreshold = 0.9 # days[salesAmount>0] / days >= category_longTail_stable_DaysThreshold then it's long tail stable
+category_longTail_stable_SalesThreshold = 5
+category_5days_weight,category_5_10days_weight,category_10_20days_weight,category_20_28days_weight = 0.7,0.2,0.07,0.03
+Sales_prediction_errorPercent= 1.5
+salespredictionErrorFilldays = 7
 
 strategy={
     0:'SkuSimulation',
@@ -31,6 +40,8 @@ strategy={
     3:'SkuSimulationMg',
     4:'SkuSimulationPbs',
     5:'SkuSimulationSalesCorrection',
+    6:'LongTailLowSalesSimulation',
+    7:'PreSalesMonitor',
 }
 def start_point(workingfolderName):
     # f=open("start.txt")

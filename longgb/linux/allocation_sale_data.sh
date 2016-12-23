@@ -119,10 +119,10 @@ echo 'create mid table dev.tmp_allocation_order_data_mid03'
 		where 
 			c.id=o.chuku_id                             	
 			and c.export_type in(2,4,7,8)  
-			and c.create_by = '订单worker' 
+			and c.create_by = '订单worker' 		-- 内配驱动？
 			and c.org_from = '${org_id}'
 			and c.org_to = '${dc_id}' 
-			and c.yn in (1, 3, 5)  
+			and c.yn in (1, 3, 5)  				-- 看看状态
 			and c.create_date >='${start_date}'
 			and c.create_date <='${end_date}'
 		)	a
@@ -218,7 +218,7 @@ insert overwrite table dev.dev_allocation_sale_data partition(date_s,dc_id)
 	  	case when b.sale_ord_id is not null then 'rdc'
 			  when c.sale_ord_id is not null then 'fdc_rdc'
 			  when d.sale_ord_id is not null then 'fdc'
-	  		  else 'other' end,
+	  		  else 'other' end,									-- 什么情况下出现这个
 	  	d.white_flag,
 	    a.item_third_cate_cd,
 		a.item_second_cate_cd,
@@ -241,6 +241,6 @@ insert overwrite table dev.dev_allocation_sale_data partition(date_s,dc_id)
 	on 
 		a.sale_ord_id=d.sale_ord_id
 	left join 
-		dev.dev_allocation_sku_data e
+		dev.dev_allocation_sku_data e 							-- 为什么用这个 e，没有出现任何的 e 的字段
 	on 
 		a.item_sku_id=e.sku_id and a.sale_ord_dt=e.date_s;"

@@ -29,9 +29,9 @@ hive -e"DROP TABLE IF EXISTS dev.tmp_allocation_order_pre_mid01;
             dt                     >= '${start_date}'
             and sale_ord_dt        >= '${start_date}'
             and sale_ord_dt        <= '${end_date}'
-            and sale_ord_type_cd    = '0'                       --只取一般订单
+            and sale_ord_type_cd    = '0'                       -- 只取一般订单
             and split_status_cd    in('2', '3')                 -- 拆分状态
-            and sale_ord_valid_flag = 1;                        --有效
+            and sale_ord_valid_flag = 1;                        -- 有效
     DROP TABLE IF EXISTS dev.tmp_allocation_order_pre_mid02;
 
     create table dev.tmp_allocation_order_pre_mid02
@@ -40,7 +40,9 @@ hive -e"DROP TABLE IF EXISTS dev.tmp_allocation_order_pre_mid01;
         SELECT
             item_sku_id,
             item_third_cate_cd,
-            item_second_cate_cd
+            item_second_cate_cd,
+            shelves_dt,
+            shelves_tm   
         FROM
             gdm.gdm_m03_item_sku_da
         WHERE

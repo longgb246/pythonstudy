@@ -1,22 +1,16 @@
 # coding=utf-8
 import os
-import sys
 from sys import path
 pth=os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath("")))))
 path.append(pth)
 print pth
 import numpy as np
-# test包路径导入
-sys.path.append(os.path.dirname(__file__))
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-sys.path.append(r'D:\Lgb\pythonstudy\longgb')
-# from com.jd.pbs.simulation.SkuSimulation import SkuSimulation
-# from com.jd.pbs.utils.MixtureGaussian import MixtureGaussian
-from simulation.SkuSimulation import SkuSimulation
-from utils.MixtureGaussian import MixtureGaussian
-
+from com.jd.pbs.simulation.SkuSimulation import SkuSimulation
+from com.jd.pbs.utils.MixtureGaussian import MixtureGaussian
 import math
 from scipy.stats import rv_discrete,norm
+from com.jd.pbs.simulation.SkuSimulation import Utils
+from com.jd.pbs.simulation.configServer import Sales_prediction_errorPercent
 class SkuSimulationBp25(SkuSimulation):
 
     def calc_replenishment_quantity(self, bp=None):
@@ -80,100 +74,57 @@ class SkuSimulationPbs(SkuSimulation):
 
 class MaxVlt_Times_Demand(SkuSimulation):
     def calc_lop(self, cr=None,type="prob"):
-        vlt_max= 1.5 * self.vlt_max
-        sales_pred_mean = self.sales_pred_mean.extend(self.sales_pred_mean)
-        sales_pred_sd = self.sales_pred_sd.extend(self.sales_pred_sd)
-        self.lop[self.cur_index]= sales_pred_mean[self.cur_index][:vlt_max].sum()
-
-        # 给定VLT，计算VLT期间总销量的均值
-        demand_mean = [sum(sales_pred_mean[self.cur_index][:vlt_max+1])]
-        vlt_prob = 1
-        # VLT期间总销量均值的概率分布
-        demand_mean_distribution = rv_discrete(values=(demand_mean, vlt_prob))
-        part1 = demand_mean_distribution.mean()
-        # 给定VLT，计算总销量的方差
-        demand_var = [sum([i ** 2 for i in sales_pred_sd[self.cur_index][:vlt_max+1]])]
-        # demand_std = np.sqrt(demand_var)
-        # VLT期间总销量方差的概率分布
-        demand_var_distribution = rv_discrete(values=(demand_var, vlt_prob))
-        # 条件期望的方差
-        part21 = demand_mean_distribution.var()
-        # 条件方差的期望
-        part22 = demand_var_distribution.mean()
-        # 计算补货点
-        cur_cr = self.cr_pbs[self.cur_index] if cr is None else cr
-        self.lop[self.cur_index] = np.ceil(part1 + norm.ppf(cur_cr) * math.sqrt(part21 + part22 + 0.1))
+        if self.org_nation_sale_num_band in ['A','B']:
+            vlt_max= int(self.vlt_max)
+            fill_days = int(vlt_max-self.pred_days)
+            sales_pred_mean = self.sales_pred_mean[self.cur_index]
+            sales_pred_sd = self.sales_pred_sd[self.cur_index]
+            if fill_days>0:
+                sales_pred_mean.extend([np.nanmean(sales_pred_mean)]*fill_days)
+                sales_pred_sd.extend([np.nanmean(sales_pred_sd)]*fill_days)
+            # 给定VLT，计算VLT期间总销量的均值
+            demand_mean = [sum(sales_pred_mean[:(vlt_max+1)])]
+            vlt_prob = 1
+            # VLT期间总销量均值的概率分布
+            demand_mean_distribution = rv_discrete(values=(demand_mean, vlt_prob))
+            part1 = demand_mean_distribution.mean()
+            # 给定VLT，计算总销量的方差
+            demand_var = [sum([i ** 2 for i in sales_pred_sd[:int(vlt_max+1)]])]
+            # demand_std = np.sqrt(demand_var)
+            # VLT期间总销量方差的概率分布
+            demand_var_distribution = rv_discrete(values=(demand_var, vlt_prob))
+            # 条件期望的方差
+            part21 = demand_mean_distribution.var()
+            # 条件方差的期望
+            part22 = demand_var_distribution.mean()
+            # 计算补货点
+            cur_cr = self.cr_pbs[self.cur_index] if cr is None else cr
+            self.subCategory[self.cur_index] = 66
+            self.lop[self.cur_index] = np.ceil(part1 + norm.ppf(cur_cr) * math.sqrt(part21 + part22 + 0.1))
+        else:
+            SkuSimulation.calc_lop(self,cr)
 
 class SkuSimulationSalesCorrection(SkuSimulation):
-    # 如果销量预测出现较大偏差，使用历史28天平均销量代替
-    # def calc_replenishment_quantity(self, bp=None):
-    #     cur_bp = self.bp_pbs[self.cur_index] if bp is None else bp
-        # #处理预测销量为0的情况
-        # if self.cur_index<28:
-        #     sales_28days=self.sales_sim[0:self.cur_index+1]
-        #     pred_28days=sum(self.sales_pred_mean[0][0:self.cur_index])
-        # else:
-        #     sales_28days=self.sales_sim[self.cur_index-27:self.cur_index+1]
-        #     pred_28days=sum(self.sales_pred_mean[self.cur_index-28])
-        #     #获取过去28天的销量
-        # total_sales_28days=sum(sales_28days)
-        # if total_sales_28days==0:
-        #     #如果库存和在途为0，则补一个，否则不补货
-        #     return max(1 -self.inv_sim[self.cur_index] - self.open_po_sim[self.cur_index],0)
-        # if sum(self.sales_pred_mean[self.cur_index])==0:
-        #     #如果只有一天有销量，则目标库存为max(2,销量)，所以补货量为目标库存-在途-库存
-        #     if np.count_nonzero(sales_28days)==1:
-        #         return max(min(2,max(sales_28days))-self.inv_sim[self.cur_index] - self.open_po_sim[self.cur_index],0)
-        #     #如果有一天以上的销量补货量为28天的销量和
-        #     else:
-        #         return max(np.sum(sales_28days[sales_28days>0])-self.inv_sim[self.cur_index] - self.open_po_sim[self.cur_index],0)
-        # #预测销量与实际销量偏差较大,如果cur_index<28天如何判断,直接获取对应天数的预测与实际值
-        # elif (abs(float(pred_28days-total_sales_28days))/total_sales_28days)>0.3 and float(pred_28days-total_sales_28days)>5:
-        #     return max(total_sales_28days-self.inv_sim[self.cur_index] - self.open_po_sim[self.cur_index],0)
-        # #其他情况
-        # else:
-        #     return np.ceil(self.lop[self.cur_index] + cur_bp * np.mean(self.sales_pred_mean[self.cur_index]) -
-        #                self.inv_sim[self.cur_index] - self.open_po_sim[self.cur_index])
-        # return np.ceil(self.lop[self.cur_index] + cur_bp * np.mean(self.sales_pred_mean[self.cur_index]) -
-        #                self.inv_sim[self.cur_index] - self.open_po_sim[self.cur_index])
     def calc_lop(self, cr=None):
-        # if self.cur_index<28:
-        #     sales_28days=self.sales_sim[0:self.cur_index+1]
-        #     pred_28days=sum(self.sales_pred_mean[0][0:self.cur_index])
-        # else:
-        #     sales_28days=self.sales_sim[self.cur_index-27:self.cur_index+1]
-        #     pred_28days=sum(self.sales_pred_mean[self.cur_index-28])
-        # total_sales_28days=sum(sales_28days)
-        # #如果过去28天销量为0，将补货点置为1
-        # if total_sales_28days==0:
-        #     self.lop[self.cur_index]=1
-        # elif sum(self.sales_pred_mean[self.cur_index])==0:
-        #     #如果只有一天有销量，则补货点为1
-        #     if np.count_nonzero(sales_28days)==1:
-        #         self.lop[self.cur_index]=1
-        #     #如果有一天以上的销量补货量为28天的销量和的0.2倍向上取整
-        #     else:
-        #         self.lop[self.cur_index]=np.ceil(total_sales_28days*0.2)
-        # elif (abs(float(pred_28days-total_sales_28days))/total_sales_28days)>0.3 and float(pred_28days-total_sales_28days)>5:
-        #     self.lop[self.cur_index]=np.ceil(total_sales_28days*0.2)
-        # else:
-        # 给定VLT，计算VLT期间总销量的均值
-        demand_mean = [sum(self.sales_pred_mean[self.cur_index][:(l+1)]) for l in self.vlt_value_trunc]
-        # VLT期间总销量均值的概率分布
-        demand_mean_distribution = rv_discrete(values=(demand_mean, self.vlt_prob_trunc))
-        part1 = demand_mean_distribution.mean()
-        # 给定VLT，计算总销量的方差
-        demand_var = [sum([i ** 2 for i in self.sales_pred_sd[self.cur_index][:(l+1)]]) for l in self.vlt_value_trunc]
-        # demand_std = np.sqrt(demand_var)
-        # VLT期间总销量方差的概率分布
-        demand_var_distribution = rv_discrete(values=(demand_var, self.vlt_prob_trunc))
-        # 条件期望的方差
-        part21 = demand_mean_distribution.var()
-        # 条件方差的期望
-        part22 = demand_var_distribution.mean()
-        # 计算补货点
-        cur_cr = self.cr_pbs[self.cur_index] if cr is None else cr
-        self.lop[self.cur_index] = np.ceil(part1 + norm.ppf(cur_cr) * 2*math.sqrt(part21 + part22 + 0.1))
+        if self.category == 99:
+            SkuSimulation.calc_lop(self,cr)
+        elif self.category == 1:
+            demand_mean = [sum(self.sales_pred_mean[self.cur_index][:(l+1)]) for l in self.vlt_value_trunc]
+            # VLT期间总销量均值的概率分布
+            demand_mean_distribution = rv_discrete(values=(demand_mean, self.vlt_prob_trunc))
+            part1 = demand_mean_distribution.mean()
+            # 给定VLT，计算总销量的方差
+            demand_var = [sum([i ** 2 for i in self.sales_pred_sd[self.cur_index][:(l+1)]]) for l in self.vlt_value_trunc]
+            # demand_std = np.sqrt(demand_var)
+            # VLT期间总销量方差的概率分布
+            demand_var_distribution = rv_discrete(values=(demand_var, self.vlt_prob_trunc))
+            # 条件期望的方差
+            part21 = demand_mean_distribution.var()
+            # 条件方差的期望
+            part22 = demand_var_distribution.mean()
+            # 计算补货点
+            cur_cr = self.cr_pbs[self.cur_index] if cr is None else cr
+            self.lop[self.cur_index] = np.ceil(part1 + norm.ppf(cur_cr) * 2*math.sqrt(part21 + part22 + 0.1))
 
 
 class HisSkuBpMeanSimulation(SkuSimulation):
@@ -184,3 +135,66 @@ class HisSkuBpMeanSimulation(SkuSimulation):
         return np.ceil(self.lop[self.cur_index] + cur_bp* np.mean(self.sales_pred_mean[self.cur_index]) -
         self.inv_sim[self.cur_index] - self.open_po_sim[self.cur_index])
 
+class LongTailLowSalesSimulation(SkuSimulation):
+    def calc_lop(self, cr=None):
+        if self.category == 99: #其他
+            SkuSimulation.calc_lop(self,cr)
+        elif self.category == 1: #长尾低销量
+            # 给定VLT，计算VLT期间总销量的均值
+            multiple = Utils.getPredictionErrorMultiple(self.sales_his,self.sales_pred_mean,self.cur_index)
+            print "---------------multiple---------------" ,multiple ,self.sku_id
+            if multiple >= Sales_prediction_errorPercent:
+                sales_pred_mean,sales_pred_sd = Utils.getWeightedActSales(self.sales_his,self.cur_index)
+                fill_days = max(self.vlt_value_trunc)
+                sales_pred_mean = np.array(sales_pred_mean * fill_days)
+                sales_pred_sd = np.array(sales_pred_sd * fill_days)
+                print sales_pred_mean
+                print sales_pred_sd
+                demand_mean = [sum(sales_pred_mean[:(l+1)]) for l in self.vlt_value_trunc]
+                # VLT期间总销量均值的概率分布
+                demand_mean_distribution = rv_discrete(values=(demand_mean, self.vlt_prob_trunc))
+                part1 = demand_mean_distribution.mean()
+                # 给定VLT，计算总销量的方差
+                demand_var = [sum([i ** 2 for i in sales_pred_sd[:(l+1)]]) for l in self.vlt_value_trunc]
+                # demand_std = np.sqrt(demand_var)
+                # VLT期间总销量方差的概率分布
+                demand_var_distribution = rv_discrete(values=(demand_var, self.vlt_prob_trunc))
+                # 条件期望的方差
+                part21 = demand_mean_distribution.var()
+                # 条件方差的期望
+                part22 = demand_var_distribution.mean()
+                # 计算补货点
+                cur_cr = self.cr_pbs[self.cur_index] if cr is None else cr
+                self.subCategory[self.cur_index] = 66
+                self.lop[self.cur_index] = np.ceil(part1 + norm.ppf(cur_cr) * math.sqrt(part21 + part22 + 0.1))
+            else:
+                SkuSimulation.calc_lop(self,cr)
+
+class PreSalesMonitor(SkuSimulation):
+    def calc_lop(self, cr=None):
+        # 给定VLT，计算VLT期间总销量的均值
+        multiple = Utils.getPredictionErrorMultiple(self.sales_his,self.sales_pred_mean,self.cur_index)
+        if multiple >= Sales_prediction_errorPercent:
+            sales_pred_mean,sales_pred_sd = Utils.getWeightedActSales(self.sales_his,self.cur_index)
+            fill_days = max(self.vlt_value_trunc)
+            sales_pred_mean = np.array(sales_pred_mean * fill_days)
+            sales_pred_sd = np.array(sales_pred_sd * fill_days)
+            demand_mean = [sum(sales_pred_mean[:(l+1)]) for l in self.vlt_value_trunc]
+            # VLT期间总销量均值的概率分布
+            demand_mean_distribution = rv_discrete(values=(demand_mean, self.vlt_prob_trunc))
+            part1 = demand_mean_distribution.mean()
+            # 给定VLT，计算总销量的方差
+            demand_var = [sum([i ** 2 for i in sales_pred_sd[:(l+1)]]) for l in self.vlt_value_trunc]
+            # demand_std = np.sqrt(demand_var)
+            # VLT期间总销量方差的概率分布
+            demand_var_distribution = rv_discrete(values=(demand_var, self.vlt_prob_trunc))
+            # 条件期望的方差
+            part21 = demand_mean_distribution.var()
+            # 条件方差的期望
+            part22 = demand_var_distribution.mean()
+            # 计算补货点
+            cur_cr = self.cr_pbs[self.cur_index] if cr is None else cr
+            self.subCategory[self.cur_index] = 66
+            self.lop[self.cur_index] = np.ceil(part1 + norm.ppf(cur_cr) * math.sqrt(part21 + part22 + 0.1))
+        else:
+            SkuSimulation.calc_lop(self,cr)

@@ -339,6 +339,7 @@ class inventory_proess:
 
 
     def OrdersSimulation(self):
+        save_date = ["2016-10-05","2016-10-10","2016-10-15","2016-10-20","2016-10-25"]
         self.mkdir_save()
         for d in self.date_range:
             #更新获取当天白名单`
@@ -497,7 +498,8 @@ class inventory_proess:
                 self.white_list_dict[k[1]][k[0]]=list(v)#
             self.logger.info('日sku数据更新完成')
             # 保存每天数据
-            self.save_oneday(d)
+            if d in save_date:
+                self.save_oneday(d)
             #订单数据量不是太大，所以一次性全部加载到内存中
             '''
             # 下面更新订单明细数据

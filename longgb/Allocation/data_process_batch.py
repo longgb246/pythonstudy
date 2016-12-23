@@ -210,8 +210,7 @@ def gene_index(fdc,sku,date_s=''):
     '''
     #生成调用索引,将在多个地方调用该函数
     '''
-    return date_s+fdc+sku
-
+    return str(date_s)+str(fdc)+str(sku)
 ##将上述读入的数据集，转换为调拨仿真类需要的数据集
 
 
@@ -346,10 +345,10 @@ logger.info('采购单数据处理完成')
 logger.info('开始处理订单明细数据并转化')
 
 
-tmp_df=allocation_sale_data[['dc_id','date_s','item_sku_id','sale_ord_id','sale_ord_tm','sale_qtty']]
+tmp_df=allocation_sale_data[['dc_id','date_s','item_sku_id','parent_sale_ord_id','sale_ord_tm','sale_qtty']]
 tmp_df=pd.DataFrame(tmp_df)
 orders_retail_mid=pd.concat([tmp_df['dc_id'].astype(str)+tmp_df['date_s'].astype(str),tmp_df['sale_ord_tm'].astype(str)+
-                             tmp_df['sale_ord_id'].astype(str),tmp_df[['item_sku_id','sale_qtty']]],
+                             tmp_df['parent_sale_ord_id'].astype(str),tmp_df[['item_sku_id','sale_qtty']]],
                             axis=1)
 orders_retail_mid.columns=['dc_date_id','id','item_sku_id','sale_qtty']
 # orders_retail_mid=orders_retail_mid.drop_duplicates(subset=['id','item_sku_id'])
@@ -394,6 +393,7 @@ pickle.dump(fdc_forecast_std,open(save_data_path+'fdc_forecast_std.pkl','w'))
 pickle.dump(fdc_alt,open(save_data_path+'fdc_alt.pkl','w'))
 pickle.dump(fdc_alt_prob,open(save_data_path+'fdc_alt_prob.pkl','w'))
 pickle.dump(all_sku_list,open(save_data_path+'all_sku_list.pkl','w'))
+
 with open(save_data_path+'white_list_dict.txt','w') as white:
     for k,v in white_list_dict.items():
         for k1,v1 in v.items():
@@ -418,6 +418,10 @@ logger.info('仿真运算完成，开始进行数据保存与KPI计算')
 
 #保持关键仿真数据
 logger.info('开始保存仿真数据......')
+pickle.dump(fdc_forecast_sales,open(save_data_path+'fdc_forecast_sales_02.pkl','w'))
+pickle.dump(fdc_forecast_std,open(save_data_path+'fdc_forecast_std_02.pkl','w'))
+
+
 pickle.dump(dict(allocation.fdc_inv),open(save_data_path+'fdc_inv.pkl','w'))
 # pickle.dump(white_list_dict,open(save_data_path+'white_list_dict','w'))
 pickle.dump(dict(allocation.fdc_allocation),open(save_data_path+'fdc_allocation.pkl','w'))
@@ -429,6 +433,18 @@ pickle.dump(dict(allocation.rdc_inv),open(save_data_path+'rdc_inv.pkl','w'))
 ####保持嵌套的字典#####
 pickle.dump(dict(allocation.fdc_allocation),open(save_data_path+'fdc_allocation.pkl','w'))
 pickle.dump(dict(allocation.rdc_inv),open(save_data_path+'rdc_inv.pkl','w'))
+
+
+with open(save_data_path+'white_list_dict_02.txt','w') as white:
+    for k,v in white_list_dict.items():
+        for k1,v1 in v.items():
+            white.write(str(k))
+            white.write('\t')
+            white.write(str(k1))
+            white.write('\t')
+            white.write(str(v1))
+        white.write('\n')
+
 
 with open(save_data_path+'order_list.txt','w') as ol:
     for k,v in allocation.order_list.items():

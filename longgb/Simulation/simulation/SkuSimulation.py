@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm
 from scipy.stats import rv_discrete
 from matplotlib.backends.backend_pdf import PdfPages
-import seaborn as sns
+from configServer import category_longTail_stable_DaysThreshold,category_longTail_stable_SalesThreshold,salespredictionErrorFilldays
+
 
 
 class Utils:
@@ -37,6 +38,42 @@ class Utils:
         prob_trunc[0] += np.sum(prob[~(val >= vlt_mean)])
         return val_trunc, prob_trunc
 
+    @staticmethod
+    def getCategory(sales,):
+        category=99 #normal
+        percent = (sum(sales>0)*1.0/ len(sales))
+        salesMean = np.mean(sales)
+        if  (percent>=category_longTail_stable_DaysThreshold) & (salesMean<=category_longTail_stable_SalesThreshold):
+            category=1 #longTail_stable
+        return category
+
+    @staticmethod
+    def getPredictionErrorMultiple(sales,pred_sales,cur_index):
+        """
+        judge whether prediction sales exceed the actual sales
+        """
+        sales3days =  sum([sales[cur_index]]*3)
+        pred_sales3days = sum([pred_sales[cur_index][0]]*3)
+        if cur_index >= 3:
+            sales3days = sum(sales[cur_index-3:cur_index])
+            pred_sales3days = sum(pred_sales[cur_index-3][0:3])
+        multiple = max((sales3days*1.0/pred_sales3days),1)
+        return multiple
+
+    @staticmethod
+    def getWeightedActSales(sales,cur_index):
+        """
+        1. estimate whether error is too large
+        2. return weighted
+        """
+        if cur_index>= salespredictionErrorFilldays:
+            actualSale = sales[cur_index-salespredictionErrorFilldays:cur_index]
+            return [np.mean(actualSale)],[np.std(actualSale)]
+        else:
+            rang = salespredictionErrorFilldays - cur_index
+            mean_sale = np.nanmean(sales[0:cur_index])
+            actualSale = np.concatenate((sales[0:cur_index],np.array([mean_sale]*(rang))))
+            return [np.mean(actualSale)],[np.std(actualSale)]
 
 class SkuSimulation:
 
@@ -147,6 +184,8 @@ class SkuSimulation:
         self.cur_index = 0
         # 仿真状态：{0: 未开始，1: 进行中，2：正常完成}
         self.simulation_status = 0
+        self.category = Utils.getCategory(self.sales_his)
+        self.subCategory = np.array([99]*self.simulation_period)
 
     def reset(self):
         self.inv_sim = np.array([0] * self.simulation_period, dtype=np.float64)
@@ -185,8 +224,12 @@ class SkuSimulation:
 
     def calc_replenishment_quantity(self, bp=None, cr=None):
         cur_bp = self.bp_pbs[self.cur_index] if bp is None else bp
+        sales_pred_sd = self.sales_pred_sd[self.cur_index]
+        if cur_bp> len(sales_pred_sd):
+            filldays = cur_bp - len(sales_pred_sd)
+            sales_pred_sd = np.concatenate(( sales_pred_sd,[np.nanmean(sales_pred_sd)]*filldays))
         cur_cr = self.cr_pbs[self.cur_index] if cr is None else cr
-        cur_bp_var = sum([sd**2 for sd in self.sales_pred_sd[self.cur_index][:int(cur_bp)]])
+        cur_bp_var = sum([sd**2 for sd in sales_pred_sd[:int(cur_bp)]])
         return np.ceil(self.lop[self.cur_index] +
                        cur_bp * np.mean(self.sales_pred_mean[self.cur_index]) +
                        norm.ppf(cur_cr) * math.sqrt(cur_bp_var) -
@@ -267,11 +310,13 @@ class SkuSimulation:
                           'ti_pbs': self.ti_pbs,
                           'sku_id': np.repeat(self.sku_id, self.simulation_period),
                           'mean_price': np.repeat(self.wh_qtn, self.simulation_period),
-                          'sale_num_band':self.org_nation_sale_num_band}
+                          'sale_num_band':self.org_nation_sale_num_band,
+                          'category':self.category,
+                          'subCategory' : self.subCategory,}
             return pd.DataFrame(daily_data, columns=['sku_id', 'dt', 'sales_his_origin', 'inv_his', 'sales_sim',
                                                      'mean_price', 'inv_sim', 'lop', 'pur_qtty_sim', 'open_po_sim',
                                                      'vlt_sim', 'arrive_qtty_sim', 'sales_pred_mean', 'sales_pred_sd',
-                                                     'cr_pbs', 'bp_pbs', 'lop_pbs', 'ti_pbs','sale_num_band'])
+                                                     'cr_pbs', 'bp_pbs', 'lop_pbs', 'ti_pbs','sale_num_band','category','subCategory'])
         else:
             print "Please call run_simulation() before getting daily data!"
 

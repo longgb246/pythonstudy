@@ -1,13 +1,8 @@
 # coding: utf-8
-# ----------------------------------- 路径导入 ---------------------------------------
 import os
-import sys
 from sys import path
 pth=os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath("")))))
 path.append(pth)
-# test包路径导入
-sys.path.append(os.path.dirname(__file__))
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 print pth
 import ast
 import datetime
@@ -17,25 +12,13 @@ import pickle
 import numpy as np
 import pandas as pd
 from scipy.stats import itemfreq
-sys.path.append(r'D:\Lgb\pythonstudy\longgb')
-# from com.jd.pbs.simulation.SkuSimulation import SkuSimulation
-# from com.jd.pbs.simulation.SkuSimulationModify import MaxVlt_Times_Demand,SkuSimulationBp25,SkuSimulationMg,SkuSimulationPbs,SkuSimulationSalesCorrection,SkuSimulationSequential,HisSkuBpMeanSimulation
-# from com.jd.pbs.simulation import configServer
-from simulation.SkuSimulation import SkuSimulation
-from simulation.SkuSimulationModify import MaxVlt_Times_Demand,SkuSimulationBp25,SkuSimulationMg,SkuSimulationPbs,SkuSimulationSalesCorrection,HisSkuBpMeanSimulation
-# from simulation.SkuSimulationModify import SkuSimulationSequential
-from simulation import configServer
-
+# from com.jd.pbs.simulation.SkuSimulationModify import SkuSimulationPbs
+from com.jd.pbs.simulation.SkuSimulation import SkuSimulation
+from com.jd.pbs.simulation.SkuSimulationModify import MaxVlt_Times_Demand,SkuSimulationBp25,SkuSimulationMg,SkuSimulationPbs,SkuSimulationSalesCorrection,LongTailLowSalesSimulation,PreSalesMonitor
+from com.jd.pbs.simulation import configServer
 import time
 
-
-
-
-
-
-time.strftime('%Y-%m-%d_%H-%M-%S',time.localtime())
-time.ctime() # 当前时间的字符串形式
-time.strptime('2016-11-29_17-57-51', '%Y-%m-%d_%H-%M-%S')
+import sys
 # 配置信息
 workingfolderName=time.strftime('%Y-%m-%d_%H-%M-%S',time.localtime(time.time()))
 choice=configServer.start_point(workingfolderName)
@@ -176,7 +159,7 @@ for sku_id in sku_list:
                                    org_nation_sale_num_band=org_nation_sale_num_band)
     if choice == 0:
         pass
-    if choice == 1:
+    elif choice == 1:
         sku_simulation=MaxVlt_Times_Demand(date_range, sales_his, inv_his, sales_pred_mean, sales_pred_sd, vlt_val,
                                              vlt_prob, actual_pur_qtty, wh_qtn, sku_id=sku_id, sku_name=sku_name,
                                              cr_pbs=cr_pbs, bp_pbs=bp_pbs, lop_pbs=lop_pbs, ti_pbs=ti_pbs,
@@ -201,6 +184,16 @@ for sku_id in sku_list:
                                                     vlt_prob, actual_pur_qtty, wh_qtn, sku_id=sku_id, sku_name=sku_name,
                                                     cr_pbs=cr_pbs, bp_pbs=bp_pbs, lop_pbs=lop_pbs, ti_pbs=ti_pbs,
                                                     org_nation_sale_num_band=org_nation_sale_num_band)
+    elif choice ==6:
+        sku_simulation=LongTailLowSalesSimulation(date_range, sales_his, inv_his, sales_pred_mean, sales_pred_sd, vlt_val,
+                                                  vlt_prob, actual_pur_qtty, wh_qtn, sku_id=sku_id, sku_name=sku_name,
+                                                  cr_pbs=cr_pbs, bp_pbs=bp_pbs, lop_pbs=lop_pbs, ti_pbs=ti_pbs,
+                                                  org_nation_sale_num_band=org_nation_sale_num_band)
+    elif choice==7:
+        sku_simulation=PreSalesMonitor(date_range, sales_his, inv_his, sales_pred_mean, sales_pred_sd, vlt_val,
+                                       vlt_prob, actual_pur_qtty, wh_qtn, sku_id=sku_id, sku_name=sku_name,
+                                       cr_pbs=cr_pbs, bp_pbs=bp_pbs, lop_pbs=lop_pbs, ti_pbs=ti_pbs,
+                                       org_nation_sale_num_band=org_nation_sale_num_band)
 
     # 仿真
     logging.info(str(sku_id) + '@' + 'run_simulation()')
@@ -239,7 +232,7 @@ data = pd.DataFrame()
 for name in glob.glob(output_dir+'/*[0-9].csv'):
     # print name
     df = pd.read_csv(name,sep="\\t")
-    df=df[["sku_id","dt","sales_his_origin","sales_sim","mean_price","inv_his","inv_sim","sale_num_band"]]
+    df=df[["sku_id","dt","sales_his_origin","sales_sim","mean_price","inv_his","inv_sim","sale_num_band","category"]]
     data = pd.concat([data,df])
 cr_his = (data["inv_his"]>0).sum() / float(len(data))
 cr_sim = (data["inv_sim"]>0).sum() / float(len(data))
@@ -258,14 +251,14 @@ total_Kpi = pd.DataFrame(
 )
 
 
-for band,grouped in data.groupby("sale_num_band"):
+for category,grouped in data.groupby("category"):
     cr_his_band = (grouped["inv_his"]>0).sum() / float(len(grouped))
     cr_sim_band = (grouped["inv_sim"]>0).sum() / float(len(grouped))
     ito_his_band = np.sum(grouped["inv_his"]*grouped["mean_price"]) / float(np.sum(grouped["sales_his_origin"]*grouped["mean_price"]))
     ito_sim_band = np.sum(grouped["inv_sim"]*grouped["mean_price"]) / float(np.sum(grouped["sales_sim"]*grouped["mean_price"]))
     gmv_his_band = np.sum(grouped["sales_his_origin"] * grouped["mean_price"])
     gmv_sim_band = np.sum(grouped["sales_sim"] * grouped["mean_price"])
-    arr.append([band,cr_his_band,cr_sim_band,ito_his_band,ito_sim_band,gmv_his_band,gmv_sim_band])
+    arr.append([category,cr_his_band,cr_sim_band,ito_his_band,ito_sim_band,gmv_his_band,gmv_sim_band])
 arr.append(["Total",cr_his,cr_sim,ito_his,ito_sim,gmv_his,gmv_sim])
 df= pd.DataFrame(np.array(arr))
 df.columns=["band","cr_his_band","cr_sim_band","ito_his_band","ito_sim_band","gmv_his_band","gmv_sim_band"]

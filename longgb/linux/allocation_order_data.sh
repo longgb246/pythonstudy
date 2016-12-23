@@ -34,7 +34,7 @@ hive -e"set hive.exec.dynamic.partition=true;
 	        t2.valid_flag = 1 AND  						-- 有效标志
 	        t2.cgdetail_yn = 1 AND 						-- 采购明细单有效标志
 	        to_date(t2.create_tm) BETWEEN '${start_date}' AND '${end_date}' AND
-	        t2.int_org_num = '${dc_id}'
+	        t2.int_org_num = '${org_dc_id}'
 	    group by 
 		    t2.int_org_num,
 		    to_date(t2.complete_dt),

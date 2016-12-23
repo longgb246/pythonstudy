@@ -48,8 +48,8 @@ org_dc_id=$4
 		0 as arrive_quantity, --这个会在程序中更新
 		a.open_po,
 		case when c.modify_time is not null and c.modify_time<='2016-10-11' then 1 
-	     	when c.modify_time is not null and a.dt>c.modify_time then 1
-			else 0 end as white_flag,
+	     	 when c.modify_time is not null and a.dt>c.modify_time then 1
+			 else 0 end as white_flag,
 		case when c.create_time is not null and a.dt>c.create_time then 1 else 0 end as white_flag_01,
 		a.dt as date_s,
 		b.dc_id  		  	

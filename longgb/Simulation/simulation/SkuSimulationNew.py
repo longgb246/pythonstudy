@@ -36,8 +36,21 @@ class Utils:
         prob_trunc[0] += np.sum(prob[~(val >= vlt_mean)])
         return val_trunc, prob_trunc
 
+    @staticmethod
+    def truncate_add_vlt_distribution(val, prob, safety_days):
+        vlt_mean = (val * prob).sum()
+        val_trunc = np.copy(val[val >= vlt_mean])
+        prob_trunc = np.copy(prob[val >= vlt_mean])
+        prob_trunc[0] += np.sum(prob[~(val >= vlt_mean)])
+        return val_trunc + safety_days, prob_trunc
+
+    @staticmethod
+    def add_vlt_distribution(val, prob, safety_days):
+        return val + safety_days, prob
+
 
 class SkuSimulation:
+
     def __init__(self, date_range, sales_his, inv_his, sales_pred_mean, sales_pred_sd, vlt_val, vlt_prob,
                  actual_pur_qtty, wh_qtn, pred_days=28, sku_id='', sku_name='', cr_pbs=None, bp_pbs=None,
                  lop_pbs=None, ti_pbs=None, band=None):
@@ -54,20 +67,19 @@ class SkuSimulation:
 
         # 销量填充
         self.sales_his = self.sales_his_origin.copy()
-        stock_and_sale_days = ((self.inv_his > 0) & (self.sales_his > 0)).sum()
+        stock_days = (self.inv_his > 0).sum()
         stock_and_sale0_days = ((self.inv_his > 0) & (self.sales_his == 0)).sum()
         sales_his_mean = np.mean(self.sales_his[self.inv_his > 0])
-        flag1 = (float(stock_and_sale0_days) / (stock_and_sale_days + 0.1)) > 0.5
+        flag1 = (float(stock_and_sale0_days) / (stock_days + 0.1)) > 0.5
         flag2 = sales_his_mean < 1
-        print flag1
-        print flag2
         if flag1 or flag2:
-            # 零销量天数占比超过0.5或者平均销量小于1，使用随机抽样填充
+            # 有库存零销量天数占比超过0.5或者有库存平均销量小于1，使用随机抽样填充
             sales_set = self.sales_his_origin[self.inv_his > 0]
             np.random.seed(618)
             for i in np.where(self.inv_his == 0)[0]:
                 self.sales_his[i] = np.random.choice(sales_set)
         else:
+            # 使用有库存销量中位数填充
             self.sales_his[self.inv_his == 0] = np.median(self.sales_his[self.inv_his > 0])
 
         # 预测天数
@@ -87,8 +99,8 @@ class SkuSimulation:
         self.vlt_prob = vlt_prob
         self.vlt_distribution = rv_discrete(values=(self.vlt_val, self.vlt_prob))
 
-        # 计算截断的VLT分布
-        self.vlt_value_trunc, self.vlt_prob_trunc = Utils.truncate_vlt_distribution(self.vlt_val, self.vlt_prob)
+        # 修改VLT分布
+        self.vlt_value_modify, self.vlt_prob_modify = Utils.add_vlt_distribution(self.vlt_val, self.vlt_prob, 7)
 
         self.vlt_max = max(self.vlt_val)
         # 处理VLT最大值大于预测天数的情况：使用均值填充预测销量和预测标准差
@@ -115,7 +127,9 @@ class SkuSimulation:
 
         self.wh_qtn = wh_qtn
         self.cr_pbs = cr_pbs
+        self.avg_cr_pbs = np.nanmean(self.cr_pbs)
         self.bp_pbs = bp_pbs
+        self.avg_bp_pbs = np.nanmean(self.bp_pbs)
         self.lop_pbs = lop_pbs
         self.ti_pbs = ti_pbs
 
@@ -164,22 +178,22 @@ class SkuSimulation:
 
     def calc_lop(self, cr=None):
         # 给定VLT，计算VLT期间总销量的均值
-        demand_mean = [sum(self.sales_pred_mean[self.cur_index][:(l + 1)]) for l in self.vlt_value_trunc]
+        demand_mean = [sum(self.sales_pred_mean[self.cur_index][:(l + 1)]) for l in self.vlt_value_modify]
         # VLT期间总销量均值的概率分布
-        demand_mean_distribution = rv_discrete(values=(demand_mean, self.vlt_prob_trunc))
+        demand_mean_distribution = rv_discrete(values=(demand_mean, self.vlt_prob_modify))
         part1 = demand_mean_distribution.mean()
         # 给定VLT，计算总销量的方差
-        demand_var = [sum([i ** 2 for i in self.sales_pred_sd[self.cur_index][:(l + 1)]]) for l in self.vlt_value_trunc]
+        demand_var = [sum([i ** 2 for i in self.sales_pred_sd[self.cur_index][:(l + 1)]]) for l in self.vlt_value_modify]
         # demand_std = np.sqrt(demand_var)
         # VLT期间总销量方差的概率分布
-        demand_var_distribution = rv_discrete(values=(demand_var, self.vlt_prob_trunc))
+        demand_var_distribution = rv_discrete(values=(demand_var, self.vlt_prob_modify))
         # 条件期望的方差
         part21 = demand_mean_distribution.var()
         # 条件方差的期望
         part22 = demand_var_distribution.mean()
         # 计算补货点
         cur_cr = self.cr_pbs[self.cur_index] if cr is None else cr
-        self.lop[self.cur_index] = np.ceil(part1 + norm.ppf(cur_cr) * math.sqrt(part21 + part22 + 0.1))
+        self.lop[self.cur_index] = (np.ceil(part1 + norm.ppf(cur_cr) * math.sqrt(part21 + part22 + 0.1)))
 
     def calc_replenishment_quantity(self, bp=None, cr=None):
         cur_bp = self.bp_pbs[self.cur_index] if bp is None else bp
@@ -276,7 +290,7 @@ class SkuSimulation:
     def calc_kpi(self):
         if self.simulation_status == 2:
             # 现货率（cr）：有货天数除以总天数
-            cr_sim = (self.inv_sim > 0).sum() / float(self.simulation_period)
+            cr_sim = ((self.inv_sim - self.arrive_qtty_sim) > 0).sum() / float(self.simulation_period)
             cr_his = (self.inv_his > 0).sum() / float(self.simulation_period)
             # 周转天数（ito）：平均库存除以平均销量
             ito_sim = np.nanmean(self.inv_sim) / np.nanmean(self.sales_sim)
@@ -287,8 +301,16 @@ class SkuSimulation:
             # gmv
             gmv_sim = ts_sim * self.wh_qtn
             gmv_his = ts_his * self.wh_qtn
-            return [self.sku_id, cr_sim, cr_his, ito_sim, ito_his, gmv_sim, gmv_his, ts_sim, ts_his,
-                    self.pur_cnt_sim, self.success_cnt, self.wh_qtn, self.pur_cnt_his]
+            # 总库存
+            total_inv_sim = np.sum(self.inv_sim)
+            total_inv_his = np.sum(self.inv_his)
+            return [self.sku_id,
+                    cr_sim, cr_his,
+                    total_inv_sim, total_inv_his,
+                    ito_sim, ito_his,
+                    gmv_sim, gmv_his,
+                    ts_sim, ts_his,
+                    self.pur_cnt_sim, self.success_cnt, self.pur_cnt_his, self.wh_qtn, self.avg_bp_pbs]
         else:
             print "Please call run_simulation() before calculating KPI!"
 
@@ -363,7 +385,7 @@ class SkuSimulation:
         # 销量对比图
         axs6 = fig1.add_subplot(4, 1, 4)
         axs6.plot(date_range, self.sales_sim, c='r', label='sales_sim')
-        axs6.plot(date_range, self.sales_his, c='b', label='sales_his')
+        axs6.plot(date_range, self.sales_his_origin, c='b', label='sales_his_origin')
         axs6.legend()
 
         # vlt分布图

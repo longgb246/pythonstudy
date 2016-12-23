@@ -1,10 +1,10 @@
 # coding=utf-8
 
 import pickle
-from src.com.jd.pbs.simulation import config
+from com.jd.pbs.simulation import config
 
 output_dir = config.output_dir
-simulation_name = 'sample_data_base_policy.dat'
+simulation_name = 'simulation_1671.dat'
 
 simulation_results = pickle.load(open(output_dir + simulation_name, 'rb'))
 print simulation_results.keys()
