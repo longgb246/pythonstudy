@@ -443,7 +443,7 @@ with open(save_data_path+'white_list_dict_02.txt','w') as white:
             white.write(str(k1))
             white.write('\t')
             white.write(str(v1))
-        white.write('\n')
+            white.write('\n')
 
 
 with open(save_data_path+'order_list.txt','w') as ol:
@@ -454,7 +454,7 @@ with open(save_data_path+'order_list.txt','w') as ol:
             ol.write(str(k1))
             ol.write('\t')
             ol.write(str(v1))
-        ol.write('\n')
+            ol.write('\n')
 
 with open(save_data_path+'orders_retail.txt','w') as orl:
     for k,v in allocation.orders_retail.items():
@@ -467,7 +467,7 @@ with open(save_data_path+'orders_retail.txt','w') as orl:
                 orl.write(str(k2))
                 orl.write('\t')
                 orl.write(str(v2))
-        orl.write('\n')
+                orl.write('\n')
 
 try:
     with open(save_data_path+'simu_orders_retail.txt','w') as orl:
@@ -481,7 +481,7 @@ try:
                     orl.write(str(k2))
                     orl.write('\t')
                     orl.write(str(v2))
-            orl.write('\n')
+                    orl.write('\n')
 except:
     print 'simu order  in the except'
 try:
@@ -496,7 +496,7 @@ try:
                     orl.write(str(k2))
                     orl.write('\t')
                     orl.write(str(v2))
-            orl.write('\n')
+                    orl.write('\n')
     logger.info('仿真数据保存完成...仿真程序完成...')
 except:
     print 'in the except'
