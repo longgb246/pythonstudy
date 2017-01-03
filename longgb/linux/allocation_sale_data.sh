@@ -244,3 +244,12 @@ insert overwrite table dev.dev_allocation_sale_data partition(date_s,dc_id)
 		dev.dev_allocation_sku_data e 							-- 为什么用这个 e，没有出现任何的 e 的字段
 	on 
 		a.item_sku_id=e.sku_id and a.sale_ord_dt=e.date_s;"
+
+
+
+
+你把现在数据整理的思路，基本情况，难点介绍的稍微详细一些；表明这需要花很多功夫和时间。
+然后是调拨的策略：补货点+补货量计算+FDC之间的分配算法（权重法和贪婪算法）
+最好都能把计算的公式展示出来，贪心算法我之前手写过一个给建申，你没有的话，我发给你。谢谢，辛苦啦
+
+

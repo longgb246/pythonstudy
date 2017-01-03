@@ -423,15 +423,16 @@ class inventory_proess:
                     elif flag_rdc==1:
                         self.orders_retail_type[o[0]]='rdc'
                         for s in o[1].items():
-                            index=self.gene_index(f,s[0],d)
+                            index=self.gene_index('rdc',s[0],d)
                             self.rdc_inv[index]=self.rdc_inv[index]-min(s[1],self.rdc_inv[index])
                     elif flag_fdc_rdc==1:
                         self.orders_retail_type[o[0]]='fdc_rdc'
                         for s in o[1].items():
                             index=self.gene_index(f,s[0],d)
+                            rdc_index=self.gene_index('rdc',s[0],d)
                             sku_gap=s[1]-self.fdc_inv[index]['inv']
                             self.fdc_inv[index]['inv']=0 if sku_gap>=0 else sku_gap
-                            self.rdc_inv[index]=self.rdc_inv[index] if sku_gap<0 else self.rdc_inv[index]-sku_gap
+                            self.rdc_inv[rdc_index]=self.rdc_inv[rdc_index] if sku_gap<0 else self.rdc_inv[rdc_index]-sku_gap
                     else:
                         pass
             #更新下一天库存，将当天剩余库存标记为第二天库存,第二天到达库存会在开始增加上
