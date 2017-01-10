@@ -1,0 +1,5 @@
+hadoop fs -get /user/cmo_ipc/dev.db/dev_allocation_sale_data ./sale_data
+hadoop fs -get /user/cmo_ipc/dev.db/dev_allocation_sku_data ./sku_data
+#关于Allocation的说明文件
+该目录程序主要为调拨仿真程序，其中主要程序包括如下：
+1，inventory_process.py 库存处理程序
