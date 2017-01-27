@@ -96,4 +96,6 @@ def plot_axpie():
 if __name__ == '__main__':
     # plot_mix_method()
     plot_axpie()
-
+    # import numpy as np
+    # N = 20
+    # np.linspace(0.0, 2 * np.pi, N, endpoint=True)
