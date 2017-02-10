@@ -93,6 +93,7 @@ def plot_axpie():
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     fig1.savefig(r'F:\test.png')
 
+
 if __name__ == '__main__':
     # plot_mix_method()
     plot_axpie()
