@@ -7,7 +7,7 @@ mpl.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体
 mpl.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
 
 
-def plot_2d_to_3d():
+def plot_2dcollections3d():
     fig = plt.figure()
     ax = fig.gca(projection='3d')           # 设置 3d 的画质, 产生一个3d的坐标
     # =========================== 1、画出 z 轴 sin 图 ===========================
@@ -34,5 +34,24 @@ def plot_2d_to_3d():
     plt.show()
 
 
+def plot_bars3d():
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    # ax = fig.gca(projection='3d')
+    for c, z in zip(['r', 'g', 'b', 'y'], [30, 20, 10, 0]):
+        xs = np.arange(20)
+        ys = np.random.rand(20)             # [0, 1] 均匀分布
+        cs = [c] * len(xs)
+        cs[0] = 'c'
+        ax.bar(xs, ys, zs=z, zdir='y', color=cs, alpha=0.8)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.view_init(elev=20, azim=-35)         # elev是高度角度，azim是平面角度
 
+
+if __name__ == '__main__':
+    # plot_2dcollections3d()
+    plot_bars3d()
 
