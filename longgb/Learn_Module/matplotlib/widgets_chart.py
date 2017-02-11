@@ -65,6 +65,35 @@ def plot_slider():
     cursor = Cursor(ax, useblit=True, color='#C44E52', linewidth=2, linestyle='--')
 
 
+# ======================== 自己 ========================
+def script_hist():
+    from matplotlib.widgets import Cursor, Slider, Button, RadioButtons
+    plt.style.use('ggplot')
+    # plt.style.use('seaborn-darkgrid')
+    # plt.style.use('classic')
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.subplots_adjust(bottom=0.25)
+    data_num = 50
+    data = np.random.randn(data_num)
+    auto_pic = ax.hist(data)
+    auto_pic[2]
+    ymin, ymax = plt.ylim()
+    ax.set_ylim((ymin - 1, ymax + 1))
+    axfreq = plt.axes([0.2, 0.1, 0.6, 0.05])
+    sfreq = Slider(axfreq, 'Number_n', 5, 10000, valinit=data_num, valfmt='%1.f')
+    button = Button(axfreq, 'Reset', hovercolor='0.975')
+    def update(val):
+        sval = sfreq.val
+
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
     plot_cursor()
     plot_slider()
