@@ -7,7 +7,6 @@
 from mpl_toolkits.mplot3d import Axes3D             # 3d 库
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 from pylab import mpl
 mpl.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体
