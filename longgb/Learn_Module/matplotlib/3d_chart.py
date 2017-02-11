@@ -1,6 +1,13 @@
 #-*- coding:utf-8 -*-
+# 绿色：#6AB27B
+# 土色：#a27712
+# 浅紫色：#8172B2
+# 蓝色：#4C72B0
+# 红色：#C44E52
 from mpl_toolkits.mplot3d import Axes3D             # 3d 库
 import numpy as np
+import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from pylab import mpl
 mpl.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体
@@ -51,7 +58,256 @@ def plot_bars3d():
     ax.view_init(elev=20, azim=-35)         # elev是高度角度，azim是平面角度
 
 
+def plot_contour3d():
+    from mpl_toolkits.mplot3d import axes3d
+    from matplotlib import cm
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    # ax = fig.gca(projection='3d')
+    X, Y, Z = axes3d.get_test_data(0.05)
+    # 样式1
+    cset = ax.contour(X, Y, Z, cmap=cm.coolwarm)
+    # 样式2
+    cset = ax.contour(X, Y, Z, extend3d=True, cmap=cm.coolwarm)
+
+
+def plot_contour3d2():
+    from mpl_toolkits.mplot3d import axes3d
+    from matplotlib import cm
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    X, Y, Z = axes3d.get_test_data(0.05)
+    ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)                   # 画表面
+    cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)         # 画侧面？奇怪
+    cset = ax.contour(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
+    cset = ax.contour(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
+    ax.set_xlabel('X')
+    ax.set_xlim(-40, 40)
+    ax.set_ylabel('Y')
+    ax.set_ylim(-40, 40)
+    ax.set_zlabel('Z')
+    ax.set_zlim(-100, 100)
+
+
+def plot_contourf3d():
+    from mpl_toolkits.mplot3d import axes3d
+    from matplotlib import cm
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    X, Y, Z = axes3d.get_test_data(0.05)
+    # =============================== 样式1 ================================
+    cset = ax.contourf(X, Y, Z, cmap=cm.coolwarm)
+    # =============================== 样式2 ================================
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
+    cset = ax.contourf(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+    cset = ax.contourf(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
+    cset = ax.contourf(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
+    ax.set_xlabel('X')
+    ax.set_xlim(-40, 40)
+    ax.set_ylabel('Y')
+    ax.set_ylim(-40, 40)
+    ax.set_zlabel('Z')
+    ax.set_zlim(-100, 100)
+
+
+def plot_custom_shaded_3d_surface():
+    # 还没有搞清楚这个代码的意思。
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import cbook
+    from matplotlib import cm
+    from matplotlib.colors import LightSource
+    filename = cbook.get_sample_data('jacksboro_fault_dem.npz', asfileobj=False)
+    with np.load(filename) as dem:
+        z = dem['elevation']
+        nrows, ncols = z.shape
+        x = np.linspace(dem['xmin'], dem['xmax'], ncols)
+        y = np.linspace(dem['ymin'], dem['ymax'], nrows)
+        x, y = np.meshgrid(x, y)
+    region = np.s_[5:50, 5:50]
+    x, y, z = x[region], y[region], z[region]
+    fig, ax = plt.subplots(subplot_kw=dict(projection='3d'))
+    ls = LightSource(270, 45)
+    rgb = ls.shade(z, cmap=cm.gist_earth, vert_exag=0.1, blend_mode='soft')
+    surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, facecolors=rgb, linewidth=0, antialiased=False, shade=False)
+
+
+def plot_hist3d():
+    # 效果很不好，不算是想要的
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import cm
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    x, y = np.random.rand(2, 100)*4                 # 2*100 的随机数
+    hist, xedges, yedges = np.histogram2d(x, y, bins=4, range=[[0,4], [0,4]])           # 生成2*2的平面的坐标的高低
+    xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25)
+    xpos = xpos.flatten('F')                        # 竖着拉伸成一个数组
+    ypos = ypos.flatten('F')
+    zpos = np.zeros_like(xpos)                      # 生成全部是 0 的np数组，规格和xpos一样
+    dx = 0.5 * np.ones_like(zpos)                   # 生成全部是 1 的np数组，规格和zpos一样
+    dy = dx.copy()
+    dz = hist.flatten()
+    ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='#6AB27B', zsort='average')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+
+def plot_lines3d():
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()          # 默认：mpl.rcParams['figure.figsize']=[8.0, 6.0]
+    ax = fig.add_subplot(111, projection='3d')
+    theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
+    z = np.linspace(-2, 2, 100)
+    r = z**2 + 1
+    x = r * np.sin(theta)
+    y = r * np.cos(theta)
+    ax.plot(x, y, z, label='parametric curve', color='#4C72B0')
+    ax.legend()
+
+
+def plot_lorenz_attractor():
+    def lorenz(x, y, z, s=10, r=28, b=2.667):
+        x_dot = s * (y - x)
+        y_dot = r * x - y - x * z
+        z_dot = x * y - b * z
+        return x_dot, y_dot, z_dot
+    dt = 0.01
+    stepCnt = 10000
+    # Need one more for the initial values
+    xs = np.empty((stepCnt + 1,))
+    ys = np.empty((stepCnt + 1,))
+    zs = np.empty((stepCnt + 1,))
+    # Setting initial values
+    xs[0], ys[0], zs[0] = (0., 1., 1.05)
+    # Stepping through "time".
+    for i in range(stepCnt):
+        # Derivatives of the X, Y, Z state
+        x_dot, y_dot, z_dot = lorenz(xs[i], ys[i], zs[i])
+        xs[i + 1] = xs[i] + (x_dot * dt)
+        ys[i + 1] = ys[i] + (y_dot * dt)
+        zs[i + 1] = zs[i] + (z_dot * dt)
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.plot(xs, ys, zs, lw=0.5, color='#4C72B0')
+    ax.set_xlabel("X Axis")
+    ax.set_ylabel("Y Axis")
+    ax.set_zlabel("Z Axis")
+    ax.set_title("Lorenz Attractor")
+
+
+def plot_mixed_subplots():
+    from mpl_toolkits.mplot3d import Axes3D
+    def f(t):
+        s1 = np.cos(2*np.pi*t)
+        e1 = np.exp(-t)
+        return np.multiply(s1, e1)
+    t1 = np.arange(0, 5, 0.1)
+    t2 = np.arange(0, 5, 0.02)
+    t3 = np.arange(0, 2, 0.01)
+    fig = plt.figure(figsize=plt.figaspect(2.0))
+    fig.suptitle('A tale of 2 subplots')
+    ax = fig.add_subplot(2, 1, 1)
+    l = ax.plot(t1, f(t1), 'bo', t2, f(t2), 'k--', markerfacecolor='green')
+    ax.grid(True)
+    ax.set_ylabel('Damped oscillation')
+    ax.set_title('Damped oscillation')
+    ax2 = fig.add_subplot(2, 1, 2, projection='3d')
+    X = np.arange(-5, 5, 0.25)
+    Y = np.arange(-5, 5, 0.25)
+    X, Y = np.meshgrid(X, Y)
+    R = np.sqrt(X**2 + Y**2)
+    Z = np.sin(R)
+    surf = ax2.plot_surface(X, Y, Z, rstride=1, cstride=1, linewidth=0, antialiased=False, color='#4C72B0')
+    ax2.set_zlim3d(-1, 1)
+    ax2.set_title('A picture')
+
+
+def plot_pathpatch():
+    from matplotlib.patches import Circle, PathPatch
+    from mpl_toolkits.mplot3d import Axes3D
+    import mpl_toolkits.mplot3d.art3d as art3d
+    from matplotlib.text import TextPath
+    from matplotlib.transforms import Affine2D
+    def text3d(ax, xyz, s, zdir="z", size=None, angle=0, usetex=False, **kwargs):
+        x, y, z = xyz
+        if zdir == "y":
+            xy1, z1 = (x, z), y
+        elif zdir == "y":
+            xy1, z1 = (y, z), x
+        else:
+            xy1, z1 = (x, y), z
+        text_path = TextPath((0, 0), s, size=size, usetex=usetex)
+        trans = Affine2D().rotate(angle).translate(xy1[0], xy1[1])
+        p1 = PathPatch(trans.transform_path(text_path), **kwargs)
+        ax.add_patch(p1)
+        art3d.pathpatch_2d_to_3d(p1, z=z1, zdir=zdir)
+
+
+
+
+
+# ================================= 自己函数 =================================
+def self_bars3d_demo(n):
+    data_demo = []
+    for x in xrange(n):
+        ys = np.random.rand(10) * 10  # [0, 1] 均匀分布
+        data_demo.append(ys)
+    data_demo = pd.DataFrame(data_demo).T
+    data_demo.columns = [str(1998 + x) for x in range(n)]
+    self_bars3d(data_demo)
+
+
+def self_bars3d(data):
+    '''
+    data: 为数据框，传入数据仅仅包含以年份，如'1998'等包含的列
+    '''
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    data_len = len(data.columns)
+    c_color = ['r', 'g', 'b', 'y', 'c'] * 10
+    c_color = c_color[:data_len]
+    i = 0
+    for c, z in zip(c_color, data.columns):
+        i += 1
+        xs = np.arange(len(data[z]))
+        ys = data[z]
+        cs = [c] * len(xs)
+        ax.bar(xs, ys, zs=i, zdir='y', color=cs, alpha=0.8)
+    ax.set_xlabel('X')
+    ax.set_ylabel(u'Y（年份）')
+    ax.set_ylim3d(1, data_len)
+    if data_len == 1:
+        data_columns = [""] * 2 + list(data.columns) + [""] * 2
+    elif data_len == 2:
+        print list(data.columns)
+        print list(data.columns)[0]
+        data_columns = [list(data.columns)[0]] + [""] * 4 + [list(data.columns)[1]]
+    elif data_len <= 5:
+        data_columns = []
+        for x in data.columns:
+            data_columns.append(x)
+            if x != data.columns[-1]:
+                data_columns.append('')
+    else:
+        data_columns = list(data.columns)
+    ax.set_yticklabels(data_columns)
+    ax.set_zlabel('Z')
+    ax.view_init(elev=20, azim=-35)  # elev是高度角度，azim是平面角度
+
+
+
+
 if __name__ == '__main__':
     # plot_2dcollections3d()
-    plot_bars3d()
-
+    # plot_bars3d()
+    # plot_contour3d()
+    # plot_contour3d2()
+    # plot_contourf3d()
+    # for i in xrange(10):
+    #     self_bars3d_demo(i)
+    plot_lorenz_attractor()
+    pass
