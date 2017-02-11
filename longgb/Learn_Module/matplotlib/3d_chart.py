@@ -224,28 +224,240 @@ def plot_mixed_subplots():
     ax2.set_title('A picture')
 
 
-def plot_pathpatch():
-    from matplotlib.patches import Circle, PathPatch
+def plot_quiver3d():
+    # 看不清楚
+    from mpl_toolkits.mplot3d import axes3d
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    x, y, z = np.meshgrid(np.arange(-0.8, 1, 0.2), np.arange(-0.8, 1, 0.2), np.arange(-0.8, 1, 0.8))
+    u = np.sin(np.pi * x) * np.cos(np.pi * y) * np.cos(np.pi * z)
+    v = -np.cos(np.pi * x) * np.sin(np.pi * y) * np.cos(np.pi * z)
+    w = (np.sqrt(2.0 / 3.0) * np.cos(np.pi * x) * np.cos(np.pi * y) * np.sin(np.pi * z))
+    ax.quiver(x, y, z, u, v, w, length=0.1)
+
+
+# 旋转动图
+def plot_rotate_axes3d():
+    from mpl_toolkits.mplot3d import axes3d
+    fig = plt.figure(figsize=(8,18))
+    ax = fig.add_subplot(211, projection='3d')
+    X, Y, Z = axes3d.get_test_data(0.1)
+    ax.plot_wireframe(X, Y, Z, rstride=5, cstride=5)                # 轮廓图
+    ax2 = fig.add_subplot(212, projection='3d')
+    ax2.plot_surface(X, Y, Z, rstride=5, cstride=5, linewidth=0, color='#4C72B0')
+    for angle in range(0, 360):
+        ax.view_init(30, angle)
+        ax2.view_init(30, angle)
+        plt.draw()
+        plt.pause(0.05)
+
+
+def plot_scatter3d():
     from mpl_toolkits.mplot3d import Axes3D
-    import mpl_toolkits.mplot3d.art3d as art3d
-    from matplotlib.text import TextPath
-    from matplotlib.transforms import Affine2D
-    def text3d(ax, xyz, s, zdir="z", size=None, angle=0, usetex=False, **kwargs):
-        x, y, z = xyz
-        if zdir == "y":
-            xy1, z1 = (x, z), y
-        elif zdir == "y":
-            xy1, z1 = (y, z), x
-        else:
-            xy1, z1 = (x, y), z
-        text_path = TextPath((0, 0), s, size=size, usetex=usetex)
-        trans = Affine2D().rotate(angle).translate(xy1[0], xy1[1])
-        p1 = PathPatch(trans.transform_path(text_path), **kwargs)
-        ax.add_patch(p1)
-        art3d.pathpatch_2d_to_3d(p1, z=z1, zdir=zdir)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    n = 100
+    def randrange(n, vmin, vmax):
+        return (vmax - vmin) * np.random.rand(n) + vmin
+    for c, m, zlow, zhigh in [('r', 'o', -50, -25), ('b', '^', -30, -5)]:
+        xs = randrange(n, 23, 32)
+        ys = randrange(n, 0, 100)
+        zs = randrange(n, zlow, zhigh)
+        ax.scatter(xs, ys, zs, c=c, marker=m)
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    for angle in range(360):
+        ax.view_init(30, angle)
+        plt.draw()
+        plt.pause(0.001)
 
 
+def plot_subplot3d():
+    from mpl_toolkits.mplot3d.axes3d import Axes3D, get_test_data
+    from matplotlib import cm
+    fig = plt.figure(figsize=(15,7))
+    fig.suptitle("Two Pictures")
+    ax = fig.add_subplot(121, projection='3d')
+    X = np.arange(-5, 5, 0.25)
+    Y = np.arange(-5, 5, 0.25)
+    X, Y = np.meshgrid(X, Y)
+    R = np.sqrt(X**2 + Y**2)
+    Z = np.sin(R)
+    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0)
+    ax.set_zlim(-1.01, 1.01)
+    ax.set_title("First..")
+    fig.colorbar(surf, shrink=0.5, aspect=10)
+    ax2 = fig.add_subplot(122, projection='3d')
+    X, Y, Z = get_test_data(0.05)
+    ax2.plot_wireframe(X, Y, Z, rstride=10, cstride=10)
+    ax2.set_title("Second..")
+    for angle in range(100):
+        ax.view_init(30, angle)
+        ax2.view_init(30, angle)
+        plt.draw()
+        plt.pause(0.001)
 
+
+# 调整显示格式
+def plot_surface3d():
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib.ticker import LinearLocator, FormatStrFormatter
+    from matplotlib import cm
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    X = np.arange(-5, 5, 0.25)
+    Y = np.arange(-5, 5, 0.25)
+    X, Y = np.meshgrid(X, Y)
+    R = np.sqrt(X ** 2 + Y ** 2)
+    Z = np.sin(R)
+    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, linewidth=0, antialiased=False, rstride=1, cstride=1)
+    ax.set_zlim(-1.01, 1.01)
+    ax.zaxis.set_major_locator(LinearLocator(10))
+    ax.zaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    fig.colorbar(surf, shrink=0.5, aspect=10)
+
+
+def plot_ball():
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    u = np.linspace(0, 2*np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x = 10 * np.outer(np.cos(u), np.sin(v))
+    y = 10 * np.outer(np.sin(u), np.sin(v))
+    z = 10 * np.outer(np.ones(np.size(u)), np.cos(v))
+    ax.plot_surface(x, y, z, color='#4C72B0', alpha=0.7)
+
+
+# 特殊颜色
+def plot_surface3d():
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    r = np.linspace(0, 1.25, 50)
+    p = np.linspace(0, 2 * np.pi, 50)
+    R, P = np.meshgrid(r, p)
+    Z = ((R**2 - 1)**2)
+    X, Y = R * np.cos(P), R * np.sin(P)
+    ax.plot_surface(X, Y, Z, cmap=plt.cm.YlGnBu_r, rstride=1, cstride=1, linewidth=0)
+    ax.set_zlim(0, 1)
+    ax.set_xlabel(r'$\phi_\mathrm{real}$')
+    ax.set_ylabel(r'$\phi_\mathrm{im}$')
+    ax.set_zlabel(r'$V(\phi)$')
+
+
+# 添加文字
+def plot_text3d():
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    zdirs = (None, 'x', 'y', 'z', (1, 1, 0), (1, 1, 1))         # (1, 1, 0)表示方位
+    xs = (1, 4, 4, 9, 4, 1)
+    ys = (2, 5, 8, 10, 1, 2)
+    zs = (10, 3, 8, 9, 1, 8)
+    for zdir, x, y, z in zip(zdirs, xs, ys, zs):
+        label = '(%d, %d, %d), dir=%s' % (x, y, z, zdir)
+        ax.text(x, y, z, label, zdir)
+        ax.plot([x], [y], [z], color='#4C72B0', marker='o')
+    ax.text(9, 0, 0, "red", color='red')
+    ax.text2D(0.05, 0.95, "2D Text", transform=ax.transAxes)
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.set_zlim(0, 10)
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Z axis')
+
+
+# np 独特用法 np.repeat(angles[..., np.newaxis], n_radii, axis=1) 拆成竖着的  .flatten()反向操作
+def plot_trisurf():
+    from mpl_toolkits.mplot3d import Axes3D
+    n_radii = 8
+    n_angles = 36
+    radii = np.linspace(0.125, 1.0, n_radii)
+    angles = np.linspace(0, 2 * np.pi, n_angles, endpoint=False)
+    angles = np.repeat(angles[..., np.newaxis], n_radii, axis=1)           # 重复
+    x = np.append(0, (radii*np.cos(angles)).flatten())
+    y = np.append(0, (radii*np.sin(angles)).flatten())
+    z = np.sin(-x * y)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_trisurf(x, y, z, linewidth=0.2, antialiased=True, color='#4C72B0')
+
+
+def plot_trisurf2():
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.tri as mtri
+    fig = plt.figure(figsize=plt.figaspect(0.5))
+    # ============
+    # First plot
+    # ============
+    u = np.linspace(0, 2.0 * np.pi, endpoint=True, num=50)
+    v = np.linspace(-0.5, 0.5, endpoint=True, num=10)
+    u, v = np.meshgrid(u, v)
+    u, v = u.flatten(), v.flatten()
+    x = (1 + 0.5 * v * np.cos(u / 2.0)) * np.cos(u)
+    y = (1 + 0.5 * v * np.cos(u / 2.0)) * np.sin(u)
+    z = 0.5 * v * np.sin(u / 2.0)
+    tri = mtri.Triangulation(u, v)
+    ax = fig.add_subplot(1, 2, 1, projection='3d')
+    ax.plot_trisurf(x, y, z, triangles=tri.triangles, cmap=plt.cm.Spectral, linewidth=0)
+    ax.set_zlim(-1, 1)
+    # ============
+    # Second plot
+    # ============
+    n_angles = 36
+    n_radii = 8
+    min_radius = 0.25
+    radii = np.linspace(min_radius, 0.95, n_radii)
+    angles = np.linspace(0, 2 * np.pi, n_angles, endpoint=False)
+    angles = np.repeat(angles[..., np.newaxis], n_radii, axis=1)
+    angles[:, 1::2] += np.pi / n_angles
+    x = (radii * np.cos(angles)).flatten()
+    y = (radii * np.sin(angles)).flatten()
+    z = (np.cos(radii) * np.cos(angles * 3.0)).flatten()
+    triang = mtri.Triangulation(x, y)
+    xmid = x[triang.triangles].mean(axis=1)
+    ymid = y[triang.triangles].mean(axis=1)
+    mask = np.where(xmid ** 2 + ymid ** 2 < min_radius ** 2, 1, 0)
+    triang.set_mask(mask)
+    ax = fig.add_subplot(1, 2, 2, projection='3d')
+    ax.plot_trisurf(triang, z, cmap=plt.cm.CMRmap, linewidth=0)
+
+
+# 海浪动画
+def plot_wire3d_animation():
+    from mpl_toolkits.mplot3d import axes3d
+    import time
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    xs = np.linspace(-1, 1, 50)
+    ys = np.linspace(-1, 1, 50)
+    X, Y = np.meshgrid(xs, ys)
+    ax.set_zlim(-1, 1)
+    wframe = None
+    tstart = time.time()
+    def generate(X, Y, phi):
+        R = 1 - np.sqrt(X**2 + Y**2)
+        return np.cos(2 * np.pi * X + phi) * R
+    for phi in np.linspace(0, 180. / np.pi, 100):
+        if wframe:
+            ax.collections.remove(wframe)
+        Z = generate(X, Y, phi)
+        wframe = ax.plot_wireframe(X, Y, Z, rstride=2, cstride=2, color='#4C72B0')
+        plt.pause(0.05)
+    print('Average FPS: %f' % (100 / (time.time() - tstart)))
+
+
+def plot_wire3d_zero_stride():
+    from mpl_toolkits.mplot3d import axes3d
+    fig, [ax1, ax2] = plt.subplots(2, 1, figsize=(8, 12), subplot_kw={'projection': '3d'})
+    X, Y, Z = axes3d.get_test_data(0.05)
+    ax1.plot_wireframe(X, Y, Z, rstride=10, cstride=0)
+    ax1.set_title("Column (x) stride set to 0")
+    ax2.plot_wireframe(X, Y, Z, rstride=0, cstride=10)
+    ax2.set_title("Row (y) stride set to 0")
 
 
 # ================================= 自己函数 =================================
@@ -259,6 +471,7 @@ def self_bars3d_demo(n):
     self_bars3d(data_demo)
 
 
+# 画多年的 bar 图
 def self_bars3d(data):
     '''
     data: 为数据框，传入数据仅仅包含以年份，如'1998'等包含的列
@@ -299,8 +512,6 @@ def self_bars3d(data):
     ax.view_init(elev=20, azim=-35)  # elev是高度角度，azim是平面角度
 
 
-
-
 if __name__ == '__main__':
     # plot_2dcollections3d()
     # plot_bars3d()
@@ -309,5 +520,6 @@ if __name__ == '__main__':
     # plot_contourf3d()
     # for i in xrange(10):
     #     self_bars3d_demo(i)
-    plot_lorenz_attractor()
+    # plot_lorenz_attractor()
+    plot_subplot3d()
     pass
