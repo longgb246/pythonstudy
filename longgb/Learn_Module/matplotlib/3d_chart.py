@@ -13,7 +13,6 @@ mpl.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体
 mpl.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
 
 
-
 def plot_2dcollections3d():
     fig = plt.figure()
     ax = fig.gca(projection='3d')           # 设置 3d 的画质, 产生一个3d的坐标
