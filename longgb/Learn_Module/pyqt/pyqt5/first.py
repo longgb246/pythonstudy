@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 """
@@ -12,6 +11,7 @@ ZetCode PyQt5 教程
 
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget
+
 
 
 if __name__ == '__main__':
