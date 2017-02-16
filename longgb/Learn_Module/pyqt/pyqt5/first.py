@@ -1,14 +1,4 @@
 # -*- coding: utf-8 -*-
-
-"""
-ZetCode PyQt5 教程
-在这个例子中, 我们用PyQt5创建了一个简单的窗口。
-
-作者: Jan Bodnar
-网站: zetcode.com
-最后一次编辑: January 2015
-"""
-
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget
 
