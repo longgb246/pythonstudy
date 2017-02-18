@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 from pylab import mpl
 mpl.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体
 mpl.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
+import warnings
+warnings.filterwarnings('ignore')
 
 
 def plot_2dcollections3d():
