@@ -17,7 +17,6 @@ httpClient = None
 myurls = '/api/trans/vip/translate'
 
 
-
 class buttonRedrect(QtGui.QWidget):                       # 继承
     def __init__(self):
         super(buttonRedrect, self).__init__()               # 继承
@@ -63,11 +62,11 @@ class buttonRedrect(QtGui.QWidget):                       # 继承
         self.okButton2.resize(80, 30)
 
         # ===================================== 标签 =====================================
-        self.labelEn2CH = QtGui.QLabel(u'英文 翻译为 中文', self)
+        self.labelEn2CH = QtGui.QLabel(u'[ 英文 ] 翻译为 [ 中文 ]', self)
         self.labelEn2CH.move(20,10)
         # self.labels.setGeometry(50, 50, 150, 50)
         # self.labels.mouseReleaseEvent = self.events
-        self.labelCH2En = QtGui.QLabel(u'中文 翻译为 英文', self)
+        self.labelCH2En = QtGui.QLabel(u'[ 中文 ] 翻译为 [ 英文 ]', self)
         self.labelCH2En.move(20,200)
 
         # ===================================== 文本框 ===================================
@@ -189,8 +188,8 @@ class buttonRedrect(QtGui.QWidget):                       # 继承
             pass
 
 
-
-app = QtGui.QApplication(sys.argv)
-buttonr = buttonRedrect()
-buttonr.show()
-sys.exit(app.exec_())
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    buttonr = buttonRedrect()
+    buttonr.show()
+    sys.exit(app.exec_())
