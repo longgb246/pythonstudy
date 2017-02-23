@@ -91,17 +91,18 @@ class buttonRedrect(QtGui.QWidget):                       # 继承
         # self.setLayout(vbox)
 
     def fanyi_en2ch(self, event):
+        q = str(self.edit_text.text())
         fromLang = 'en'  # 从..语言翻译
         toLang = 'zh'  # 翻译到..语言
-        self.fanyi(fromLang, toLang)
+        self.fanyi(fromLang, toLang, q)
 
     def fanyi_ch2en(self, event):
+        q = str(self.edit_text2.text())
         fromLang = 'zh'  # 从..语言翻译
         toLang = 'en'  # 翻译到..语言
-        self.fanyi(fromLang, toLang)
+        self.fanyi(fromLang, toLang, q)
 
-    def fanyi(self, fromLang, toLang):
-        q = str(self.edit_text2.text())
+    def fanyi(self, fromLang, toLang, q):
         # q = 'apple'  # 翻译语句
         salt = random.randint(32768, 65536)  # 随机数
         sign = appid + q + str(salt) + secretKey  # sign
@@ -115,7 +116,7 @@ class buttonRedrect(QtGui.QWidget):                       # 继承
             response = httpClient.getresponse()
             response_dict2 = response.read()
             response_dict2 = json.loads(response_dict2)
-            # print response_dict2
+            print response_dict2
             print response_dict2["trans_result"][0]["dst"]
             result = response_dict2["trans_result"][0]["dst"]
             # uni_result = result.decode("unicode-escape")
