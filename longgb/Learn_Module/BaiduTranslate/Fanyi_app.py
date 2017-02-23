@@ -17,9 +17,9 @@ httpClient = None
 myurls = '/api/trans/vip/translate'
 
 
-class buttonRedrect(QtGui.QWidget):                       # 继承
+class fanyiApp(QtGui.QWidget):                       # 继承
     def __init__(self):
-        super(buttonRedrect, self).__init__()               # 继承
+        super(fanyiApp, self).__init__()               # 继承
         self.initUI()
 
     def initUI(self):
@@ -121,10 +121,10 @@ class buttonRedrect(QtGui.QWidget):                       # 继承
             result = response_dict2["trans_result"][0]["dst"]
             # uni_result = result.decode("unicode-escape")
             if fromLang == 'en':
-                print "en"
+                # print "en"
                 self.fanyi_show_en2ch(result)
             else:
-                print "ch"
+                # print "ch"
                 self.fanyi_show_ch2en(result)
         except Exception, e:
             print e
@@ -191,6 +191,6 @@ class buttonRedrect(QtGui.QWidget):                       # 继承
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    buttonr = buttonRedrect()
-    buttonr.show()
+    fanyi = fanyiApp()
+    fanyi.show()
     sys.exit(app.exec_())
