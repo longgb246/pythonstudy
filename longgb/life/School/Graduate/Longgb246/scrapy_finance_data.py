@@ -1,5 +1,6 @@
 #-*- coding:utf-8 -*-
 '''
+使用python27运行。
 该脚本用于抓取财务等基本信息。
 '''
 import tushare as ts

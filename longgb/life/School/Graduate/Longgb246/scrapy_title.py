@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 '''
+使用python27运行。
 该脚本用于单线程抓取新闻标题和相应的urls。
 '''
 import requests

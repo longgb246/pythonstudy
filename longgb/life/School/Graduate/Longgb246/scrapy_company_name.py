@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 '''
+使用python27运行。
 该脚本用于抓取公司名称和代码。
 存储于"F:\Learning\School_Master\Graduate\Codes_Data"下,命名为：
 "name_sha.txt":上海A股
