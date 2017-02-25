@@ -38,7 +38,7 @@ logging.getLogger('').addHandler(logger)
 # 用于解决问题：
 # HTTPConnectionPool(host='dds.cr.usgs.gov', port=80): Max retries exceeded with url: /ltaauth//sno18/ops/l1/2016/138/037/LC81380372016038LGN00.tar.gz?id=stfb9e0bgrpmc4j9lcg45ikrj1&iid=LC81380372016038LGN00&did=227966479&ver=production (Caused by NewConnectionError('<requests.packages.urllib3.connection.HTTPConnection object at 0x105b9d210>: Failed to establish a new connection: [Errno 65] No route to host',))
 # 1、增加重试连接次数
-requests.adapters.DEFAULT_RETRIES = 5
+requests.adapters.DEFAULT_RETRIES = 30
 # DEFAULT_OPEN_PAGE_FREQUENCY = 1
 # 2、关闭多余的连接
 s = requests.session()
@@ -106,7 +106,7 @@ def loadUrls(read_file, f_i):
         flag = 1
     for file in root_files:
         logging.warning('[ File ]' + file)
-        if file == '600251':
+        if file == '600647':
             flag = 1
         if flag == 1:
             logging.warning('Run ...')
@@ -120,7 +120,11 @@ def loadUrls(read_file, f_i):
                 for line in load_urls:
                     data = line.replace('\n','').split('|')
                     logging.warning('[ News ]' + data[0] + ' | ' + data[1])
-                    content = parserUrl(data[1])
+                    try:
+                        content = parserUrl(data[1])
+                    except:
+                        logging.warning(file)
+                        exit()
                     # time.sleep(DEFAULT_OPEN_PAGE_FREQUENCY)
                     f.write(line.replace('\n',''))
                     f.write("|")
@@ -131,6 +135,7 @@ def runGetContent():
     for i, read_file in enumerate(read_files):
         logging.warning('[ Root File ]' + read_file)
         loadUrls(read_file, i)
+        exit()
 
 
 if __name__ == '__main__':

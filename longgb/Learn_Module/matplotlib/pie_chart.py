@@ -80,6 +80,7 @@ def plot_axpie():
     '''
     import matplotlib.pyplot as plt
     from pylab import mpl
+    # import Image
     mpl.rcParams['font.sans-serif'] = ['SimHei']          # 指定默认字体
     mpl.rcParams['axes.unicode_minus'] = False              # 解决保存图像是负号'-'显示为方块的问题
     # import seaborn as sns                                   # seaborn不起作用。
@@ -91,7 +92,10 @@ def plot_axpie():
     ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', shadow=True, startangle=90, colors=colors)
     # startangle：第一个（15）开始的角度，shadow：阴影，autopct：自动百分比显示
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    fig1.savefig(r'F:\test.png')
+    fig1.savefig(r'C:\Users\longgb246\Desktop\test.eps')
+    # fig1.savefig(r'C:\Users\longgb246\Desktop\test.jpeg')
+    # fig1.savefig(r'F:\test.png')
+    # Image.open(r'F:\test.png').save(r'F:\test.jpg','JPEG')
 
 
 if __name__ == '__main__':
