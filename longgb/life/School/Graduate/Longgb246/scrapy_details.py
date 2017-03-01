@@ -43,6 +43,7 @@ requests.adapters.DEFAULT_RETRIES = 30
 # 2、关闭多余的连接
 s = requests.session()
 s.keep_alive = False
+# (1219+52+50+601+5371+834)*400
 
 
 def parserUrl(url):
@@ -100,13 +101,15 @@ def loadUrls(read_file, f_i):
     # read_file = read_files[0]
     root_path = read_path + os.sep + read_file
     root_files = os.listdir(root_path)
-    if f_i == 0:
-        flag = 0
-    else:
-        flag = 1
+    # if f_i == 0:
+    #     flag = 0
+    # else:
+    #     flag = 1
+    flag = 0
+    f_i = 1
     for file in root_files:
         logging.warning('[ File ]' + file)
-        if file == '600647':
+        if file == '000020':
             flag = 1
         if flag == 1:
             logging.warning('Run ...')
@@ -134,8 +137,10 @@ def loadUrls(read_file, f_i):
 def runGetContent():
     for i, read_file in enumerate(read_files):
         logging.warning('[ Root File ]' + read_file)
-        loadUrls(read_file, i)
-        exit()
+        if i == 4:
+            loadUrls(read_file, i)
+            print read_file, "   Over!"
+            exit()
 
 
 if __name__ == '__main__':
