@@ -1,0 +1,50 @@
+ create table dev.dev_inv_opt_simulation_data_sku_param
+   as
+   select
+   B.sku_id,
+   b.dt,
+   case when b.dt> a.start_date and b.dt<= end_date and b.item_third_cate_cd=a.lv3id and a.lv3id is not null then 3
+       when b.dt> a.start_date and b.dt<= end_date and b.item_second_cate_cd=a.lv2id and a.lv2id is not null then 2
+       when b.dt> a.start_date and b.dt<= end_date and b.item_first_cate_cd=a.lv1id  and a.lv1id is not null then 1
+       when b.dt> a.start_date and b.dt<= end_date and a.lv3id is null and a.lv2id is null and a.lv1id is null then 0
+       else -1 end   label,
+    safestock,
+    maxstock
+   from
+   (select
+            *
+    from
+            dev.tmp_dev_fdc_stock_setting_chain_605
+    where
+            end_date             >= '2016-12-01'
+            and last_update_date <= '2016-12-31'
+            and start_date > '2016-09-08') A,
+    dev.dev_inv_opt_simulation_data_sku_type B
+
+
+create table dev.dev_inv_opt_simulation_data_sku_param_01
+as
+select *
+from
+(select
+sku_id,
+dt,
+safestock,
+maxstock,
+row_number() over(partition by sku_id,dt order by label desc) as param_order
+from
+dev.dev_inv_opt_simulation_data_sku_param
+where label<>-1) a
+where param_order=1
+
+
+    create table dev.dev_inv_opt_simulation_data_pre_mid02
+    as
+    select
+    A.*,
+    B.safestock,
+    maxstock
+    from
+    dev.dev_inv_opt_simulation_data_pre_mid A left join
+    dev.dev_inv_opt_simulation_data_sku_param_01 B
+    on a.sku_id=b.sku_id and a.dt=b.dt

@@ -1,0 +1,25 @@
+    #计算某个FDC的某个SKU的补货点
+    def calc_lop(self,cr=0.99):
+        #sku的FDC销量预测，与RDC的cv系数
+        sku_sales=[]
+        sku_std=[]
+        #具体的fdc对应的送货时长分布
+        fdc_vlt=[]
+        fdc_vlt_porb=[]
+        #计算送货期间的需求量
+        demand_mean = [sum(sku_sales[:(l+1)]) for l in fdc_vlt]
+        # VLT期间总销量均值的概率分布
+        demand_mean_distribution = rv_discrete(values=(demand_mean, fdc_vlt_porb))
+        part1 = demand_mean_distribution.mean()
+        # 给定VLT，计算总销量的方差
+        demand_var = [sum([i ** 2 for i in sku_std[:(l+1)]]) for l in fdc_vlt]
+        # demand_std = np.sqrt(demand_var)
+        # VLT期间总销量方差的概率分布
+        demand_var_distribution = rv_discrete(values=(demand_var, fdc_vlt_porb))
+        # 条件期望的方差
+        part21 = demand_mean_distribution.var()
+        # 条件方差的期望
+        part22 = demand_var_distribution.mean()
+        # 计算补货点
+        lop = np.ceil(part1 + norm.ppf(cr) * math.sqrt(part21 + part22 + 0.1))
+        return lop
