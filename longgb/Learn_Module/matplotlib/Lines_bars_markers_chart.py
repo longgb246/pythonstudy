@@ -37,13 +37,17 @@ def fill_between_demo():
     x = np.arange(0.0, 2, 0.01)
     y1 = np.sin(2 * np.pi * x)
     y2 = 1.2 * np.sin(4 * np.pi * x)
+
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)          # sharex 分享x轴坐标刻度，三个图都有x轴刻度，否则只有最下面的有
     # fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
     # 分开添加不可以指定是否共享同一 x 坐标轴。以后使用上面的形式开启图片。
     # fig = plt.figure()
     # ax1 = fig.add_subplot(311)
+    # ax1.set_xticklabels([''])
     # ax2 = fig.add_subplot(312)
+    # ax2.set_xticklabels([''])
     # ax3 = fig.add_subplot(313)
+
     ax1.fill_between(x, 0, y1)
     ax1.set_ylabel('between y1 and 0')
     ax2.fill_between(x, y1, 1)
