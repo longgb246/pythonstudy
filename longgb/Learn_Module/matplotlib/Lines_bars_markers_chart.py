@@ -1,6 +1,9 @@
 #-*- coding:utf-8 -*-
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 
 # 1、画横着的 bar 图, ax.barh
@@ -77,6 +80,7 @@ def fill_between_demo():
     ax.axhline(-theta, color='red', lw=2, alpha=0.5)
     ax.fill_between(x, 0, 1, where=y > theta, facecolor='green', alpha=0.5, transform=trans)
     ax.fill_between(x, 0, 1, where=y < -theta, facecolor='red', alpha=0.5, transform=trans)
+# 简单的图
 def fill_demo_features():
     x = np.linspace(0, 2*np.pi, 500)
     x_max = np.max(x) + (np.max(x) - np.min(x))*0.05
@@ -93,19 +97,41 @@ def fill_demo_features():
     ax.set_ylim([y_min,y_max])
     plt.show()
 
+# 3、设置虚线点
 def line_demo_dash_control():
     x = np.linspace(0, 10, 500)
-    dashes = [10, 5, 100, 5]        # 10 points on, 5 off, 100 on, 5 off
+    dashes = [10, 5, 100, 5]        # 10 points 画, 5 不画, 100 画, 5 不画，点数根据 x 的linspace的那个决定
     fig = plt.figure(figsize=(18,7))
     ax = fig.add_subplot(121)
     line1, = ax.plot(x, np.sin(x), '--', linewidth=2, label='Dashes set retroactively')     # 之所以用“，”，是因为想直接取返回的list中的第一个元素
     ax2 = fig.add_subplot(122)
     line2, = ax2.plot(x, np.sin(x), '--', linewidth=2, label='Dashes set retroactively')  # 之所以用“，”，是因为想直接取返回的list中的第一个元素
     line2.set_dashes(dashes)
-    line2, = ax.plot(x, -1 * np.sin(x), dashes=[30, 5, 10, 5], label='Dashes set proactively')
-
-
-    ax.legend(loc='lower right')
+    line2, = ax2.plot(x, -1 * np.sin(x), dashes=[30, 5, 10, 5], label='Dashes set proactively')
+    ax2.legend(loc='lower right')
+    plt.show()
+# nice_repr 为有用函数，处理原unicode的编码变为str
+def line_styles_reference():
+    color = 'cornflowerblue'
+    points = np.ones(5)  # Draw 5 points for each line
+    text_style = dict(horizontalalignment='right', verticalalignment='center', fontsize=12, fontdict={'family': 'monospace'})
+    # text_style 是一个 dict 的属性
+    def format_axes(ax):
+        ax.margins(0.2)                         # 设置自动边距
+        ax.set_axis_off()                       # 把坐标轴取消
+    def nice_repr(text):
+        return repr(text).lstrip('u')
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    linestyles = ['-', '--', '-.', ':']
+    for y, linestyle in enumerate(linestyles):
+        # y = 2
+        # linestyle = linestyles[2]
+        ax.text(-0.1, y, nice_repr(linestyle), **text_style)        # 这个地方使用属性的时候，要使用**在前面
+        # ax.text(-0.1, y, nice_repr(linestyle), text_style)
+        ax.plot(y * points, linestyle=linestyle, color=color, linewidth=3)
+        format_axes(ax)
+        ax.set_title('line styles')
     plt.show()
 
 

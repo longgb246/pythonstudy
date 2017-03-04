@@ -29,8 +29,8 @@ class fanyiApp(QtGui.QWidget):                       # 继承
 
         # ===================================== 窗口 =====================================
         self.setWindowTitle(u'百度翻译')                        # 设置窗口名称
-        # self.setWindowIcon(QtGui.QIcon(r"D:\Life\Photo\favicon.ico"))       # 设置Icon的图标
-        self.setWindowIcon(QtGui.QIcon(r"D:\Lgb\Self\favicon.ico"))       # 设置Icon的图标
+        self.setWindowIcon(QtGui.QIcon(r"D:\Life\Photo\favicon.ico"))       # 设置Icon的图标【家里】
+        # self.setWindowIcon(QtGui.QIcon(r"D:\Lgb\Self\favicon.ico"))       # 设置Icon的图标【公司】
         self.setGeometry(300, 300, 600, 400)
         # self.resize(300, 150)                                 # 设置窗口大小
         # self.move(300, 300)                                   # 设置位置
