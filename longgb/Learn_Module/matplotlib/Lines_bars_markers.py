@@ -243,6 +243,7 @@ def marker_reference():
 
 # 4、散点图
 # 4.1、散点图(指定点大小，把点边界取消)+legend透明的
+# ax.scatter(edgecolors='none')   ax.legend(framealpha=0.7)
 def scatter_with_legend():
     fig, ax = plt.subplots()
     for color in ['red', 'green', 'blue']:
@@ -256,9 +257,6 @@ def scatter_with_legend():
     # ax.legend()
     ax.grid(True)
     plt.show()
-
-
-
 
 
 if __name__ == '__main__':
