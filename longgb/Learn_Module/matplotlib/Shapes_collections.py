@@ -78,8 +78,49 @@ def artist_reference():
     plt.axis('off')
     plt.show()
     pass
-
-
+# 2、这样有点难
+def path_patch_demo():
+    import matplotlib.path as mpath
+    import matplotlib.patches as mpatches
+    fig, ax = plt.subplots()
+    Path = mpath.Path
+    path_data = [                           # 1、设置点
+        (Path.MOVETO, (1.58, -2.57)),       # 移动至(1.58, -2.57)
+        (Path.CURVE4, (0.35, -1.1)),        # 应该是样条曲线，以下为3点连续
+        (Path.CURVE4, (-1.75, 2.0)),
+        (Path.CURVE4, (0.375, 2.0)),
+        (Path.LINETO, (0.85, 1.15)),        # 直线
+        (Path.CURVE4, (2.2, 3.2)),
+        (Path.CURVE4, (3, 0.05)),
+        (Path.CURVE4, (2.0, -0.5)),
+        (Path.CLOSEPOLY, (1.58, -2.57)),    # 封闭？
+    ]
+    codes, verts = zip(*path_data)          # 拆分形式
+    path = mpath.Path(verts, codes)                                 # 2.1、形成路径
+    patch = mpatches.PathPatch(path, facecolor='r', alpha=0.5)      # 2.2、形成路径
+    ax.add_patch(patch)                     # 3、添加补丁，画图
+    x, y = zip(*path.vertices)              # 取出原始点
+    line, = ax.plot(x, y, 'go-')            # 画原始点路径
+    ax.grid()
+    ax.axis('equal')
+    plt.show()
+    pass
+# 3、散点图
+def scatter_demo():
+    N = 50
+    x = np.random.rand(N)
+    y = np.random.rand(N)
+    colors = np.random.rand(N)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    area = np.pi * (15 * np.random.rand(N)) ** 2            # 0 to 15 point radii
+    # area = (15 * np.random.rand(N)) ** 2            # 0 to 15 point radii
+    scat = ax.scatter(x, y, s=area
+                , c=colors
+                , alpha=0.5
+                )
+    plt.show()
+    pass
 
 
 if __name__ == '__main__':
