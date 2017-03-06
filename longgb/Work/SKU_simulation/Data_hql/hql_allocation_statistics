@@ -17,7 +17,7 @@
 -- date_s  string,                      日期，仅有 2016-12-20 数据
 -- price   double,                      进货价
 
--- 2、dev.dev_tmp_lgb_allocation_qttys
+-- 2、dev.dev_tmp_lgb_allocation_qttys      # 按照 date_s 分区
 -- fdc_id	 string,
 -- sku_id	 string,
 -- is_whitelist	int,
@@ -182,7 +182,7 @@ on
 
 
 -- ============================================================================
--- =                2、建表：dev.dev_tmp_lgb_allocation_qttys                  =
+-- =                2、建表：dev.dev_tmp_lgb_saleForecast                      =
 -- ============================================================================
 drop table if exists dev.dev_tmp_lgb_saleForecast;
 create table dev.dev_tmp_lgb_saleForecast as
