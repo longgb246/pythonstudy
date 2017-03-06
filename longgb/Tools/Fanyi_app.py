@@ -28,8 +28,9 @@ class fanyiApp(QtGui.QWidget):                       # 继承
         # self.setToolTip('This is a <b>QWidget</b> widget')      # 提示字体格式，可以使用html标签
 
         # ===================================== 窗口 =====================================
-        self.setWindowTitle(u'百度翻译')                        # 设置窗口名称
-        self.setWindowIcon(QtGui.QIcon(r"D:\Life\Photo\favicon.ico"))       # 设置Icon的图标【家里】
+        self.setWindowTitle(u'百度翻译——函函版本')                        # 设置窗口名称
+        self.setWindowIcon(QtGui.QIcon(r"./favicon.ico"))                  # 公司家里通用
+        # self.setWindowIcon(QtGui.QIcon(r"D:\Life\Photo\favicon.ico"))       # 设置Icon的图标【家里】
         # self.setWindowIcon(QtGui.QIcon(r"D:\Lgb\Self\favicon.ico"))       # 设置Icon的图标【公司】
         self.setGeometry(300, 300, 600, 400)
         # self.resize(300, 150)                                 # 设置窗口大小
@@ -175,7 +176,7 @@ class fanyiApp(QtGui.QWidget):                       # 继承
         重写了这个关闭的方法，跳出提示的信息，不用设置链接按钮
         '''
         # ===================================== 提示信息 =================================
-        reply = QtGui.QMessageBox.question(self, u'警告', u"你确定要退出翻译吗?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+        reply = QtGui.QMessageBox.question(self, u'警告', u"你确定要退出函函翻译吗?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
         if reply == QtGui.QMessageBox.Yes:
             event.accept()              # 这个事件会被接受
         else:
