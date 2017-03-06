@@ -189,39 +189,33 @@ def readDataTi():
     this_columns = ['rdc_id','fdc_id','sku_id','is_whitelist','plan_allocation_qtty','actual_allocation_qtty','forecast_daily_override_sales' ,'forecast_sales_mean','sale', 'sale_all', 'stock_qtty','date_s', 'price']
     data_ss.columns = this_columns
     data_ss['sku_id'] = data_ss['sku_id'].astype(str)
-
+    # 画Ti的分布
     MAX_Ti = np.max(data_ss['sale_all']*data_ss['price'])
-
-
-
-
+    # np.argmax(data_ss['sale_all']*data_ss['price'])
+    # print data_ss['sale_all'][3660]*data_ss['price'][3660]
     Ti = map(lambda x: np.max([4, 2*np.sqrt(MAX_Ti * 1.0 / (x[0]*x[1]))]), data_ss.loc[:,['sale_all','price']].values)
-
+    Ti = pd.DataFrame(Ti, columns=['Ti'])
+    Ti = Ti.dropna()
+    Ti = Ti[Ti['Ti'] != np.inf]
+    binsn = [4, 5, 6, 7, 8, 9 ] + np.arange(10, 1000, 100).tolist() + [1000, np.inf]
+    plothistper(Ti['Ti'],binsn,'number of SKU','Ti','Distribution_Ti',is_save=True, save_path=save_path+os.sep+'Distribution_Ti.png', size=(16,8))
+    binsn = [4, 5, 6, 7, 8, 9 ] + np.arange(10, 100, 10).tolist() + np.arange(100, 1000, 200).tolist() + [1000, np.inf]
+    plothistper(Ti['Ti'],binsn,'number of SKU','Ti','Distribution_Ti',is_save=True, save_path=save_path+os.sep+'Distribution_Ti_2.png', size=(19,8))
+    print 'Max of Ti :', np.max(Ti)
+    # 画Pi*Qi的分布
     piqi = map(lambda x: x[0]*x[1], data_ss.loc[:,['sale_all','price']].values)
     piqi = pd.DataFrame(piqi, columns=['piqi'])
     piqi = piqi.dropna()
     piqi = piqi[piqi['piqi'] != np.inf]
-
-    print np.median(piqi['piqi'])
-    print np.mean(piqi['piqi'])
-
-
-    binsn = np.linspace(np.min(piqi['piqi']), np.max(piqi['piqi']), 15).tolist()
-    plothistper(piqi['piqi'], binsn,'number of SKU','Ti','Distribution_PiQi',is_save=True, save_path=save_path+os.sep+'Distribution_piqi_big.png', size=(16,8))
-
+    print 'Median of Ti :', np.median(piqi['piqi'])
+    print 'Mean of Ti :',np.mean(piqi['piqi'])
+    binsn = np.arange(0, 1000, 100).tolist() + [1000, 4000, 7000, np.inf]
+    plothistper(piqi['piqi'], binsn,'number of SKU','Ti','Distribution_PiQi',is_save=True, save_path=save_path+os.sep+'Distribution_piqi_big.png', size=(14,8))
     binsn = [0, 1] + np.arange(5, 100, 5).tolist()
     plothistper(piqi['piqi'], binsn,'number of SKU','Ti','Distribution_PiQi',is_save=True, save_path=save_path+os.sep+'Distribution_piqi_litte.png', size=(16,8))
 
-    Ti = pd.DataFrame(Ti, columns=['Ti'])
-    Ti = Ti.dropna()
-    Ti = Ti[Ti['Ti'] != np.inf]
-
     # ret = plt.hist(Ti, bins=binsn, label='Z', color='#0070C0',histtype='bar', rwidth=0.6)
     # counts, bins, patches = ret[0], ret[1], ret[2]
-
-    binsn = [4, 5, 6, 7, 8, 9] + np.arange(10, 1000, 100).tolist() + [1000, np.inf]
-    plothistper(Ti['Ti'],binsn,'number of SKU','Ti','Distribution_Ti',is_save=True, save_path=save_path+os.sep+'Distribution_Ti.png', size=(16,8))
-
     # data_ss['sale'] = data_ss['sale'].fillna(0)
     # data_ss['sale_avg'] = data_ss['sale_avg'].fillna(0)
     pass
@@ -229,7 +223,7 @@ def readDataTi():
 
 # ======================= 参数设置 =======================
 read_path = r'D:\Lgb\data_sz'
-save_path = r'D:\Lgb\data_rz'
+save_path = r'D:\Lgb\WorkFiles\SKU_Allocations'
 file_name = 'sS_hql.out'
 
 
