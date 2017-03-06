@@ -64,6 +64,7 @@ def plothistper(plot_data, binsn, xlabeln, ylabeln, titlen, save_path='1', cum_T
 
 # ============================= 使用函数 =============================
 # ----------------------------- ss分布   -----------------------------
+# 读取sS数据
 def readData():
     '''
     读取数据
@@ -75,19 +76,20 @@ def readData():
     data_ss['sale'] = data_ss['sale'].fillna(0)
     data_ss['sale_avg'] = data_ss['sale_avg'].fillna(0)
     return data_ss
-
+# 画图函数
 def plotsSale(ax, title, x, y, data_ss):
     ax.plot(data_ss[x], data_ss[y], '.', alpha=0.2)
     ax.set_xlim(0,50)
     ax.set_ylim(-1,50)
     ax.set_title(title)
-
+# 画图函数log化
 def plotlogsSale(ax, title, x, y, data_ss):
     ax.plot(data_ss[x], data_ss[y], '.', alpha=0.2)
     ax.set_xlim(0,50)
     # ax.set_ylim(-1,50)
     ax.set_title(title)
 
+# 1、sS分析主函数
 def plot_sSsale(data_ss):
     ss_Data = data_ss.loc[:,['sku_id','plan_S', 'actual_S','s','sale', 'sale_avg']]
     data_ss = data_ss.dropna()                              # 去掉所有空值
@@ -138,10 +140,10 @@ def plot_sSsale(data_ss):
     binsn = [-np.inf, 0, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 30, 40, 50, np.inf]
     plothistper(data_ss['plan_S'].dropna(), binsn, 'plan_S', 'sku_number', 'plan_S Distribution', is_save=True, save_path=save_path+os.sep+'Distribution_plan_S.png', size=(16,8))
     plothistper(data_ss['actual_S'].dropna(), binsn, 'actual_S', 'sku_number', 'actual_S Distribution', is_save=True, save_path=save_path+os.sep+'Distribution_actual_S.png', size=(16,8))
-
+# 没用
 def cal_sSsale(data_ss):
     data_ss_upper = data_ss[data_ss['plan_S'] > 50]
-
+# log分析，没用
 def plot_log_sSsale(data_ss):
     ss_Data = data_ss.loc[:,['sku_id','plan_S', 'actual_S','s','sale', 'sale_avg']]
     data_ss = data_ss.dropna()                              # 去掉所有空值
@@ -179,6 +181,7 @@ def plot_log_sSsale(data_ss):
     # plothistper(data_ss['actual_S'].dropna(), binsn, 'actual_S', 'sku_number', 'actual_S Distribution', is_save=True, save_path=save_path+os.sep+'Distribution_actual_S.png')
 
 # ----------------------------- Ti分布   -----------------------------
+# 2、Ti分布分析
 def readDataTi():
     import matplotlib.style as mstyle
     plt.style.use('seaborn-darkgrid')
