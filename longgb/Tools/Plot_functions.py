@@ -77,15 +77,17 @@ def plotHistPerDemo():
 
 # 2、画放大图
 # 2.1 需要引入的包
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.patches import ConnectionPatch
-# 参考代码
+# 2.2 参考代码
 # test 画局部图   dpi
 # ax.text(tx, ty, label_f0, fontsize=15, verticalalignment="top", horizontalalignment="left")
 def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xlabel='X', ylabel='Y', title=''):
     plt.style.use('seaborn-darkgrid')
     fig = plt.figure(figsize=(16, 8), dpi=98)  # 加个dpi调整。
     ax1 = fig.add_subplot(121, aspect=5 / 2.5)
-    ax2 = fig.add_subplot(122, aspect=0.5 / 0.05)
+    ax2 = fig.add_subplot(122, aspect=5 / 2.5)
     if colors == []:
         colors = ['#6AB27B', '#C44E52', '#4C72B0', '#FFA455']
     if linestyle == []:
@@ -135,8 +137,7 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     ax2.add_artist(con)
     plt.show()
     pass
-
-
+# 2.3 demo运行函数
 def plotEnlargeDemo():
     def f1(t):
         return np.exp(-t) * np.cos(2 * np.pi * t)
@@ -145,13 +146,16 @@ def plotEnlargeDemo():
     def f111(t):
         return np.exp(-t + 0.2) * np.cos(2 * np.pi * t)
     data_x = np.arange(0.0, 5.0, 0.02)
-    data_y = f1(data_x)
-    label_f0 = r"$f(t)=e^{-t+\alpha} \cos (2 \pi t+\beta)$"
-    label_f1 = r"$\alpha=0,\beta=0$"
-    label_f11 = r"$\alpha=0,\beta=0.2$"
-    label_f111 = r"$\alpha=0.2,\beta=0$"
-    tx = 0.5  # 添加 text 文本
-    ty = 0.9
+    data_y = [f1(data_x), f11(data_x), f111(data_x)]
+    data_x = [data_x, data_x, data_x]
+    plotEnlarge(data_x, data_y)
+    # label_f0 = r"$f(t)=e^{-t+\alpha} \cos (2 \pi t+\beta)$"
+    # label_f1 = r"$\alpha=0,\beta=0$"
+    # label_f11 = r"$\alpha=0,\beta=0.2$"
+    # label_f111 = r"$\alpha=0.2,\beta=0$"
+    # tx = 0.5  # 添加 text 文本
+    # ty = 0.9
+    pass
 
 
 
