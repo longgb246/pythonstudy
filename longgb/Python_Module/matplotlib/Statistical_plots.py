@@ -9,18 +9,43 @@ def boxplot_color_demo():
     plt.style.use('seaborn-darkgrid')
     np.random.seed(123)             # 设置种子
     all_data = [np.random.normal(0, std, 100) for std in range(1, 4)]
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(9, 4))
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(16, 9))
+    # boxplot的属性
+    boxprops = dict(linewidth=2, facecolor='#4C72B0', alpha=0.3)
+    whiskerprops = dict(linewidth=2, linestyle='--', color='#797979')
+    flierprops = dict(linewidth=2, marker='o', markerfacecolor='none', markersize=6, linestyle='none')
+    medianprops = dict(linestyle='-', linewidth=2.5, color='#FFA455')
+    # meanpointprops = dict(marker='D', markeredgecolor='black', markerfacecolor='#C44E52')
+    meanlineprops = dict(linestyle='--', linewidth=2.5, color='r', alpha=0.6)
+    capprops = dict(linestyle='-', linewidth=2.5, color='r', alpha=0.6)
+    # boxplot的添加属性
     bplot1 = axes[0].boxplot(all_data,
-                             vert=True,         # vertical box aligmnent
-                             showmeans=True,    # 显示均值
-                             # meanline=True,   # 均值使用线
-                             patch_artist=True  # fill with color
+                             vert=True,                     # vertical box aligmnent
+                             showmeans=True,                # 显示均值
+                             meanline=True,                 # 均值使用线
+                             patch_artist=True,             # fill with color
+                             # showcaps=False,              # 边界横线
+                             # showbox=False,               # 盒子展示
+                             # showfliers=False,            # 异常值
+                             boxprops=boxprops,             # 盒子属性
+                             whiskerprops=whiskerprops,     # 虚线条属性
+                             capprops=capprops,             # 边界横线
+                             flierprops=flierprops,         # 异常值
+                             medianprops=medianprops,       # 中位数  #FFA455   #797979    #3E3E3E
+                             meanprops=meanlineprops        # 异常值
                              )
     bplot2 = axes[1].boxplot(all_data,
-                             notch=True,        # 有缺口形状
+                             notch=True,                    # 有缺口形状
                              showmeans=True,
-                             vert=True,         # vertical box aligmnent
-                             patch_artist=True
+                             patch_artist=True,
+                             meanline=True,                 # 均值使用线
+                             vert=True,                     # vertical box aligmnent
+                             boxprops=boxprops,             # 盒子属性
+                             whiskerprops=whiskerprops,     # 虚线条属性
+                             capprops=capprops,             # 边界横线
+                             flierprops=flierprops,         # 异常值
+                             medianprops=medianprops,       # 中位数  #FFA455   #797979    #3E3E3E
+                             meanprops=meanlineprops        # 异常值
                              )
     colors = ['pink', 'lightblue', 'lightgreen']
     # 添加 box 的颜色
@@ -32,14 +57,13 @@ def boxplot_color_demo():
         ax.set_xticks([y + 1 for y in range(len(all_data))], )
         ax.set_xlabel('xlabel')
         ax.set_ylabel('ylabel')
-    plt.setp(axes, xticks=[y + 1 for y in range(len(all_data))],
-             xticklabels=['x1', 'x2', 'x3'])
+    # plt.setp(axes, xticks=[y + 1 for y in range(len(all_data))], xticklabels=['x1', 'x2', 'x3'])
     axes[0].set_xticklabels(['x1', 'x2', 'x3'])
     axes[1].set_xticklabels(['x1', 'x2', 'x3'])
     plt.tight_layout(rect=(0.05, 0.05, 0.95, 0.95))         # 设置左，上，右，下的位置比例
     plt.show()
     pass
-#
+# box的demo
 def boxplot_demo():
     # fake data
     np.random.seed(937)
@@ -124,8 +148,12 @@ def histogram_demo_cumulative():
     plt.show()
     pass
 
+
+# 2、小提琴图
+
+
 # test 画局部图   dpi
-# p1.text(tx, ty, label_f0, fontsize=15, verticalalignment="top", horizontalalignment="left")
+# ax.text(tx, ty, label_f0, fontsize=15, verticalalignment="top", horizontalalignment="left")
 def test():
     # import matplotlib.style as mstyle
     plt.style.use('seaborn-darkgrid')
