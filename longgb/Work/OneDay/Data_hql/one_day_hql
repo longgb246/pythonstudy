@@ -163,5 +163,79 @@ from
 where
     dt >= '2016-01-01' and
     dt <= '2017-03-01' and
-    dcid in (3, 4, 5, 6, 9, 10, 316, 682);
+    dcid in (3, 4, 5, 6, 9, 10, 316, 682)  and
+    wid in (select
+                m.sku_id
+            from
+                dev.tmp_oneday_rdc_info_noPartition_skuList  m
+            )
+
+
+
+-- 选取 1671 的三级品类
+drop table if exists dev.tmp_oneday_rdc_info_noPartition_skuList;
+CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_skuList as
+SELECT
+    item_sku_id  as sku_id,
+    item_third_cate_cd,
+    item_second_cate_cd
+FROM
+    gdm.gdm_m03_item_sku_da
+WHERE
+    dt= sysdate(-1)
+    and item_third_cate_cd = '1671'
+    and data_type = '1';
+-- 统计一下这个
+SELECT
+    count(DISTINCT item_sku_id)
+FROM
+    gdm.gdm_m03_item_sku_da
+WHERE
+    dt= sysdate( - 1)
+    and item_third_cate_cd = '1671'
+    and data_type = '1';
+
+
+-- 假如成功，使用以下SQL合并
+drop table if exists dev.tmp_oneday_rdc_info_noPartition;
+CREATE TABLE dev.tmp_oneday_rdc_info_noPartition as
+select
+    c.rdc_id,
+    c.sku_id,
+    c.item_second_cate_cd,
+    c.item_third_cate_cd,
+    c.open_po,
+    c.inv,
+    d.variance,
+    d.ofdsales,
+    c.date_s
+from
+    (
+        select
+            b.rdc_id,
+            a.sku_id,
+            a.item_second_cate_cd,
+            a.item_third_cate_cd,
+            b.open_po,
+            b.inv,
+            b.date_s
+        from
+            dev.tmp_oneday_rdc_info_noPartition_skuList  a
+        left join
+            dev.tmp_oneday_rdc_info_noPartition_upper  b
+        on
+            a.sku_id = b.sku_id
+    ) c
+left join
+    dev.tmp_oneday_rdc_info_noPartition_lower  d
+on
+    c.sku_id = d.sku_id  and
+    c.rdc_id = d.rdc_id  and
+    c.date_s = d.date_s
+order by
+    c.rdc_id,
+    c.sku_id,
+    c.date_s;
+
+
 
