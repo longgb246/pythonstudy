@@ -76,7 +76,7 @@ CREATE TABLE IF Not EXISTS dev.tmp_oneday_rdc_info_noPartition
     ofdsales    string,
     date_s      string);
 
-insert OVERWRITE table dev.tmp_oneday_rdc_info
+insert OVERWRITE table dev.tmp_oneday_rdc_info_noPartition
 select
     a.rdc_id,
     a.sku_id,
@@ -129,8 +129,39 @@ order by
     a.date_s;
 
 
-
-
-
-
+-- 拆分建表
+-- 1、建立上表
+drop table if exists dev.tmp_oneday_rdc_info_noPartition_upper;
+CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_upper as
+SELECT
+    delv_center_num as rdc_id,
+    dt as date_s,
+    sku_id,
+    sum(in_transit_qtty) AS open_po,
+    sum(stock_qtty) AS inv --库存数量
+FROM
+    gdm.gdm_m08_item_stock_day_sum	     	-- 【主表】商品库存日汇总
+WHERE
+    dt >= '2016-01-01' AND
+    dt <= '2017-03-01' AND
+    delv_center_num in (3, 4, 5, 6, 9, 10, 316, 682)
+group by
+    delv_center_num,
+    dt,
+    sku_id;
+-- 2、建立下表
+drop table if exists dev.tmp_oneday_rdc_info_noPartition_lower;
+CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_lower as
+select
+    dt  as date_s,
+    wid  as sku_id,
+    dcid  as rdc_id,
+    variance,
+    ofdsales
+from
+    app.app_sfs_rdc_forecast_result
+where
+    dt >= '2016-01-01' and
+    dt <= '2017-03-01' and
+    dcid in (3, 4, 5, 6, 9, 10, 316, 682);
 

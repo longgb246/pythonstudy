@@ -87,42 +87,33 @@ class SkuSimulation:
         self.sales_his_origin = sales_his
         self.inv_his = inv_his
         self.org_nation_sale_num_band = org_nation_sale_num_band
-
         self.s=s
         self.S=S
         self.ito_level=ito_level
-
         # # 销量填充与平滑
-        #在仿真前对数据进行平滑
+        # 在仿真前对数据进行平滑
         self.sales_his = self.sales_his_origin.copy()
         # '''销量平滑，输入DF，返回DF
         #   采用3sigma方法进行平滑处理
         # '''
         # print self.sales_his
         # self.sales_his=EMsmooth.smooth(self.sales_his)
-
         # 预测天数
         self.pred_days = pred_days
         # 销量预测（均值）
         self.sales_pred_mean = sales_pred_mean
-
         # 处理销量预测为空的情况：使用前一天的预测值
         for i in range(self.simulation_period):
             if self.sales_pred_mean[i] is None:
                 self.sales_pred_mean[i] = self.sales_pred_mean[i - 1]
-
-        #处理调拨时长分布情况，针对调拨更多的为两点或者三点分布
+        # 处理调拨时长分布情况，针对调拨更多的为两点或者三点分布
         self.vlt_val = vlt_val.astype(np.int32)
         self.vlt_prob = vlt_prob
         self.vlt_distribution = rv_discrete(values=(self.vlt_val, self.vlt_prob))
-
-
-
         # 最晚的到货日期
         self.latest_arrive_index = 0
-
         # 仿真库存，初始化
-        # TODO：初始值=现货库存+在途
+        # 初始值=现货库存+在途
         self.inv_sim = np.array([0] * self.simulation_period, dtype=np.float64)
         self.inv_sim[0] = self.inv_his[0]
         # 仿真销量
@@ -211,12 +202,11 @@ class SkuSimulation:
         self.vlt_sim[self.cur_index] = self.vlt_distribution.rvs()
         # 更新补货状态，last_index是采购到货天的下标
         last_index = self.cur_index + self.vlt_sim[self.cur_index] + 1
-
         # 判断上次的到货时间点早于该次的到货时间，如果晚于则重新抽样确定vlt
+        # 【疑问？】
         while last_index < self.latest_arrive_index:
             self.vlt_sim[self.cur_index] = self.vlt_distribution.rvs()
             last_index = self.cur_index + self.vlt_sim[self.cur_index] + 1
-
         if last_index < self.simulation_period:
             # 更新采购在途
             self.open_po_sim[(self.cur_index+1):last_index] += self.pur_qtty_sim[self.cur_index]
@@ -252,7 +242,7 @@ class SkuSimulation:
             # 当天仿真销量 = min(当天历史销量, 当天仿真库存量)
             self.sales_sim[self.cur_index] = min(self.sales_his[self.cur_index], self.inv_sim[self.cur_index]+self.open_po_sim[self.cur_index])
             # 下一天的仿真库存量（初始库存） = 当天仿真库存量 - 当天销量,销量可能超过库存因为消耗在途
-            #将当天的在途进行运算，当天在途数量默认消耗不入库
+            # 将当天的在途进行运算，当天在途数量默认消耗不入库
             if self.cur_index < self.simulation_period - 1:
                 self.inv_sim[self.cur_index + 1] = max(self.inv_sim[self.cur_index] -self.sales_sim[self.cur_index],0)
                 self.open_po_sim[self.cur_index]=self.open_po_sim[self.cur_index]-max(0,self.sales_sim[self.cur_index]-self.inv_sim[self.cur_index])

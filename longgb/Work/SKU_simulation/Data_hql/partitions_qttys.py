@@ -2,6 +2,7 @@
 from string import Template
 import os
 import pandas as pd
+import datetime
 
 def getDateRange(start_date, end_date, freq='D'):
     date_range = map(lambda x: str(x)[:10],pd.date_range(start_date, end_date, freq=freq).values)
@@ -220,7 +221,9 @@ if __name__ == '__main__':
         if date_s == '2016-12-20':
             pass
         else:
-            os.system("hive -e '{0}';".format(dev_tmp_lgb_allocation_qttys.substitute(this_date=date_s)))
+            # os.system("hive -e '{0}';".format(dev_tmp_lgb_allocation_qttys.substitute(this_date=date_s)))
+            last_date = str(pd.to_datetime(date_s)-datetime.timedelta(1))[:10]
+            os.system("hive -e '{0}';".format(dev_tmp_lgb_combine_allocation_Forecast.substitute(this_date=date_s, last_date=last_date, avg_date='2016-12-20')))
             # os.system('echo "======================================================"  >>  dev_tmp_lgb_allocation_qttys.log')
             # os.system('echo "======================= {0} ==================="  >>  dev_tmp_lgb_allocation_qttys.log'.format(date_s))
             # os.system('echo "======================================================  >>  dev_tmp_lgb_allocation_qttys.log"')

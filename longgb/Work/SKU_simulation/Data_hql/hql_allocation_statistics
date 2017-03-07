@@ -514,7 +514,8 @@ select
 from
     dev.dev_tmp_lgb_combine_allocation_Forecast
 where
-    date_s = '2016-12-20'
+    date_s = '2016-12-20'  and
+    plan_allocation_qtty  > 0
 -- 将数据导出，使用 python 画出分布图
 
 
