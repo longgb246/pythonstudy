@@ -1,132 +1,132 @@
 -- 取出纸品 1671
 -- SQL模板
-set hive.exec.dynamic.partition=true;
-set hive.exec.dynamic.partition.mode=nonstrict;
-CREATE TABLE IF Not EXISTS dev.tmp_oneday_rdc_info
-(
-    rdc_id	    string,
-    sku_id	    string,
-    open_po	    double,
-    inv         double,
-    variance    string,
-    ofdsales    string)
-    PARTITIONED by (date_s  string);
-
-insert OVERWRITE table dev.tmp_oneday_rdc_info  partition(date_s)
-select
-    a.rdc_id,
-    a.sku_id,
-    a.open_po,
-    a.inv,
-    b.variance,
-    b.ofdsales,
-    a.date_s
-from
-    (
-        SELECT
-            delv_center_num as rdc_id,
-            dt as date_s,
-            sku_id,
-            sum(in_transit_qtty) AS open_po,
-            sum(stock_qtty) AS inv --库存数量
-        FROM
-            gdm.gdm_m08_item_stock_day_sum	     	-- 【主表】商品库存日汇总
-        WHERE
-            dt >= '2016-01-01' AND
-            dt <= '2017-03-01' AND
-            delv_center_num in (3, 4, 5, 6, 9, 10, 316, 682)
-        group by
-            delv_center_num,
-            dt,
-            sku_id
-    ) a
-full outer join
-    (
-        select
-		  	dt  as date_s,
-			wid  as sku_id,
-			dcid  as rdc_id,
-			variance,
-			ofdsales
-		from
-			app.app_sfs_rdc_forecast_result
-		where
-		    dt >= '2016-01-01' and
-		    dt <= '2017-03-01' and
-		    dcid in (3, 4, 5, 6, 9, 10, 316, 682)
-    ) b
-on
-    a.sku_id = b.sku_id  and
-    a.rdc_id = b.rdc_id  and
-    a.date_s = b.date_s
-order by
-    a.date_s;
-
-
--- 建立非分区的表
-drop table if exists dev.tmp_oneday_rdc_info_noPartition;
-
-CREATE TABLE IF Not EXISTS dev.tmp_oneday_rdc_info_noPartition
-(
-    rdc_id	    string,
-    sku_id	    string,
-    open_po	    double,
-    inv         double,
-    variance    string,
-    ofdsales    string,
-    date_s      string);
-
-insert OVERWRITE table dev.tmp_oneday_rdc_info_noPartition
-select
-    a.rdc_id,
-    a.sku_id,
-    a.open_po,
-    a.inv,
-    b.variance,
-    b.ofdsales,
-    a.date_s
-from
-    (
-        SELECT
-            delv_center_num as rdc_id,
-            dt as date_s,
-            sku_id,
-            sum(in_transit_qtty) AS open_po,
-            sum(stock_qtty) AS inv --库存数量
-        FROM
-            gdm.gdm_m08_item_stock_day_sum	     	-- 【主表】商品库存日汇总
-        WHERE
-            dt >= '2016-01-01' AND
-            dt <= '2017-03-01' AND
-            delv_center_num in (3, 4, 5, 6, 9, 10, 316, 682)
-        group by
-            delv_center_num,
-            dt,
-            sku_id
-    ) a
-full outer join
-    (
-        select
-		  	dt  as date_s,
-			wid  as sku_id,
-			dcid  as rdc_id,
-			variance,
-			ofdsales
-		from
-			app.app_sfs_rdc_forecast_result
-		where
-		    dt >= '2016-01-01' and
-		    dt <= '2017-03-01' and
-		    dcid in (3, 4, 5, 6, 9, 10, 316, 682)
-    ) b
-on
-    a.sku_id = b.sku_id  and
-    a.rdc_id = b.rdc_id  and
-    a.date_s = b.date_s
-order by
-    a.rdc_id,
-    a.sku_id,
-    a.date_s;
+--set hive.exec.dynamic.partition=true;
+--set hive.exec.dynamic.partition.mode=nonstrict;
+--CREATE TABLE IF Not EXISTS dev.tmp_oneday_rdc_info
+--(
+--    rdc_id	    string,
+--    sku_id	    string,
+--    open_po	    double,
+--    inv         double,
+--    variance    string,
+--    ofdsales    string)
+--    PARTITIONED by (date_s  string);
+--
+--insert OVERWRITE table dev.tmp_oneday_rdc_info  partition(date_s)
+--select
+--    a.rdc_id,
+--    a.sku_id,
+--    a.open_po,
+--    a.inv,
+--    b.variance,
+--    b.ofdsales,
+--    a.date_s
+--from
+--    (
+--        SELECT
+--            delv_center_num as rdc_id,
+--            dt as date_s,
+--            sku_id,
+--            sum(in_transit_qtty) AS open_po,
+--            sum(stock_qtty) AS inv --库存数量
+--        FROM
+--            gdm.gdm_m08_item_stock_day_sum	     	-- 【主表】商品库存日汇总
+--        WHERE
+--            dt >= '2016-01-01' AND
+--            dt <= '2017-03-01' AND
+--            delv_center_num in (3, 4, 5, 6, 9, 10, 316, 682)
+--        group by
+--            delv_center_num,
+--            dt,
+--            sku_id
+--    ) a
+--full outer join
+--    (
+--        select
+--		  	dt  as date_s,
+--			wid  as sku_id,
+--			dcid  as rdc_id,
+--			variance,
+--			ofdsales
+--		from
+--			app.app_sfs_rdc_forecast_result
+--		where
+--		    dt >= '2016-01-01' and
+--		    dt <= '2017-03-01' and
+--		    dcid in (3, 4, 5, 6, 9, 10, 316, 682)
+--    ) b
+--on
+--    a.sku_id = b.sku_id  and
+--    a.rdc_id = b.rdc_id  and
+--    a.date_s = b.date_s
+--order by
+--    a.date_s;
+--
+--
+---- 建立非分区的表
+--drop table if exists dev.tmp_oneday_rdc_info_noPartition;
+--
+--CREATE TABLE IF Not EXISTS dev.tmp_oneday_rdc_info_noPartition
+--(
+--    rdc_id	    string,
+--    sku_id	    string,
+--    open_po	    double,
+--    inv         double,
+--    variance    string,
+--    ofdsales    string,
+--    date_s      string);
+--
+--insert OVERWRITE table dev.tmp_oneday_rdc_info_noPartition
+--select
+--    a.rdc_id,
+--    a.sku_id,
+--    a.open_po,
+--    a.inv,
+--    b.variance,
+--    b.ofdsales,
+--    a.date_s
+--from
+--    (
+--        SELECT
+--            delv_center_num as rdc_id,
+--            dt as date_s,
+--            sku_id,
+--            sum(in_transit_qtty) AS open_po,
+--            sum(stock_qtty) AS inv --库存数量
+--        FROM
+--            gdm.gdm_m08_item_stock_day_sum	     	-- 【主表】商品库存日汇总
+--        WHERE
+--            dt >= '2016-01-01' AND
+--            dt <= '2017-03-01' AND
+--            delv_center_num in (3, 4, 5, 6, 9, 10, 316, 682)
+--        group by
+--            delv_center_num,
+--            dt,
+--            sku_id
+--    ) a
+--full outer join
+--    (
+--        select
+--		  	dt  as date_s,
+--			wid  as sku_id,
+--			dcid  as rdc_id,
+--			variance,
+--			ofdsales
+--		from
+--			app.app_sfs_rdc_forecast_result
+--		where
+--		    dt >= '2016-01-01' and
+--		    dt <= '2017-03-01' and
+--		    dcid in (3, 4, 5, 6, 9, 10, 316, 682)
+--    ) b
+--on
+--    a.sku_id = b.sku_id  and
+--    a.rdc_id = b.rdc_id  and
+--    a.date_s = b.date_s
+--order by
+--    a.rdc_id,
+--    a.sku_id,
+--    a.date_s;
 
 
 -- 拆分建表
@@ -149,6 +149,7 @@ group by
     delv_center_num,
     dt,
     sku_id;
+
 -- 2、建立下表
 drop table if exists dev.tmp_oneday_rdc_info_noPartition_lower;
 CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_lower as
@@ -170,9 +171,7 @@ where
                 dev.tmp_oneday_rdc_info_noPartition_skuList  m
             )
 
-
-
--- 选取 1671 的三级品类
+-- 3、选取 1671 的三级品类
 drop table if exists dev.tmp_oneday_rdc_info_noPartition_skuList;
 CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_skuList as
 SELECT
@@ -185,6 +184,7 @@ WHERE
     dt= sysdate(-1)
     and item_third_cate_cd = '1671'
     and data_type = '1';
+
 -- 统计一下这个
 SELECT
     count(DISTINCT item_sku_id)
@@ -196,7 +196,7 @@ WHERE
     and data_type = '1';
 
 
--- 假如成功，使用以下SQL合并
+-- 4、假如成功，使用以下SQL合并
 drop table if exists dev.tmp_oneday_rdc_info_noPartition;
 CREATE TABLE dev.tmp_oneday_rdc_info_noPartition as
 select
@@ -238,4 +238,76 @@ order by
     c.date_s;
 
 
+-- 5、取出销量数据
+drop table if exists dev.tmp_oneday_rdc_sales;
+CREATE TABLE dev.tmp_oneday_rdc_sales as
+select
+    sku_id,
+    dc_id  as rdc_id,
+    order_date,
+    total_sales,
+    dt   as date_s
+from
+    app.app_sfs_sales_region
+where
+    dt >= '2016-01-01'  and
+    dt <= '2017-03-01'  and
+    dc_id in (3, 4, 5, 6, 9, 10, 316, 682)  and
+    sku_id in (select
+                m.sku_id
+            from
+                dev.tmp_oneday_rdc_info_noPartition_skuList  m
+            )
+
+
+--    app.app_sfs_rdc_forecast_result 只有 2016-02-19 至 2017-03-07的数据
+--    a.rdc_id,                 RDC
+--    a.sku_id,                 SKU
+--    a.item_second_cate_cd,    二级品类
+--    a.item_third_cate_cd,     三级品类
+--    a.open_po,                采购在途
+--    a.inv,                    库存
+--    a.variance,               预测标准差
+--    a.ofdsales,               预测均值
+--    b.order_date,
+--    b.total_sales,            销量
+--    a.date_s                  日期
+-- 6、将销量预测数据加入合并
+drop table if exists dev.tmp_oneday_rdc_info_combine;
+CREATE TABLE dev.tmp_oneday_rdc_info_combine as
+select
+    a.rdc_id,
+    a.sku_id,
+    a.item_second_cate_cd,
+    a.item_third_cate_cd,
+    a.open_po,
+    a.inv,
+    a.variance,
+    a.ofdsales,
+    b.order_date,
+    b.total_sales,
+    a.date_s
+from
+    (
+        select
+            d.rdc_id,
+            d.sku_id,
+            d.item_second_cate_cd,
+            d.item_third_cate_cd,
+            d.open_po,
+            d.inv,
+            d.variance,
+            d.ofdsales,
+            d.date_s
+        from
+            dev.tmp_oneday_rdc_info_noPartition  d
+        where
+            d.rdc_id is not null
+    )  a
+left join
+    dev.tmp_oneday_rdc_sales  b
+on
+    a.sku_id = b.sku_id  and
+    a.rdc_id = b.rdc_id  and
+    a.date_s = b.date_s
 
