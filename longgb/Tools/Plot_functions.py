@@ -76,13 +76,63 @@ def plotHistPerDemo():
     pass
 
 
-# 2、画放大图
+# 2、画分布图
 # 2.1 需要引入的包
+import matplotlib.pyplot as plt
+# 2.2 主函数
+def plotBoxplot(data, size=(8, 8), diff_color=False, xlabeln='x', ylabeln='y', titlen='', xticklabels=[]):
+    plt.style.use('seaborn-darkgrid')
+    fig = plt.figure(figsize=size)
+    ax = fig.add_subplot(111)
+    # boxplot的属性
+    boxprops = dict(linewidth=2, facecolor='#4C72B0', alpha=0.35)           # 盒子属性
+    whiskerprops = dict(linewidth=2.5, linestyle='--', color='#797979', alpha=0.8)          # 虚线条属性
+    flierprops = dict(linewidth=2, marker='o', markerfacecolor='none', markersize=6, linestyle='none')  # 异常值
+    medianprops = dict(linestyle='-', linewidth=2.5, color='#FFA455')       # 中位数
+    meanpointprops = dict(marker='D', markeredgecolor='black', markerfacecolor='#C44E52')   # 均值
+    meanlineprops = dict(linestyle='--', linewidth=2.5, color='r', alpha=0.6)               # 均值
+    capprops = dict(linestyle='-', linewidth=2.5, color='#797979', alpha=0.8)               # 边界横线
+    bplot = ax.boxplot(data,
+               vert=True,               # vertical box aligmnent
+               showmeans=True,          # 显示均值
+               meanline=True,           # 均值使用线
+               patch_artist=True,       # fill with color
+               boxprops=boxprops,       # 盒子属性
+               whiskerprops=whiskerprops,   # 虚线条属性
+               capprops=capprops,           # 边界横线
+               flierprops=flierprops,       # 异常值
+               medianprops=medianprops,     # 中位数  #FFA455   #797979    #3E3E3E
+               meanprops=meanlineprops      # 异常值
+                )
+    colors = ['pink', 'lightblue', 'lightgreen', '#6AB27B', '#a27712', '#8172B2', '#4C72B0', '#C44E52', '#FFA455', '#797979'] * 4
+    # 添加 box 的颜色
+    if diff_color:
+        for patch, color in zip(bplot['boxes'], colors[:len(bplot['boxes'])]):
+            patch.set_facecolor(color)
+    ax.yaxis.grid(True)
+    ax.set_xticks([y + 1 for y in range(len(data))], )
+    if xticklabels == []:
+        xticklabels = ['x{0}'.format(x) for x in range(1, len(data)+1)]
+    ax.set_xticklabels(xticklabels)
+    ax.set_xlabel(xlabeln)
+    ax.set_ylabel(ylabeln)
+    ax.set_title(titlen)
+    return [fig, ax]
+# 2.3 demo运行函数
+def plotBoxplotDemo():
+    import numpy as np
+    data = [np.random.normal(0, std, 100) for std in range(1, 4)]
+    plotBoxplot(data)
+    pass
+
+
+# 3、画放大图
+# 3.1 需要引入的包
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import ConnectionPatch
 import pandas as pd
-# 2.2 参考代码
+# 3.2 参考代码
 # test 画局部图   dpi
 # ax.text(tx, ty, label_f0, fontsize=15, verticalalignment="top", horizontalalignment="left")
 def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xlabel='X', ylabel='Y', title=['Origin Figure', 'Enlarge Figure']):
@@ -169,7 +219,7 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     ax2.add_artist(con)
     plt.show()
     return [fig, ax1, ax2]
-# 2.3 demo运行函数
+# 3.3 demo运行函数
 def plotEnlargeDemo():
     def f1(t):
         return np.exp(-t) * np.cos(2 * np.pi * t)
