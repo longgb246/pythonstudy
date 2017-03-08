@@ -67,6 +67,7 @@ def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_p
     plt.show()
     if is_save:
         plt.savefig(save_path)
+    return [fig1, ax1, ax2]
 # 1.3 demo运行函数
 def plotHistPerDemo():
     plot_data = np.random.randint(0,100,1000)
@@ -80,63 +81,94 @@ def plotHistPerDemo():
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import ConnectionPatch
+import pandas as pd
 # 2.2 参考代码
 # test 画局部图   dpi
 # ax.text(tx, ty, label_f0, fontsize=15, verticalalignment="top", horizontalalignment="left")
-def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xlabel='X', ylabel='Y', title=''):
+def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xlabel='X', ylabel='Y', title=['Origin Figure', 'Enlarge Figure']):
+    '''
+    data_x: list
+    data_y: list
+    scale: list  x的取值范围
+    label: list  每条线对应的label
+    colors: list  每条线对应的color
+    linestyle：list  每条线对应的linestyle
+    xlabel: str  x轴的label
+    ylabel: str  y轴的label
+    title: str  图的title
+    '''
     plt.style.use('seaborn-darkgrid')
-    fig = plt.figure(figsize=(16, 8), dpi=98)  # 加个dpi调整。
-    ax1 = fig.add_subplot(121, aspect=5 / 2.5)
-    ax2 = fig.add_subplot(122, aspect=5 / 2.5)
+    fig = plt.figure(figsize=(16, 7), dpi=98)  # 加个dpi调整。
+    # ax1 = fig.add_subplot(121, aspect=5 / 2.5)
+    ax1 = fig.add_subplot(121)
+    # ax2 = fig.add_subplot(122, aspect=5 / 2.5)
+    ax2 = fig.add_subplot(122)
     if colors == []:
-        colors = ['#6AB27B', '#C44E52', '#4C72B0', '#FFA455']
+        colors = ['#6AB27B', '#C44E52', '#4C72B0', '#FFA455']*4
     if linestyle == []:
-        linestyle = ['-', '--', '-.', ':']
+        linestyle = ['-', '--', '-.', ':']*4
+    pair_data = []
     for i, x in enumerate(data_x):
+        pair_data.append([pd.DataFrame(np.array([x, data_y[i]]).T, columns=['x', 'y'])])
         label_tmp = 'line_{0}'.format(i + 1) if label == [] else label[i]
         ax1.plot(x, data_y[i], color=colors[i], linestyle=linestyle[i], label=label_tmp, linewidth=2)
         ax2.plot(x, data_y[i], color=colors[i], linestyle=linestyle[i], label=label_tmp, linewidth=2)
+    x_lim = ax1.get_xlim()
+    x_range = x_lim[1] - x_lim[0]
     # ax1.axis([0.0, 5.01, -1.0, 1.5])
     ax1.set_ylabel(ylabel, fontsize=14)
     ax1.set_xlabel(xlabel, fontsize=14)
-    ax1.set_title(title,fontsize=18)
+    ax1.set_title(title[0],fontsize=18)
     ax1.grid(True)
-    ax1.legend()
+    ax1.legend(loc='best')
     # ax1.text(tx, ty, label_f0, fontsize=15, verticalalignment="top", horizontalalignment="left")
     if scale == []:
-        tx0 = 4
-        tx1 = 4.5
-        ty0 = -0.1
-        ty1 = 0.1
+        tx0 = x_lim[1] - x_range * 0.2
+        tx1 = x_lim[1] - x_range * 0.1
     else:
         tx0 = scale[0]
         tx1 = scale[1]
-        ty0 = scale[2]
-        ty1 = scale[3]
-    ax2.axis([tx0, tx1, ty0, ty1])          # 设置不同的范围
-    ax2.set_ylabel(ylabel, fontsize=14)
+    for i, each in enumerate(pair_data):
+        each = each[0]
+        tmp_max = np.max(each[(each['x'] >= tx0) & (each['x'] <= tx1)]['y'])
+        tmp_min = np.min(each[(each['x'] >= tx0) & (each['x'] <= tx1)]['y'])
+        if i == 0:
+            y_max = tmp_max
+            y_min = tmp_min
+        else:
+            y_max = y_max if y_max > tmp_max else tmp_max
+            y_min = y_min if y_min < tmp_min else tmp_min
+    y_range = y_max - y_min
+    ty0 = y_min - y_range * 0.16
+    ty1 = y_max + y_range * 0.16
+    ax2.set_xlim(tx0, tx1)
+    ax2.set_ylim(ty0, ty1)
+    # ax2.axis([tx0, tx1, ty0, ty1])          # 设置不同的范围
+    # ax2.set_ylabel(ylabel, fontsize=14)
     ax2.set_xlabel(xlabel, fontsize=14)
+    ax2.set_title(title[1], fontsize=18)
     ax2.grid(True)
-    ax2.legend()
+    ax2.legend(loc='best')
     sx = [tx0, tx1, tx1, tx0, tx0]          # 画方框
     sy = [ty0, ty0, ty1, ty1, ty0]
     ax1.plot(sx, sy, "purple")
     # plot patch lines
-    a = 0.05
-    xy = (tx1 - a, ty1 - a)
-    xy2 = (tx0 + a, ty0 + a)
+    y_a = 0.05 * (ty1 - ty0)
+    x_a = 0.05 * (tx1 - tx0)
+    xy = (tx1 - x_a, ty1 - y_a)
+    xy2 = (tx0 + x_a, ty1 - y_a)
     # 重点：连接线
     con = ConnectionPatch(xyA=xy2, xyB=xy,
                           coordsA="data", coordsB="data",           # 这个参数必须要！
                           axesA=ax2, axesB=ax1)
     ax2.add_artist(con)                      # 在p2上添加
-    xy = (tx1 - a, ty1 - a)
-    xy2 = (tx0 + a, ty0 + a)
+    xy = (tx1 - x_a, ty0 + y_a)
+    xy2 = (tx0 + x_a, ty0 + y_a)
     con = ConnectionPatch(xyA=xy2, xyB=xy, coordsA="data", coordsB="data",
                           axesA=ax2, axesB=ax1)
     ax2.add_artist(con)
     plt.show()
-    pass
+    return [fig, ax1, ax2]
 # 2.3 demo运行函数
 def plotEnlargeDemo():
     def f1(t):
@@ -148,15 +180,14 @@ def plotEnlargeDemo():
     data_x = np.arange(0.0, 5.0, 0.02)
     data_y = [f1(data_x), f11(data_x), f111(data_x)]
     data_x = [data_x, data_x, data_x]
-    plotEnlarge(data_x, data_y)
     # label_f0 = r"$f(t)=e^{-t+\alpha} \cos (2 \pi t+\beta)$"
-    # label_f1 = r"$\alpha=0,\beta=0$"
-    # label_f11 = r"$\alpha=0,\beta=0.2$"
-    # label_f111 = r"$\alpha=0.2,\beta=0$"
-    # tx = 0.5  # 添加 text 文本
-    # ty = 0.9
+    label_f1 = r"$\alpha=0,\beta=0$"
+    label_f11 = r"$\alpha=0,\beta=0.2$"
+    label_f111 = r"$\alpha=0.2,\beta=0$"
+    label = [label_f1, label_f11, label_f111]
+    plotEnlarge(data_x, data_y, label=label)
+    plotEnlarge(data_x, data_y, label=label, scale=[2.5,3])
     pass
-
 
 
 if __name__ == '__main__':
