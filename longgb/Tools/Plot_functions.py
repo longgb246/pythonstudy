@@ -71,8 +71,8 @@ def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_p
 # 1.3 demo运行函数
 def plotHistPerDemo():
     plot_data = np.random.randint(0,100,1000)
-    plothistper(plot_data)
-    plothistper(plot_data, is_drop_zero=True)
+    plotHistPer(plot_data)
+    plotHistPer(plot_data, is_drop_zero=True)
     pass
 
 

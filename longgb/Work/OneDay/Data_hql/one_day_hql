@@ -311,3 +311,19 @@ on
     a.rdc_id = b.rdc_id  and
     a.date_s = b.date_s
 
+
+
+drop table if exists dev.tmp_oneday_rdc_info_noPartition_skuList;
+CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_skuList as
+SELECT
+    item_sku_id  as sku_id,
+    item_third_cate_cd,
+    item_second_cate_cd
+FROM
+    gdm.gdm_m03_item_sku_da
+WHERE
+    dt= sysdate(-1)
+    and item_third_cate_cd = '1671'
+    and data_type = '1';
+
+
