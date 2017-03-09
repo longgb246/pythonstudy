@@ -33,7 +33,7 @@ def loadData(read_path):
     '''
     读取数据
     '''
-    load_file = read_path + os.sep + 'tmp_oneday_rdc_info_combine.out'
+    load_file = read_path + os.sep + file_name
     # 读取时间 Run Time is : 0.0 min 33.0780 s
     t1 = time.time()
     oneday_data = pd.read_table(load_file, header=None)
@@ -86,14 +86,15 @@ def countDataByDate_s(oneday_data_0219):
 # ======================== 配置参数 ========================
 read_path = r'D:\Lgb\data_sz'
 save_path = r'D:\Lgb\WorkFiles\One_day'
-start_date = '2016-02-19'
-end_date = '2017-02-27'
+start_date = '2016-03-01'
+end_date = '2017-03-01'
 date_range = getDateRange(start_date, end_date)
+file_name = 'tmp_oneday_rdc_info_combine.out'
 
 
 if __name__ == '__main__':
     oneday_data = loadData(read_path)
-    oneday_data_0219 = oneday_data[(oneday_data['date_s'] >= '2016-02-19') & (oneday_data['date_s'] <= '2017-02-27')]
+    oneday_data_0219 = oneday_data[(oneday_data['date_s'] >= '2016-03-01') & (oneday_data['date_s'] <= '2017-03-01')]
     count_oneday_data = countData(oneday_data)
     count_oneday_data_0219 = countData(oneday_data_0219)
     # 发现现在的缺失发生在 'ofdsales', 'total_sales', 'variance'
@@ -125,12 +126,18 @@ if __name__ == '__main__':
     # 2、有数据 -> 没数据
     # 3、没数据 -> 有数据
     # 4、没数据 -> 有数据 -> 没数据
+    t1 = time.time()
     oneday_data_0219_situation = pd.DataFrame()
     for sku_id in sku_list:
-        sku_id = sku_list[0]
+        # sku_id = sku_list[1]
         for date_this in date_range:
-            date_this = date_range[0]
-            oneday_data_0219_no_missinglist_need[(oneday_data_0219_no_missinglist_need['sku_id'] == sku_id) & (oneday_data_0219_no_missinglist_need['date_s'] == date_this)]
-            oneday_data_0219_situation = pd.concat([oneday_data_0219_situation, ])
+            # date_this = date_range[1]
+            tmp_count = oneday_data_0219_no_missinglist_need[(oneday_data_0219_no_missinglist_need['sku_id'] == sku_id) & (oneday_data_0219_no_missinglist_need['date_s'] == date_this)]
+            tmp_count_com = pd.DataFrame(np.matrix([sku_id, date_this, np.sum(tmp_count['ofdsales_mask'])/len(tmp_count),
+                                np.sum(tmp_count['total_sales_mask'])/len(tmp_count), np.sum(tmp_count['variance_mask'])/len(tmp_count)]),
+                                columns=['sku_id', 'date_s', 'ofdsales_mask', 'total_sales_mask', 'variance_mask'])
+            oneday_data_0219_situation = pd.concat([oneday_data_0219_situation, tmp_count_com])
+    oneday_data_0219_situation.index = range(len(oneday_data_0219_situation))
+    printRunTime(t1, 'oneday_data_0219_situation')
     pass
 

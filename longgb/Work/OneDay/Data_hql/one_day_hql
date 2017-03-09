@@ -129,8 +129,37 @@
 --    a.date_s;
 
 
+-- 1、选取 autoPO 的三级品类
+drop table if exists dev.tmp_oneday_rdc_info_noPartition_skuList;
+CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_skuList as
+SELECT
+    item_sku_id  as sku_id,
+    item_third_cate_cd,
+    item_second_cate_cd
+FROM
+    gdm.gdm_m03_item_sku_da
+WHERE
+    dt= sysdate(-1)  and
+    data_type = '1'  and
+    item_third_cate_cd in ( select
+                                item_third_cate_cd
+                            from
+                                dev.dev_autopo_third_cate
+                           );
+
+
+-- 统计有多少个 SKU
+SELECT
+	COUNT(1)
+FROM
+	dev.tmp_oneday_rdc_info_noPartition_skuList
+-- 原先 ： 2664  ("1671")
+-- 现在 ： 106012  (40多个3级品类)
+
+
+
 -- 拆分建表
--- 1、建立上表
+-- 2、建立上表               取 库存、在途 的数据
 drop table if exists dev.tmp_oneday_rdc_info_noPartition_upper;
 CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_upper as
 SELECT
@@ -142,15 +171,21 @@ SELECT
 FROM
     gdm.gdm_m08_item_stock_day_sum	     	-- 【主表】商品库存日汇总
 WHERE
-    dt >= '2016-01-01' AND
+    dt >= '2016-03-01' AND
     dt <= '2017-03-01' AND
-    delv_center_num in (3, 4, 5, 6, 9, 10, 316, 682)
+    delv_center_num in (3, 4, 5, 6, 9, 10, 316, 682)  and
+    sku_id in ( select
+                    m.sku_id
+                from
+                    dev.tmp_oneday_rdc_info_noPartition_skuList  m
+                )
 group by
     delv_center_num,
     dt,
     sku_id;
 
--- 2、建立下表
+
+-- 3、建立下表               取 均值、标准差 的数据
 drop table if exists dev.tmp_oneday_rdc_info_noPartition_lower;
 CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_lower as
 select
@@ -162,7 +197,7 @@ select
 from
     app.app_sfs_rdc_forecast_result
 where
-    dt >= '2016-01-01' and
+    dt >= '2016-03-01' and
     dt <= '2017-03-01' and
     dcid in (3, 4, 5, 6, 9, 10, 316, 682)  and
     wid in (select
@@ -171,74 +206,8 @@ where
                 dev.tmp_oneday_rdc_info_noPartition_skuList  m
             )
 
--- 3、选取 1671 的三级品类
-drop table if exists dev.tmp_oneday_rdc_info_noPartition_skuList;
-CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_skuList as
-SELECT
-    item_sku_id  as sku_id,
-    item_third_cate_cd,
-    item_second_cate_cd
-FROM
-    gdm.gdm_m03_item_sku_da
-WHERE
-    dt= sysdate(-1)
-    and item_third_cate_cd = '1671'
-    and data_type = '1';
 
--- 统计一下这个
-SELECT
-    count(DISTINCT item_sku_id)
-FROM
-    gdm.gdm_m03_item_sku_da
-WHERE
-    dt= sysdate( - 1)
-    and item_third_cate_cd = '1671'
-    and data_type = '1';
-
-
--- 4、假如成功，使用以下SQL合并
-drop table if exists dev.tmp_oneday_rdc_info_noPartition;
-CREATE TABLE dev.tmp_oneday_rdc_info_noPartition as
-select
-    c.rdc_id,
-    c.sku_id,
-    c.item_second_cate_cd,
-    c.item_third_cate_cd,
-    c.open_po,
-    c.inv,
-    d.variance,
-    d.ofdsales,
-    c.date_s
-from
-    (
-        select
-            b.rdc_id,
-            a.sku_id,
-            a.item_second_cate_cd,
-            a.item_third_cate_cd,
-            b.open_po,
-            b.inv,
-            b.date_s
-        from
-            dev.tmp_oneday_rdc_info_noPartition_skuList  a
-        left join
-            dev.tmp_oneday_rdc_info_noPartition_upper  b
-        on
-            a.sku_id = b.sku_id
-    ) c
-left join
-    dev.tmp_oneday_rdc_info_noPartition_lower  d
-on
-    c.sku_id = d.sku_id  and
-    c.rdc_id = d.rdc_id  and
-    c.date_s = d.date_s
-order by
-    c.rdc_id,
-    c.sku_id,
-    c.date_s;
-
-
--- 5、取出销量数据
+-- 4、取出销量数据
 drop table if exists dev.tmp_oneday_rdc_sales;
 CREATE TABLE dev.tmp_oneday_rdc_sales as
 select
@@ -250,7 +219,7 @@ select
 from
     app.app_sfs_sales_region
 where
-    dt >= '2016-01-01'  and
+    dt >= '2016-03-01'  and
     dt <= '2017-03-01'  and
     dc_id in (3, 4, 5, 6, 9, 10, 316, 682)  and
     sku_id in (select
@@ -258,6 +227,132 @@ where
             from
                 dev.tmp_oneday_rdc_info_noPartition_skuList  m
             )
+
+
+---- 统计一下这个
+--SELECT
+--    count(DISTINCT item_sku_id)
+--FROM
+--    gdm.gdm_m03_item_sku_da
+--WHERE
+--    dt= sysdate( - 1)
+--    and item_third_cate_cd = '1671'
+--    and data_type = '1';
+
+
+-- 4、假如成功，使用以下SQL合并
+drop table if exists dev.tmp_oneday_rdc_info_noPartition;
+CREATE TABLE dev.tmp_oneday_rdc_info_noPartition as
+select
+    e.rdc_id,
+    e.sku_id,
+    e.item_second_cate_cd,
+    e.item_third_cate_cd,
+    e.open_po,
+    e.inv,
+    e.variance,
+    e.ofdsales,
+    f.order_date,
+    f.total_sales,
+    e.date_s
+from
+    (
+        select
+            c.rdc_id,
+            c.sku_id,
+            c.item_second_cate_cd,
+            c.item_third_cate_cd,
+            c.open_po,
+            c.inv,
+            d.variance,
+            d.ofdsales,
+            c.date_s
+        from
+            (
+                select
+                    b.rdc_id,
+                    a.sku_id,
+                    a.item_second_cate_cd,
+                    a.item_third_cate_cd,
+                    b.open_po,
+                    b.inv,
+                    b.date_s
+                from
+                    dev.tmp_oneday_rdc_info_noPartition_skuList  a
+                left join
+                    dev.tmp_oneday_rdc_info_noPartition_upper  b
+                on
+                    a.sku_id = b.sku_id and
+                    b.rdc_id is not null
+            ) c
+        left join
+            dev.tmp_oneday_rdc_info_noPartition_lower  d
+        on
+            c.sku_id = d.sku_id  and
+            c.rdc_id = d.rdc_id  and
+            c.date_s = d.date_s  and
+            c.rdc_id is not null
+    ) e
+left join
+    dev.tmp_oneday_rdc_sales f
+on
+    e.sku_id = f.sku_id  and
+    e.rdc_id = f.rdc_id  and
+    e.date_s = f.date_s
+
+
+-- 6、将销量预测数据加入合并
+--drop table if exists dev.tmp_oneday_rdc_info_combine;
+--CREATE TABLE dev.tmp_oneday_rdc_info_combine as
+--select
+--    a.rdc_id,
+--    a.sku_id,
+--    a.item_second_cate_cd,
+--    a.item_third_cate_cd,
+--    a.open_po,
+--    a.inv,
+--    a.variance,
+--    a.ofdsales,
+--    b.order_date,
+--    b.total_sales,
+--    a.date_s
+--from
+--    (
+--        select
+--            d.rdc_id,
+--            d.sku_id,
+--            d.item_second_cate_cd,
+--            d.item_third_cate_cd,
+--            d.open_po,
+--            d.inv,
+--            d.variance,
+--            d.ofdsales,
+--            d.date_s
+--        from
+--            dev.tmp_oneday_rdc_info_noPartition  d
+--        where
+--            d.rdc_id is not null
+--    )  a
+--left join
+--    dev.tmp_oneday_rdc_sales  b
+--on
+--    a.sku_id = b.sku_id  and
+--    a.rdc_id = b.rdc_id  and
+--    a.date_s = b.date_s
+
+
+--drop table if exists dev.tmp_oneday_rdc_info_noPartition_skuList;
+--CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_skuList as
+--SELECT
+--    item_sku_id  as sku_id,
+--    item_third_cate_cd,
+--    item_second_cate_cd
+--FROM
+--    gdm.gdm_m03_item_sku_da
+--WHERE
+--    dt= sysdate(-1)
+--    and item_third_cate_cd = '1671'
+--    and data_type = '1';
 
 
 --    app.app_sfs_rdc_forecast_result 只有 2016-02-19 至 2017-03-07的数据
@@ -272,58 +367,15 @@ where
 --    b.order_date,
 --    b.total_sales,            销量
 --    a.date_s                  日期
--- 6、将销量预测数据加入合并
-drop table if exists dev.tmp_oneday_rdc_info_combine;
-CREATE TABLE dev.tmp_oneday_rdc_info_combine as
-select
-    a.rdc_id,
-    a.sku_id,
-    a.item_second_cate_cd,
-    a.item_third_cate_cd,
-    a.open_po,
-    a.inv,
-    a.variance,
-    a.ofdsales,
-    b.order_date,
-    b.total_sales,
-    a.date_s
-from
-    (
-        select
-            d.rdc_id,
-            d.sku_id,
-            d.item_second_cate_cd,
-            d.item_third_cate_cd,
-            d.open_po,
-            d.inv,
-            d.variance,
-            d.ofdsales,
-            d.date_s
-        from
-            dev.tmp_oneday_rdc_info_noPartition  d
-        where
-            d.rdc_id is not null
-    )  a
-left join
-    dev.tmp_oneday_rdc_sales  b
-on
-    a.sku_id = b.sku_id  and
-    a.rdc_id = b.rdc_id  and
-    a.date_s = b.date_s
 
 
 
-drop table if exists dev.tmp_oneday_rdc_info_noPartition_skuList;
-CREATE TABLE dev.tmp_oneday_rdc_info_noPartition_skuList as
-SELECT
-    item_sku_id  as sku_id,
-    item_third_cate_cd,
-    item_second_cate_cd
-FROM
-    gdm.gdm_m03_item_sku_da
-WHERE
-    dt= sysdate(-1)
-    and item_third_cate_cd = '1671'
-    and data_type = '1';
+-- one_day 基本信息
+-- 47 个三级品类。
+-- 106012 个SKU。 dev.tmp_oneday_rdc_info_noPartition_skuList             sku_id
+-- 总共 264344290 条记录。 dev.tmp_oneday_rdc_info_noPartition_upper       open_po, inv
+-- 总共 68260289 条记录。 dev.tmp_oneday_rdc_info_noPartition_lower        variance, ofdsales
+-- 总共 11154224 条记录。 dev.tmp_oneday_rdc_sales                         total_sales,
+
 
 
