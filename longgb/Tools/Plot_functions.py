@@ -1,6 +1,6 @@
 #-*- coding:utf-8 -*-
 
-# 1、画分布图
+# 1、画分布图    histPlot
 # 1.1 需要引入的包
 import numpy as np
 import matplotlib.pyplot as plt
@@ -76,11 +76,11 @@ def plotHistPerDemo():
     pass
 
 
-# 2、画分布图
+# 2、画箱型线图  boxPlot
 # 2.1 需要引入的包
 import matplotlib.pyplot as plt
 # 2.2 主函数
-def plotBoxplot(data, size=(8, 8), diff_color=False, xlabeln='x', ylabeln='y', titlen='', xticklabels=[]):
+def plotBoxPlot(data, size=(8, 8), diff_color=False, xlabeln='x', ylabeln='y', titlen='', xticklabels=[]):
     plt.style.use('seaborn-darkgrid')
     fig = plt.figure(figsize=size)
     ax = fig.add_subplot(111)
@@ -119,11 +119,52 @@ def plotBoxplot(data, size=(8, 8), diff_color=False, xlabeln='x', ylabeln='y', t
     ax.set_title(titlen)
     return [fig, ax]
 # 2.3 demo运行函数
-def plotBoxplotDemo():
+def plotBoxPlotDemo():
     import numpy as np
     data = [np.random.normal(0, std, 100) for std in range(1, 4)]
-    plotBoxplot(data)
+    plotBoxPlot(data)
     pass
+
+
+# 2、画小提琴图   violinPlot
+# 2.1 需要引入的包
+import matplotlib.pyplot as plt
+# 2.2 主函数
+def plotViolinPlot(data, size=(10, 10), diff_color=False, xlabeln='x', ylabeln='y', titlen='', xticklabels=[]):
+    fig = plt.figure(figsize=size)
+    ax = fig.add_subplot(111)
+    parts = ax.violinplot(data, showmeans=False, showmedians=False, showextrema=False)
+    for pc in parts['bodies']:
+        pc.set_facecolor('#4C72B0')
+        pc.set_edgecolor('#4C72B0')
+        pc.set_alpha(0.4)
+    min_n, quartile1, medians, quartile3, max_n = np.percentile(data, [0, 25, 50, 75, 100], axis=1)
+    mean_n = np.mean(data, axis=1)
+    median_n = np.median(data, axis=1)
+    inds = np.arange(1, len(medians) + 1)
+    weitiao_box = 25
+    ax.vlines(inds, quartile1, quartile3, color='#4C72B0', linestyle='-', lw=weitiao_box)            # 画 box
+    # 画几条横线
+    x_min = [-0.15 + x + 1 for x in range(len(data))]
+    x_max = [0.15 + x + 1 for x in range(len(data))]
+    weitiao = 0.09
+    x_min_box = [-weitiao + x + 1 for x in range(len(data))]
+    x_max_box = [weitiao + x + 1 for x in range(len(data))]
+    ax.hlines(min_n, x_min, x_max, color='#4C72B0', lw=2, alpha=0.9)        # 画 min 线条
+    ax.hlines(max_n, x_min, x_max, color='#4C72B0', lw=2, alpha=0.9)        # 画 max 线条
+    ax.vlines(range(1, len(data) + 1),min_n, max_n, color='#4C72B0', lw=2, alpha=0.8)       # 画连接的骨线
+    ax.hlines(mean_n, x_min_box, x_max_box, color='r', lw=3, linestyle='-', alpha=0.6)      # 画 mean 线
+    ax.scatter(inds, median_n, marker='o', color='white', s=30, zorder=3)                   # 画 median 点
+    # ax.hlines(median_n, x_min_box, x_max_box, color='#6AB27B', lw=2, linestyle='--')
+    ax.set_xlabel(xlabeln)
+    ax.set_ylabel(ylabeln)
+    ax.set_title(titlen)
+    ax.yaxis.grid(True)
+    return [fig, ax]
+# 2.3 demo运行函数
+def plotViolinPlotDemo():
+    data = [sorted(np.random.normal(0, std, 100)) for std in range(1, 5)]
+    plotViolinPlot(data=data)
 
 
 # 3、画放大图
