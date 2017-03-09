@@ -206,7 +206,7 @@ def errorbar_demo():
     ax.errorbar(x, y, xerr=0.2, yerr=0.4)       # 画出 (x +- xerr),(y +- yerr)
     plt.show()
     pass
-#
+# error 图
 def errorbar_demo_features():
     x = np.arange(0.1, 4, 0.5)
     y = np.exp(-x)
@@ -222,6 +222,83 @@ def errorbar_demo_features():
     ax1.set_yscale('log')
     plt.show()
     pass
+# 四面八方 error 图
+def errorbar_limits():
+    x = np.array([0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0])
+    y = np.exp(-x)
+    xerr = 0.1
+    yerr = 0.2
+    lolims = np.array([0, 0, 1, 0, 1, 0, 0, 0, 1, 0], dtype=bool)
+    uplims = np.array([0, 1, 0, 0, 0, 1, 0, 0, 0, 1], dtype=bool)
+    ls = 'dotted'
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.errorbar(x, y, xerr=xerr, yerr=yerr, linestyle=ls)
+    ax.errorbar(x, y + 0.5, xerr=xerr, yerr=yerr, uplims=uplims, linestyle=ls)
+    ax.errorbar(x, y + 1.0, xerr=xerr, yerr=yerr, lolims=lolims, linestyle=ls)
+    ax.errorbar(x, y + 1.5, xerr=xerr, yerr=yerr, lolims=lolims, uplims=uplims,
+                marker='o', markersize=8, linestyle=ls)
+    xerr = 0.2
+    yerr = np.zeros(x.shape) + 0.2
+    yerr[[3, 6]] = 0.3
+    # mock up some limits by modifying previous data
+    xlolims = lolims
+    xuplims = uplims
+    lolims = np.zeros(x.shape)
+    uplims = np.zeros(x.shape)
+    lolims[[6]] = True  # only limited at this index
+    uplims[[3]] = True  # only limited at this index
+    # do the plotting
+    ax.errorbar(x, y + 2.1, xerr=xerr, yerr=yerr,
+                xlolims=xlolims, xuplims=xuplims,
+                uplims=uplims, lolims=lolims,
+                marker='o', markersize=8,
+                linestyle='none')
+    # tidy up the figure
+    ax.set_xlim((0, 5.5))
+    ax.set_title('Errorbar upper and lower limits')
+    plt.show()
+    pass
+
+
+# 4、histogram 图
+def histogram_demo_features():
+    import matplotlib.mlab as mlab
+    np.random.seed(0)
+    # example data
+    mu = 100  # mean of distribution
+    sigma = 15  # standard deviation of distribution
+    x = mu + sigma * np.random.randn(437)
+    num_bins = 50
+    fig, ax = plt.subplots()
+    # the histogram of the data
+    n, bins, patches = ax.hist(x, num_bins, normed=1)
+    # add a 'best fit' line
+    y = mlab.normpdf(bins, mu, sigma)
+    ax.plot(bins, y, '--')
+    ax.set_xlabel('Smarts')
+    ax.set_ylabel('Probability density')
+    ax.set_title(r'Histogram of IQ: $\mu=100$, $\sigma=15$')
+    # Tweak spacing to prevent clipping of ylabel
+    fig.tight_layout()
+    plt.show()
+    pass
+# 画的是没有边界的 histogram 图，不等宽的 histogram 图
+def histogram_demo_histtypes():
+    np.random.seed(0)
+    mu = 200
+    sigma = 25
+    x = np.random.normal(mu, sigma, size=100)
+    fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(8, 4))
+    ax0.hist(x, 20, normed=1, histtype='stepfilled', facecolor='g', alpha=0.75)
+    ax0.set_title('stepfilled')
+    # Create a histogram by providing the bin edges (unequally spaced).
+    bins = [100, 150, 180, 195, 205, 220, 250, 300]
+    ax1.hist(x, bins, normed=1, histtype='bar', rwidth=0.8)
+    ax1.set_title('unequal bins')
+    fig.tight_layout()
+    plt.show()
+    pass
+
 
 
 # test 画局部图   dpi

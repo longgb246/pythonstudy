@@ -126,10 +126,10 @@ def plotBoxPlotDemo():
     pass
 
 
-# 2、画小提琴图   violinPlot
-# 2.1 需要引入的包
+# 3、画小提琴图   violinPlot
+# 3.1 需要引入的包
 import matplotlib.pyplot as plt
-# 2.2 主函数
+# 3.2 主函数
 def plotViolinPlot(data, size=(10, 10), diff_color=False, xlabeln='x', ylabeln='y', titlen='', xticklabels=[]):
     fig = plt.figure(figsize=size)
     ax = fig.add_subplot(111)
@@ -161,19 +161,19 @@ def plotViolinPlot(data, size=(10, 10), diff_color=False, xlabeln='x', ylabeln='
     ax.set_title(titlen)
     ax.yaxis.grid(True)
     return [fig, ax]
-# 2.3 demo运行函数
+# 3.3 demo运行函数
 def plotViolinPlotDemo():
     data = [sorted(np.random.normal(0, std, 100)) for std in range(1, 5)]
     plotViolinPlot(data=data)
 
 
-# 3、画放大图
-# 3.1 需要引入的包
+# 4、画放大图
+# 4.1 需要引入的包
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import ConnectionPatch
 import pandas as pd
-# 3.2 参考代码
+# 4.2 参考代码
 # test 画局部图   dpi
 # ax.text(tx, ty, label_f0, fontsize=15, verticalalignment="top", horizontalalignment="left")
 def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xlabel='X', ylabel='Y', title=['Origin Figure', 'Enlarge Figure']):
@@ -260,7 +260,7 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     ax2.add_artist(con)
     plt.show()
     return [fig, ax1, ax2]
-# 3.3 demo运行函数
+# 4.3 demo运行函数
 def plotEnlargeDemo():
     def f1(t):
         return np.exp(-t) * np.cos(2 * np.pi * t)
