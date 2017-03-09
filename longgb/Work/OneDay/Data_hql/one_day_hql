@@ -376,6 +376,8 @@ on
 -- 总共 264344290 条记录。 dev.tmp_oneday_rdc_info_noPartition_upper       open_po, inv
 -- 总共 68260289 条记录。 dev.tmp_oneday_rdc_info_noPartition_lower        variance, ofdsales
 -- 总共 11154224 条记录。 dev.tmp_oneday_rdc_sales                         total_sales,
+-- 过滤前的数据量。265082156 条。
+-- 过滤后的数据量。67602588 条。  保留了25.5025%的数据。
 
 
 
