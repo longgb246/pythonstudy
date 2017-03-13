@@ -17,8 +17,8 @@ qplot(carat, price, data = diamonds, alpha = I(1/10))    # 这里必须使用I(1
 # geom = "density"   # 密度图
 # geom = "bar"       # 条形图
 qplot(carat, price, data = dsmall, geom = c("point","smooth"))   # 使用2个图
-qplot(carat, price / carat, data = dsmall, geom = "jitter", alpha = I(1/5))   # 使用2个图
+qplot(carat, data = diamonds, geom="histogram", binwidth=0.1, xlim = c(0,3), color=color, fill=color)
+qplot(carat, data = diamonds, geom="density", color=color)
 
-
-
+# p37
 
