@@ -292,25 +292,25 @@ elif sim_s_S_type == 3:
 elif sim_s_S_type == 4:
     tmp_s_S_list = []
     # 针对高销量的sku的处理，s取最大，按照周转选择S，当周转小于5,采用最大的S，当周转大于5，则采用较小的S
-    Selected_s_S_mid_01 = Selected_s_S[Selected_s_S['ts_percent'] <= 0.5]
+    Selected_s_S_mid_01 = Selected_s_S[Selected_s_S['ts_percent'] <= 0.5]           # ts_percent小于等于0.5
     tmp1 = Selected_s_S_mid_01.groupby(['sku_id']).max()
     tmp1.reset_index(inplace=True)
-    tmp2 = tmp1.loc[:, ['sku_id', 's']]
+    tmp2 = tmp1.loc[:, ['sku_id', 's']]                             # s取最大。
     tmp3 = pd.merge(tmp2, Selected_s_S_mid_01, left_on=['sku_id', 's'], right_on=['sku_id', 's'])
     tmp4_more_5 = tmp3.groupby(['sku_id', 's']).max()
     tmp4_more_5.reset_index(inplace=True)
-    tmp4_more_5 = tmp4_more_5[tmp4_more_5['ito_his'] <= 5]
+    tmp4_more_5 = tmp4_more_5[tmp4_more_5['ito_his'] <= 5]          # ito_his 最大小于5
     tmp_s_S_list.append(tmp4_more_5)
     tmp4_less_5 = tmp3.groupby(['sku_id', 's']).min()
     tmp4_less_5.reset_index(inplace=True)
-    tmp4_less_5 = tmp4_less_5[tmp4_less_5['ito_his'] > 5]
+    tmp4_less_5 = tmp4_less_5[tmp4_less_5['ito_his'] > 5]           # ito_his 最小大于5
     tmp_s_S_list.append(tmp4_less_5)
 
     # 针对低销量的SKU选择s最小的SKU，最小的S
     Selected_s_S_mid_02 = Selected_s_S[Selected_s_S['ts_percent'] >= 0.99]
     tmp1 = Selected_s_S_mid_02.groupby(['sku_id']).min()
     tmp1.reset_index(inplace=True)
-    tmp2 = tmp1.loc[:, ['sku_id', 's']]
+    tmp2 = tmp1.loc[:, ['sku_id', 's']]                             # s取最小。
     tmp3 = pd.merge(tmp2, Selected_s_S_mid_02, left_on=['sku_id', 's'], right_on=['sku_id', 's'])
     '''S的取值'''
     # tmp4=tmp3.groupby(['sku_id','s']).min()
@@ -436,6 +436,8 @@ test_start_dt = datetime.datetime.strptime(test_date_range[0], '%Y-%m-%d')
 test_end_dt = datetime.datetime.strptime(test_date_range[1], '%Y-%m-%d')
 test_length = (test_end_dt - test_start_dt).days + 1
 for sku_id in sku_list:
+
+    # sku_id = '1000054'
     # 设置仿真开始日期和0:仿真结束日期
     # 准备数据
     df_sku = df[df.sku_id == sku_id]
