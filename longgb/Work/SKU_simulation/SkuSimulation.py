@@ -84,12 +84,9 @@ class SkuSimulation:
         self.start_dt = datetime.datetime.strptime(self.date_range[0], '%Y-%m-%d')
         self.end_dt = datetime.datetime.strptime(self.date_range[1], '%Y-%m-%d')
         self.simulation_period = (self.end_dt - self.start_dt).days + 1
-        # print 'self.simulation_period .....'
-        # print self.simulation_period
         self.sales_his_origin = sales_his
         self.inv_his = inv_his
         self.org_nation_sale_num_band = org_nation_sale_num_band
-
         self.s=s
         self.S=S
         self.s_array=s_array
@@ -100,17 +97,10 @@ class SkuSimulation:
         # # 销量填充与平滑
         #在仿真前对数据进行平滑
         self.sales_his = self.sales_his_origin.copy()
-        # '''销量平滑，输入DF，返回DF
-        #   采用3sigma方法进行平滑处理
-        # '''
-        # print self.sales_his
-        # self.sales_his=EMsmooth.smooth(self.sales_his)
-
         # 预测天数
         self.pred_days = pred_days
         # 销量预测（均值）
         self.sales_pred_mean = sales_pred_mean
-
         # 处理销量预测为空的情况：使用前一天的预测值
         for i in range(self.simulation_period):
             try:
@@ -119,19 +109,14 @@ class SkuSimulation:
             except:
                 print self.sales_pred_mean
                 print self.sku_id
-
         #处理调拨时长分布情况，针对调拨更多的为两点或者三点分布
         self.vlt_val = vlt_val.astype(np.int32)
         self.vlt_prob = vlt_prob
         self.vlt_distribution = rv_discrete(values=(self.vlt_val, self.vlt_prob))
-
-
-
         # 最晚的到货日期
         self.latest_arrive_index = 0
-
         # 仿真库存，初始化
-        # TODO：初始值=现货库存+在途
+        # 初始值=现货库存+在途
         self.inv_sim = np.array([0] * self.simulation_period, dtype=np.float64)
         self.inv_sim[0] = self.inv_his[0]
         # 仿真销量
@@ -156,7 +141,6 @@ class SkuSimulation:
         self.cur_index = 0
         # 仿真状态：{0: 未开始，1: 进行中，2：正常完成}
         self.simulation_status = 0
-        #self.category = Utils.getCategory(self.sales_his)
         self.subCategory = np.array([99]*self.simulation_period)
 
     def reset(self):
