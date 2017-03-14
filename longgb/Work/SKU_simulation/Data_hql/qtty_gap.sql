@@ -11,7 +11,7 @@ FROM
         SELECT
             b.sku_id,
             b.dt,
-            b.bp_quantity,
+            b.bp_quantity ,
             b.actual_allocation_qtty,
             abs(b.bp_quantity - b.actual_allocation_qtty) as abs_gap,
             b.bp_quantity - b.actual_allocation_qtty  as gap,
