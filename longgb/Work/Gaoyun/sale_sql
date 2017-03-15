@@ -1,0 +1,18 @@
+-- ======================================================
+-- =                        建表                        =
+-- ======================================================
+-- 取 RDC 的销量数据
+create table dev.tmp_gaoyun_sale as
+select
+    sku_id,
+    dc_id  as rdc_id,
+    order_date,
+    total_sales,
+    dt
+from
+    app.app_sfs_sales_region
+where
+    dt <= '2017-03-14'
+    and dt >= '2016-07-01'
+    and dc_id in (3, 4, 5, 6, 9, 10, 316, 682)
+
