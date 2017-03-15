@@ -111,123 +111,125 @@ train_start_dt = datetime.datetime.strptime(train_date_range[0], '%Y-%m-%d')
 train_end_dt = datetime.datetime.strptime(train_date_range[1], '%Y-%m-%d')
 trian_length = (train_end_dt - train_start_dt).days + 1
 
+# df.isnull()
+# np.sum()
+# df_test = df.loc[map(lambda x: False if np.sum(x) == 0 else True,df.isnull().values),:]
 
 # ====================================================================
 # =                             2、仿真开始                           =
 # ====================================================================
-# 2.0 开始仿真
-print u'开始循环遍历SKU'
-print u'SKU原始数量为:',len(sku_list)
-# 2.1 按照 sku 进行仿真
-for sku_id in sku_list:
-    # sku_id = '1000054'
+first = 0
+if first == 1:
+    # 2.0 开始仿真
+    print u'开始循环遍历SKU'
+    print u'SKU原始数量为:',len(sku_list)
+    # 2.1 按照 sku 进行仿真
+    for sku_id in sku_list:
+        # sku_id = '1000054'
 
-    # df_sku = df[df.sku_id == sku_id]
-    # df_sku = df_sku.drop(df_sku[(df_sku.dt < train_date_range[0]) | (df_sku.dt > train_date_range[1])].index)
-    # if (df_sku.shape[0]>=trian_length) and (len(df_sku.ofdsales)>1) and (isinstance(df_sku.ofdsales.iloc[0], str)) and (not np.isnan(df_sku.stock_qtty.iloc[0])) and (abs(np.sum(df_sku.stock_qtty) - 0) > 1e-3) and (abs(np.sum(df_sku.total_sale) - 0) > 1e-3):
-    #     print sku_id
-    #     break
+        # df_sku = df[df.sku_id == sku_id]
+        # df_sku = df_sku.drop(df_sku[(df_sku.dt < train_date_range[0]) | (df_sku.dt > train_date_range[1])].index)
+        # if (df_sku.shape[0]>=trian_length) and (len(df_sku.ofdsales)>1) and (isinstance(df_sku.ofdsales.iloc[0], str)) and (not np.isnan(df_sku.stock_qtty.iloc[0])) and (abs(np.sum(df_sku.stock_qtty) - 0) > 1e-3) and (abs(np.sum(df_sku.total_sale) - 0) > 1e-3):
+        #     print sku_id
+        #     break
 
-    # 2.2 提取 2016-12-02 ~ 2016-12-15 之间的数据
-    df_sku = df[df.sku_id == sku_id]
-    df_sku = df_sku.drop(df_sku[(df_sku.dt <train_date_range[0]) | (df_sku.dt > train_date_range[1])].index)
-    # 2.3 判断情况不进行仿真：
-    #       1、仿真日期不满14天的；
-    #       2、ofdsales的数据长度小于等于1的；      3、ofdsales的第一个元素部位str的；
-    #       4、stock_qtty的第一个元素为空的；       5、stock_qtty的求和（没有考虑正负项）为0的；
-    #       6、total_sale的求和（没有考虑正负项）为0的；
-    if df_sku.shape[0]<trian_length:
-        continue
-    if len(df_sku.ofdsales)<=1:
-        logging.info(str(sku_id) + ': ' + '仿真开始日期销量预测数据为空，不进行仿真！')
-        continue
-    if (not isinstance(df_sku.ofdsales.iloc[0], str)):
-        logging.info(str(sku_id) + ': ' + '仿真开始日期销量预测数据为空，不进行仿真！')
-        continue
-    if np.isnan(df_sku.stock_qtty.iloc[0]):
-        logging.info(str(sku_id) + ': ' + '仿真开始日期库存数据为空，不进行仿真！')
-        continue
-    if abs(np.sum(df_sku.stock_qtty) - 0) <= 1e-3:
-        logging.info(str(sku_id) + ': ' + '仿真期间总库存为0，也不仿真！')
-        continue
-    if abs(np.sum(df_sku.total_sale) - 0) <= 1e-3:
-        logging.info(str(sku_id) + ': ' + '仿真期间总销量为0，不进行仿真！')
-        continue
-    sku_name = ''
-    logging.info(str(sku_id) + '@' + sku_name + u': 开始仿真......')
-    # 2.4 将原始数据输出到文件
-    if write_original_data:
-        df_sku.to_csv(path_or_buf=output_dir + 'origin/'+ str(sku_id) + '_origin.csv', index=False, sep='\t')
-    sales_his = df_sku.total_sale.as_matrix()
-    inv_his = df_sku.stock_qtty.as_matrix()
-    sales_per=df_sku.ts_percent.as_matrix()
-    cv_sale=df_sku.cv_sale.as_matrix()
-    cv_sale=cv_sale[0]
-    sales_pred_mean = []
-    for x in df_sku.ofdsales:
-        if type(x) == float and math.isnan(x):
-            sales_pred_mean.append(None)
-        else:
-            sales_pred_mean.append(ast.literal_eval(x))
-    ############ 2.5 利用搜索算法搜索最优参数 #####################
-    # 先不遍历时间窗口和S-s,上面涉及 时间窗口的数据判断，因此把时间循环放到SKU循环下面一层
-    for ito_level in range(5,6):
-        # ito_level = 5
-        for dis_s_S in np.arange(4,8,0.5):
-            # dis_s_S = 4
-            s=8
-            while s>3:
-                S=s+dis_s_S
-                # 2.5.1 初始化
-                sku_simulation = SkuSimulation(train_date_range, sales_his, inv_his, sales_pred_mean, vlt_val,
-                                                   vlt_prob,s=s,S=S, sku_id=sku_id, sku_name=sku_name,ito_level=ito_level,
-                                                   sale_per=sales_per,cv_sale=cv_sale)
-                logging.info(str(sku_id) + '@' + 'run_simulation()')
-                sku_simulation.run_simulation(seed=66)
-                # 2.5.2 计算相关KPI
-                sku_kpi = sku_simulation.calc_kpi()
-                sku_kpi.append(-99)
-                # print sku_kpi
-                #根据KPI判断是否保留参数
-                if sku_kpi[1]>=math.sqrt(sku_kpi[2]):
-                    if ((sku_kpi[4]>0 and float(sku_kpi[3]-sku_kpi[4])/float(sku_kpi[4])<=0.08) or sku_kpi[3]<=7):
-                        ss=s
-                        sku_kpi[-1]=ss
-                        # print sku_kpi
-                        s=s-1
-                        train_kpi_list.append(sku_kpi)
-                        if sku_id in no_better_para_sku_list:
-                            no_better_para_sku_list.remove(sku_id)
-                        continue
+        # 2.2 提取 2016-12-02 ~ 2016-12-15 之间的数据
+        df_sku = df[df.sku_id == sku_id]
+        df_sku = df_sku.drop(df_sku[(df_sku.dt <train_date_range[0]) | (df_sku.dt > train_date_range[1])].index)
+        # 2.3 判断情况不进行仿真：
+        #       1、仿真日期不满14天的；
+        #       2、ofdsales的数据长度小于等于1的；      3、ofdsales的第一个元素部位str的；
+        #       4、stock_qtty的第一个元素为空的；       5、stock_qtty的求和（没有考虑正负项）为0的；
+        #       6、total_sale的求和（没有考虑正负项）为0的；
+        if df_sku.shape[0]<trian_length:
+            continue
+        if len(df_sku.ofdsales)<=1:
+            logging.info(str(sku_id) + ': ' + '仿真开始日期销量预测数据为空，不进行仿真！')
+            continue
+        if (not isinstance(df_sku.ofdsales.iloc[0], str)):
+            logging.info(str(sku_id) + ': ' + '仿真开始日期销量预测数据为空，不进行仿真！')
+            continue
+        if np.isnan(df_sku.stock_qtty.iloc[0]):
+            logging.info(str(sku_id) + ': ' + '仿真开始日期库存数据为空，不进行仿真！')
+            continue
+        if abs(np.sum(df_sku.stock_qtty) - 0) <= 1e-3:
+            logging.info(str(sku_id) + ': ' + '仿真期间总库存为0，也不仿真！')
+            continue
+        if abs(np.sum(df_sku.total_sale) - 0) <= 1e-3:
+            logging.info(str(sku_id) + ': ' + '仿真期间总销量为0，不进行仿真！')
+            continue
+        sku_name = ''
+        logging.info(str(sku_id) + '@' + sku_name + u': 开始仿真......')
+        # 2.4 将原始数据输出到文件
+        if write_original_data:
+            df_sku.to_csv(path_or_buf=output_dir + 'origin/'+ str(sku_id) + '_origin.csv', index=False, sep='\t')
+        sales_his = df_sku.total_sale.as_matrix()
+        inv_his = df_sku.stock_qtty.as_matrix()
+        sales_per=df_sku.ts_percent.as_matrix()
+        cv_sale=df_sku.cv_sale.as_matrix()
+        cv_sale=cv_sale[0]
+        sales_pred_mean = []
+        for x in df_sku.ofdsales:
+            if type(x) == float and math.isnan(x):
+                sales_pred_mean.append(None)
+            else:
+                sales_pred_mean.append(ast.literal_eval(x))
+        ############ 2.5 利用搜索算法搜索最优参数 #####################
+        # 先不遍历时间窗口和S-s,上面涉及 时间窗口的数据判断，因此把时间循环放到SKU循环下面一层
+        for ito_level in range(5,6):
+            # ito_level = 5
+            for dis_s_S in np.arange(4,8,0.5):
+                # dis_s_S = 4
+                s=8
+                while s>3:
+                    S=s+dis_s_S
+                    # 2.5.1 初始化
+                    sku_simulation = SkuSimulation(train_date_range, sales_his, inv_his, sales_pred_mean, vlt_val,
+                                                       vlt_prob,s=s,S=S, sku_id=sku_id, sku_name=sku_name,ito_level=ito_level,
+                                                       sale_per=sales_per,cv_sale=cv_sale)
+                    logging.info(str(sku_id) + '@' + 'run_simulation()')
+                    sku_simulation.run_simulation(seed=66)
+                    # 2.5.2 计算相关KPI
+                    sku_kpi = sku_simulation.calc_kpi()
+                    sku_kpi.append(-99)
+                    # print sku_kpi
+                    #根据KPI判断是否保留参数
+                    if sku_kpi[1]>=math.sqrt(sku_kpi[2]):
+                        if ((sku_kpi[4]>0 and float(sku_kpi[3]-sku_kpi[4])/float(sku_kpi[4])<=0.08) or sku_kpi[3]<=7):
+                            ss=s
+                            sku_kpi[-1]=ss
+                            # print sku_kpi
+                            s=s-1
+                            train_kpi_list.append(sku_kpi)
+                            if sku_id in no_better_para_sku_list:
+                                no_better_para_sku_list.remove(sku_id)
+                            continue
+                        else:
+                            s=s-1
                     else:
                         s=s-1
-                else:
-                    s=s-1
-                train_kpi_list.append(sku_kpi)          # 【这里为什么添加2次】
-                simulation_results[sku_id] = sku_simulation
-                # 将仿真明细数据输出到文件
-                if write_daily_data:
-                    daily_data = sku_simulation.get_daily_data()
-                    daily_data.to_csv(path_or_buf=output_dir + 'daily_data/' + str(sku_id) + '.csv', index=False, sep='\t')
-                endtime = datetime.datetime.now()
-                used_seconds = (endtime - starttime).total_seconds()
-                complete_sku += 1
-                logging.info('Total SKU=' + str(total_sku) + ' | ' + 'Finish SKU=' + str(complete_sku) + ' | ' + 'Used seconds=' +
-                                 str(used_seconds))
-# SKU粒度的KPI
-kpi_df = pd.DataFrame.from_records(train_kpi_list, columns=['sku_id','cr_sim','cr_his','ito_sim','ito_his','ts_sim',
-                                                      'ts_his','pur_cnt_sim','s','S','date_begin','date_end',
-                                                      'ito_level','ts_rate','ts_percent','cv_sale','target_s'])
-kpi_df.to_csv(path_or_buf=output_dir + train_simulation_name + '_kpi.csv', index=False, sep='\t')
-### 将没有找到最优解备选集合的SKU，进行保存便于分析原因
-
-with open(output_dir +'no_better_para_sku_list.csv', 'wb') as myfile:
-    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-    wr.writerow(no_better_para_sku_list)
-
-
-print 'Over !!!'
-exit()
+                    train_kpi_list.append(sku_kpi)          # 【这里为什么添加2次】
+                    simulation_results[sku_id] = sku_simulation
+                    # 将仿真明细数据输出到文件
+                    if write_daily_data:
+                        daily_data = sku_simulation.get_daily_data()
+                        daily_data.to_csv(path_or_buf=output_dir + 'daily_data/' + str(sku_id) + '.csv', index=False, sep='\t')
+                    endtime = datetime.datetime.now()
+                    used_seconds = (endtime - starttime).total_seconds()
+                    complete_sku += 1
+                    logging.info('Total SKU=' + str(total_sku) + ' | ' + 'Finish SKU=' + str(complete_sku) + ' | ' + 'Used seconds=' +
+                                     str(used_seconds))
+    # SKU粒度的KPI
+    kpi_df = pd.DataFrame.from_records(train_kpi_list, columns=['sku_id','cr_sim','cr_his','ito_sim','ito_his','ts_sim',
+                                                          'ts_his','pur_cnt_sim','s','S','date_begin','date_end',
+                                                          'ito_level','ts_rate','ts_percent','cv_sale','target_s'])
+    kpi_df.to_csv(path_or_buf=output_dir + train_simulation_name + '_kpi.csv', index=False, sep='\t')
+    ### 将没有找到最优解备选集合的SKU，进行保存便于分析原因
+    with open(output_dir +'no_better_para_sku_list.csv', 'wb') as myfile:
+        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        wr.writerow(no_better_para_sku_list)
+    print 'Over !!!'
+    exit()
 
 
 # =====================================================================
@@ -436,13 +438,12 @@ test_start_dt = datetime.datetime.strptime(test_date_range[0], '%Y-%m-%d')
 test_end_dt = datetime.datetime.strptime(test_date_range[1], '%Y-%m-%d')
 test_length = (test_end_dt - test_start_dt).days + 1
 for sku_id in sku_list:
-
     # sku_id = '1000054'
+    # sku_id = '1107763'            # error 的信息
     # 设置仿真开始日期和0:仿真结束日期
     # 准备数据
     df_sku = df[df.sku_id == sku_id]
     df_sku = df_sku.drop(df_sku[(df_sku.dt < test_date_range[0]) | (df_sku.dt > test_date_range[1])].index)
-
     # 如果仿真开始日期的销量预测数据为空，不进行仿真
     if df_sku.shape[0] < test_length:
         continue
@@ -452,37 +453,30 @@ for sku_id in sku_list:
     if (not isinstance(df_sku.ofdsales.iloc[0], str)):
         logging.info(str(sku_id) + ': ' + u'仿真开始日期销量预测数据为空，不进行仿真！')
         continue
-
     # 如果仿真开始日期的库存数据为空，不进行仿真
     if np.isnan(df_sku.stock_qtty.iloc[0]):
         logging.info(str(sku_id) + ': ' + u'仿真开始日期库存数据为空，不进行仿真！')
         continue
-
     # 仿真期间总库存为0，也不仿真
     if abs(np.sum(df_sku.stock_qtty) - 0) <= 1e-3:
         logging.info(str(sku_id) + ': ' + u'仿真期间总库存为0，也不仿真！')
         continue
-
     # 如果仿真期间总销量为0，不进行仿真
     if abs(np.sum(df_sku.total_sale) - 0) <= 1e-3:
         logging.info(str(sku_id) + ': ' + u'仿真期间总销量为0，不进行仿真！')
         continue
-
     # sku_name = (df_sku.sku_name.iloc[0]).decode('gbk').encode('utf-8')
     sku_name = ''
     # print(sku_id + '@' + sku_name + u': 开始仿真,关键KPI:sku_id,cr_sim,cr_his,ito_sim,ito_his,ts_sim,ts_his,pur_cnt_sim,s,S.date_range,ito_level')
     logging.info(str(sku_id) + '@' + sku_name + u': 开始仿真......')
-
     # 将原始数据输出到文件
     if write_original_data:
         df_sku.to_csv(path_or_buf=output_dir + str(sku_id) + s_S_type + u'_origin.csv', index=False, sep='\t')
-
     sales_his = df_sku.total_sale.as_matrix()
     inv_his = df_sku.stock_qtty.as_matrix()
     sales_per = df_sku.ts_percent.as_matrix()
     cv_sale = df_sku.cv_sale.as_matrix()
     cv_sale = cv_sale[0]
-
     sales_pred_mean = []
     for x in df_sku.ofdsales:
         if type(x) == float and math.isnan(x):
@@ -504,7 +498,6 @@ for sku_id in sku_list:
         # 计算相关KPI
         sku_kpi = sku_simulation.calc_kpi()
         sku_kpi.append(row['type'])
-        # print sku_kpi
         test_sku_kpi.append(sku_kpi)
         test_simulation_results[sku_id] = sku_simulation
 
@@ -514,11 +507,6 @@ for sku_id in sku_list:
             sim_retail_datasets.append(daily_data)
             daily_data.to_csv(path_or_buf=output_dir + str(sku_id) + s_S_type + '_sim.csv', index=False, sep='\t')
 
-            # # 将图片输出到文件
-            # if output_fig:
-            #     sku_simulation.get_report(output_dir)
-
-            # 运行日志
         endtime = datetime.datetime.now()
         used_seconds = (endtime - starttime).total_seconds()
     complete_sku += 1
@@ -542,6 +530,10 @@ for sku_id in sku_list:
     if write_daily_data:
         daily_data = sku_simulation.get_daily_data()
         system_retail_datasets.append(daily_data)
+        if np.isnan(sum(daily_data.inv_sim) / sum(daily_data.sales_sim)):
+            print sku_id
+            daily_data.to_csv(output_dir + 'error_kpi_{0}.csv'.format(sku_id))
+            exit()
         daily_data.to_csv(path_or_buf=output_dir + str(sku_id) + s_S_type + '_system.csv', index=False, sep='\t')
 
         # # 将图片输出到文件

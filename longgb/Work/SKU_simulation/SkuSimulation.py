@@ -84,9 +84,12 @@ class SkuSimulation:
         self.start_dt = datetime.datetime.strptime(self.date_range[0], '%Y-%m-%d')
         self.end_dt = datetime.datetime.strptime(self.date_range[1], '%Y-%m-%d')
         self.simulation_period = (self.end_dt - self.start_dt).days + 1
+        # print 'self.simulation_period .....'
+        # print self.simulation_period
         self.sales_his_origin = sales_his
         self.inv_his = inv_his
         self.org_nation_sale_num_band = org_nation_sale_num_band
+
         self.s=s
         self.S=S
         self.s_array=s_array
@@ -97,10 +100,17 @@ class SkuSimulation:
         # # 销量填充与平滑
         #在仿真前对数据进行平滑
         self.sales_his = self.sales_his_origin.copy()
+        # '''销量平滑，输入DF，返回DF
+        #   采用3sigma方法进行平滑处理
+        # '''
+        # print self.sales_his
+        # self.sales_his=EMsmooth.smooth(self.sales_his)
+
         # 预测天数
         self.pred_days = pred_days
         # 销量预测（均值）
         self.sales_pred_mean = sales_pred_mean
+
         # 处理销量预测为空的情况：使用前一天的预测值
         for i in range(self.simulation_period):
             try:
@@ -109,14 +119,19 @@ class SkuSimulation:
             except:
                 print self.sales_pred_mean
                 print self.sku_id
+
         #处理调拨时长分布情况，针对调拨更多的为两点或者三点分布
         self.vlt_val = vlt_val.astype(np.int32)
         self.vlt_prob = vlt_prob
         self.vlt_distribution = rv_discrete(values=(self.vlt_val, self.vlt_prob))
+
+
+
         # 最晚的到货日期
         self.latest_arrive_index = 0
+
         # 仿真库存，初始化
-        # 初始值=现货库存+在途
+        # TODO：初始值=现货库存+在途
         self.inv_sim = np.array([0] * self.simulation_period, dtype=np.float64)
         self.inv_sim[0] = self.inv_his[0]
         # 仿真销量
@@ -141,7 +156,12 @@ class SkuSimulation:
         self.cur_index = 0
         # 仿真状态：{0: 未开始，1: 进行中，2：正常完成}
         self.simulation_status = 0
+        #self.category = Utils.getCategory(self.sales_his)
         self.subCategory = np.array([99]*self.simulation_period)
+        # 标注：消耗在途的初始化
+        self.con_open_po_sim_this  = 0
+        # 标注：消耗在途的记录数据
+        self.con_open_po_sim = np.array([0] * self.simulation_period, dtype=np.float64)
 
     def reset(self):
         self.inv_sim = np.array([0] * self.simulation_period, dtype=np.float64)
@@ -244,10 +264,12 @@ class SkuSimulation:
             if self.arrive_qtty_sim[self.cur_index] > 0:
                 if self.inv_sim[self.cur_index] > 0:
                     self.success_cnt += self.arrive_pur_sim[self.cur_index]
-                self.inv_sim[self.cur_index] += self.arrive_qtty_sim[self.cur_index]
+                arrive_real = max(self.arrive_qtty_sim[self.cur_index] - self.con_open_po_sim_this, 0)                  # 标注：实际能到达的量。
+                self.con_open_po_sim_this = max(self.con_open_po_sim_this - self.arrive_qtty_sim[self.cur_index], 0)    # 标注：消耗在途 还剩余的量。
+                self.inv_sim[self.cur_index] += arrive_real                                                             # 标注：库存的实际到达。
             # 计算补货点
             self.calc_lop(cr)
-            # 判断是否需要补货：现货库存 + 采购在途 < 补货点
+            # 判断是否需要补货： 现货库存 + 采购在途 < 补货点
             flag = (self.lop[self.cur_index] - self.inv_sim[self.cur_index] - self.open_po_sim[self.cur_index]) > 0
             if flag:
                 self.replenishment(bp)
@@ -256,8 +278,11 @@ class SkuSimulation:
             # 下一天的仿真库存量（初始库存） = 当天仿真库存量 - 当天销量,销量可能超过库存因为消耗在途
             #将当天的在途进行运算，当天在途数量默认消耗不入库
             if self.cur_index < self.simulation_period - 1:
-                self.inv_sim[self.cur_index + 1] = max(self.inv_sim[self.cur_index] -self.sales_sim[self.cur_index],0)
-                self.open_po_sim[self.cur_index]=self.open_po_sim[self.cur_index]-max(0,self.sales_sim[self.cur_index]-self.inv_sim[self.cur_index])
+                self.inv_sim[self.cur_index + 1] = max(self.inv_sim[self.cur_index] -self.sales_sim[self.cur_index],0)  # 标注：这里更新了下一天(cur_index + 1)的库存，但是今天（cur_index）的库存没有减少。
+                self.open_po_sim[self.cur_index] = self.open_po_sim[self.cur_index]-max(0,self.sales_sim[self.cur_index]-self.inv_sim[self.cur_index])
+                self.con_open_po_sim[self.cur_index] = max(0,self.sales_sim[self.cur_index]-self.inv_sim[self.cur_index])   # 标注：这个仅仅用于记录 消耗在途
+                self.con_open_po_sim_this += max(0, self.sales_sim[self.cur_index] - self.inv_sim[self.cur_index])          # 标注：这个是当前的 消耗在途 的累计
+                self.inv_sim[self.cur_index] = self.inv_sim[self.cur_index + 1]                                         # 标注：这里把更新后的下一天库存更新到今天末。使得今天期末库存=下一天期初库存。
             # 更新日期下标
             self.cur_index += 1
         self.simulation_status = 2
