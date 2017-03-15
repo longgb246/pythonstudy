@@ -110,3 +110,12 @@ if __name__ == '__main__':
 
 
 
+
+import pandas as pd
+import numpy as np
+b = [[x, str(x+np.random.rand())] for x in range(103)]
+a = pd.DataFrame(b, columns=['a','b'])
+a['b'] = map(lambda x: 'aa'+ str(x[1]) if x[0] > 10 else str(x[1]), a.loc[:,['a','b']].values)
+# 代码的意思是：对于dataframe：a，当'a'列大于10的时候，'b'列增加前缀'aa'。
+
+
