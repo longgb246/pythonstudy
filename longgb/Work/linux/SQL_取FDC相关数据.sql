@@ -55,3 +55,23 @@ group by
     dt,
     sku_id
 
+
+
+-- ==============================================================
+-- =                         FDC 销量数据                       =
+-- ==============================================================
+create table dev.tmp_gaoyun_sale as
+select
+    sku_id,
+    dc_id  as fdc_id,
+    order_date,
+    total_sales,                            -- 销量
+    dt
+from
+    app.app_sfs_sales_region
+where
+    dt >= '${start_date}'
+    and dt <= '${end_date}'
+    and dc_id = '${fdc_id}'
+
+
