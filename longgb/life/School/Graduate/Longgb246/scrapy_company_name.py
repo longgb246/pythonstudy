@@ -23,11 +23,16 @@ sys.setdefaultencoding('utf-8')
 
 
 class scrapyComName():
-    def __init__(self):
+    def __init__(self, save_path):
         # 设置初始urls
         self.name_url_list = [{'url': 'http://quote.cfi.cn/stockList.aspx?t={0}'.format(url), 'url_name': url_name} for
                               url, url_name in zip(range(11, 17), ['name_sha.txt', 'name_szz.txt', 'name_szzx.txt', 'name_szcy.txt', 'name_shb.txt', 'name_szb.txt'])]
-        self.save_path = r'F:\Learning\School_Master\Graduate\Codes_Data'
+        self.save_path = save_path
+        self.mkdir(self.save_path)
+
+    def mkdir(self, path):
+        if not os.path.exists(path):
+            os.mkdir(path)
 
     def startRun(self):
         for each in self.name_url_list:
@@ -59,6 +64,12 @@ class scrapyComName():
                 f.write('\n')
 
 
+# ==============================================================
+# =                           基本配置                          =
+# ==============================================================
+save_path = r'D:\Lgb\WorkFiles\Graduate\Codes_Data'
+
+
 if __name__ == '__main__':
-    sc = scrapyComName()
+    sc = scrapyComName(save_path)
     sc.startRun()

@@ -38,7 +38,7 @@ group by
 -- ================ 合并以上信息建表 ================
 drop table if exists dev.tmp_lgb_rdc_inv_diff;
 create table dev.tmp_lgb_rdc_inv_diff  as
-select
+select distinct
     c.rdc_id,
     c.fdc_id,
     c.sku_id,
@@ -83,7 +83,7 @@ join
             sku_id,
             sum(stock_qtty) AS inv
         FROM
-            gdm.gdm_m08_item_stock_day_sum
+            app.app_sim_act_inventory
         WHERE
             dt = '2016-12-02'
             AND delv_center_num in (3, 4, 5, 6, 9, 10, 316, 682)
@@ -104,8 +104,14 @@ select
     a.rdc_id,
     a.fdc_id,
     c.count_inv_neg0,
+    c.count_inv_neg0/d.count_total*100  as count_inv_neg0_per,
     a.count_inv0,
-    b.count_inv12
+    a.count_inv0/d.count_total*100  as count_inv0_per,
+    b.count_inv12,
+    b.count_inv12/d.count_total*100  as count_inv12_per,
+    c.count_inv_neg0 + a.count_inv0 + b.count_inv12  as  count_sum,
+    (c.count_inv_neg0 + a.count_inv0 + b.count_inv12)/d.count_total*100  as  count_sum_per,
+    d.count_total
 from
     (
         select
@@ -155,6 +161,23 @@ join
 on
     a.rdc_id = c.rdc_id
     and a.fdc_id = c.fdc_id
+join
+    (
+        select
+            rdc_id,
+            fdc_id,
+            count(1)  as  count_total
+        from
+            dev.tmp_lgb_rdc_inv_diff
+        group by
+            rdc_id,
+            fdc_id
+    )  d
+on
+    a.rdc_id = d.rdc_id
+    and a.fdc_id = d.fdc_id;
+
+
 -- 查询
 select
     *
@@ -162,7 +185,7 @@ from
     dev.tmp_lgb_rdc_inv_diff_count_fdc
 order by
     rdc_id,
-    fdc_id
+    fdc_id;
 
 
 -- ========================= RDC 维度 =========================
@@ -173,15 +196,22 @@ select distinct
     sku_id,
     inv
 from
-    dev.tmp_lgb_rdc_inv_diff
+    dev.tmp_lgb_rdc_inv_diff;
+
 -- 总的
 drop table if exists dev.tmp_lgb_rdc_inv_diff_count_rdc;
 create table dev.tmp_lgb_rdc_inv_diff_count_rdc as
 select
     a.rdc_id,
     c.count_inv_neg0,
+    c.count_inv_neg0/d.count_total*100   as count_inv_neg0_per,
     a.count_inv0,
-    b.count_inv12
+    a.count_inv0/d.count_total*100   as count_inv0_per,
+    b.count_inv12,
+    b.count_inv12/d.count_total*100   as count_inv12_per,
+    c.count_inv_neg0 + a.count_inv0 + b.count_inv12  as  count_sum,
+    (c.count_inv_neg0 + a.count_inv0 + b.count_inv12)/d.count_total*100   as  count_sum_per,
+    d.count_total
 from
     (
         select
@@ -223,6 +253,19 @@ join
     )  c
 on
     a.rdc_id = c.rdc_id
+join
+    (
+        select
+            rdc_id,
+            count(1)  as  count_total
+        from
+            dev.tmp_lgb_rdc_inv_diff_rdc
+        group by
+            rdc_id
+    )  d
+on
+    a.rdc_id = d.rdc_id;
+
 -- 查询
 select
     *

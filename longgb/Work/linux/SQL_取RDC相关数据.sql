@@ -23,7 +23,7 @@ SELECT
     sum(in_transit_qtty) AS open_po,        -- 在途
     sum(stock_qtty) AS inv                  -- 库存数量
 FROM
-    gdm.gdm_m08_item_stock_day_sum	     	-- 商品库存日汇总
+    gdm.gdm_m08_item_stock_day_sum	     	-- 商品库存日汇总              后改为 app.app_sim_act_inventory 数据，来源：旭波。
 WHERE
     dt>='${start_date}'
     AND dt<='${end_date}'
