@@ -69,23 +69,29 @@ def readTextContent(each_dir):
     data = pd.DataFrame()
     for i, each in enumerate(list_dir_name):
         print '     [ subDir ]: ', each,
-        try:
-            t1 = time.time()
-            list_dir_2 = list_dir + os.sep + each
-            com_code = each
-            if os.path.isdir(list_dir_2):
-                file_dir = list_dir_2 + os.sep + 'content.txt'
-                if os.path.exists(file_dir):
-                    tmp_data = parseTextContent(file_dir, com_code)
-                    data = pd.concat([data, tmp_data])
-            if divmod(i + 1,100)[1] == 0:
-                data.to_csv(save_path + os.sep + '{0}_tmp_{1}.csv'.format(each_dir, i + 1), index=False)
-            printRunTime(t1)
-        except:
-            print '[ Warning !] There is Error !'
-            with open(save_path + os.sep + 'error_com.log', 'a') as f:
-                f.write('     [ subDir ]: {0}'.format(each))
-                f.write('\n')
+        passNum = 0
+        if passNum != 0:
+            data = pd.read_table(save_path + os.sep + '{0}_tmp_{1}.txt'.format(each_dir, passNum), sep='|')
+        if i <= passNum:
+            pass
+        else:
+            try:
+                t1 = time.time()
+                list_dir_2 = list_dir + os.sep + each
+                com_code = each
+                if os.path.isdir(list_dir_2):
+                    file_dir = list_dir_2 + os.sep + 'content.txt'
+                    if os.path.exists(file_dir):
+                        tmp_data = parseTextContent(file_dir, com_code)
+                        data = pd.concat([data, tmp_data])
+                if divmod(i + 1,100)[1] == 0:
+                    data.to_csv(save_path + os.sep + '{0}_tmp_{1}.txt'.format(each_dir, i + 1), index=False, sep='|')
+                printRunTime(t1)
+            except:
+                print '[ Warning !] There is Error !'
+                with open(save_path + os.sep + 'error_com.log', 'a') as f:
+                    f.write('     [ subDir ]: {0}'.format(each))
+                    f.write('\n')
     return data
 
 
@@ -126,10 +132,10 @@ if __name__ == '__main__':
         try:
             data = readTextContent(each_dir)
             if isSave:
-                data.to_csv(save_path + os.sep + '{0}.csv'.format(each_dir), index=False)
+                data.to_csv(save_path + os.sep + '{0}.txt'.format(each_dir), index=False, sep='|')
             combine = data.merge(read_finance, on=['date', 'com_code'])
             if isSave:
-                combine.to_csv(save_path + os.sep + 'combine_{0}.csv'.format(each_dir), index=False)
+                combine.to_csv(save_path + os.sep + 'combine_{0}.txt'.format(each_dir), index=False, sep='|')
         except:
             print '[ Warning !] There is Error !'
             with open(save_path + os.sep + 'error_com.log', 'a') as f:
