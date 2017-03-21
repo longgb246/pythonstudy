@@ -69,7 +69,7 @@ def readTextContent(each_dir):
     data = pd.DataFrame()
     for i, each in enumerate(list_dir_name):
         print '     [ subDir ]: ', each,
-        passNum = 0
+        passNum = 600
         if passNum != 0:
             data = pd.read_table(save_path + os.sep + '{0}_tmp_{1}.txt'.format(each_dir, passNum), sep='|')
         if i <= passNum:
@@ -88,7 +88,7 @@ def readTextContent(each_dir):
                     data.to_csv(save_path + os.sep + '{0}_tmp_{1}.txt'.format(each_dir, i + 1), index=False, sep='|')
                 printRunTime(t1)
             except:
-                print '[ Warning !] There is Error !'
+                print '[ Warning !] There is Error -- 2!'
                 with open(save_path + os.sep + 'error_com.log', 'a') as f:
                     f.write('     [ subDir ]: {0}'.format(each))
                     f.write('\n')
@@ -137,7 +137,7 @@ if __name__ == '__main__':
             if isSave:
                 combine.to_csv(save_path + os.sep + 'combine_{0}.txt'.format(each_dir), index=False, sep='|')
         except:
-            print '[ Warning !] There is Error !'
+            print '[ Warning !] There is Error -- 1!'
             with open(save_path + os.sep + 'error_com.log', 'a') as f:
                 f.write('[ Dir ]: {0}'.format(each_dir))
                 f.write('\n')
