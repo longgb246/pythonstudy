@@ -247,27 +247,21 @@ for sku_id in sku_list:
     system_small_s = defaultdict(int)
     system_bigger_S = defaultdict(int)
     for ky, row in df_sku.iterrows():
-        # df_sku.columns
         if row['fdcid'] not in fdc_list:
             continue
         index = gene_index(row['fdcid'], row['sku_id'], row['dt'])
-        # 加入预测均值和预测标准差
         if type(row['ofdsales']) == float and math.isnan(row['ofdsales']):
             fdc_forecast_sales[index].append(None)
         else:
             fdc_forecast_sales[index].extend(ast.literal_eval(row['ofdsales']))
-        # 加入预测标准差
         fdc_inv[index]['inv'] = row['stock_qtty']
         sales_retail[index] = row['total_sale']
         fdc_his_inv[index] = row['stock_qtty']
         fdc_forecast_std[index] = row['varsales']
         white_flag[row['dt']][row['fdcid']] = row['white_flag']
-        # 如果运行系统调拨量，需要用到s,S
         system_small_s[index] = row["safestock"]
         system_bigger_S[index] = row["maxstock"]
-    # 传入的为引用，所以需要对起进行深度copy,后续system仿真使用,主要是需要进行读写操作的类型
     fdc_inv_system = copy.deepcopy(fdc_inv)
-    # 按照公式计算补货点和补货量，system_flag=0
     fdc_allocation = inventory_proess(sku=sku_id, fdc_forecast_sales=fdc_forecast_sales,
                                       fdc_forecast_std=fdc_forecast_std,
                                       fdc_alt=fdc_alt, fdc_alt_prob=fdc_alt_prob, fdc_inv=fdc_inv,
@@ -276,8 +270,9 @@ for sku_id in sku_list:
                                       sales_retail=sales_retail,
                                       order_list=order_list, fdc_his_inv=fdc_his_inv, system_small_s=system_small_s,
                                       system_bigger_S=system_bigger_S, system_flag=0, rdc_sale_list=rdc_sale_list,
-                                      logger=logger, save_data_path=save_data_path)
+                                      logger=1, save_data_path=save_data_path)
     fdc_allocation.allocationSimulation()
+
     # 按照SKU保存数据
     if write_daily_data:
         daily_data = fdc_allocation.get_daily_data()

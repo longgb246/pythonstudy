@@ -4,9 +4,9 @@ import os.path
 import sys
 import time
 import numpy as np
-data_dir        ='E:/allocation_data/'
-output_dir      = 'E:/simulation_results/'
-log_path         ='E:/allocation_data/log/log.txt'
+data_dir        ='D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/'
+output_dir      = 'D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/simulation_results/'
+log_path         ='D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/log/log.txt'
 data_file_name='sales_all_detail_20170324073521.csv'
 rdc_inv_file_name='rdc_inv_big0_03_20170324140531.csv'
 order_file_name='order_sample_070203_20170324143010.csv'

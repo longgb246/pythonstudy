@@ -11,8 +11,8 @@ import pickle
 import numpy as np
 import pandas as pd
 from scipy.stats import itemfreq
-from com.jd.test.zhangjs.FDC_UNION_ALLOCATION.inventory_process_online import inventory_proess
-from com.jd.test.zhangjs.FDC_UNION_ALLOCATION import configServer
+from inventory_process_online import inventory_proess
+import configServer
 import time
 from StatisUtil import EMsmooth
 from collections import defaultdict
@@ -321,14 +321,16 @@ for sku_id in sku_list:
     sku_return_result['simsucess']+=sku_return_result['simsucess']
     # 将原始数据输出到文件
     if write_original_data:
-        df_sku.to_csv(path_or_buf=output_dir + str(sku_id) + '_origin.csv', index=False, sep='\t')
+        pass
+        # df_sku.to_csv(path_or_buf=output_dir + str(sku_id) + '_origin.csv', index=False, sep='\t')
     sku_name = ''
     # print(sku_id + '@' + sku_name + u': 开始仿真,关键KPI:sku_id,cr_sim,cr_his,ito_sim,ito_his,ts_sim,ts_his,pur_cnt_sim,s,S.date_range,ito_level')
     logger.info(str(sku_id) + '@' + sku_name + u': 开始仿真......')
 
     # 将原始数据输出到文件
     if write_original_data:
-        df_sku.to_csv(path_or_buf=output_dir + str(sku_id) + u'_origin.csv', index=False, sep='\t')
+        pass
+        # df_sku.to_csv(path_or_buf=output_dir + str(sku_id) + u'_origin.csv', index=False, sep='\t')
     #保存预测数据
     fdc_forecast_sales=defaultdict(list)
     fdc_forecast_std=defaultdict(list)
@@ -377,11 +379,11 @@ for sku_id in sku_list:
     #按照SKU保存数据
     if write_daily_data:
         daily_data = fdc_allocation.get_daily_data()
-        daily_data.to_csv(path_or_buf=output_dir + str(sku_id) +'_'+sim_lable+'.csv', index=False, sep='\t')
+        # daily_data.to_csv(path_or_buf=output_dir + str(sku_id) +'_'+sim_lable+'.csv', index=False, sep='\t')
         sim_retail_datasets.append(daily_data)
     #KPI计算函数，计算出各个FDC的SKU对应的KPI
     kpi_result_sku_fdc=fdc_allocation.calc_kpi()
-    kpi_result_sku_fdc.to_csv(path_or_buf=output_dir + str(sku_id) +'_'+sim_lable+'_kpi.csv', index=False, sep='\t')
+    # kpi_result_sku_fdc.to_csv(path_or_buf=output_dir + str(sku_id) +'_'+sim_lable+'_kpi.csv', index=False, sep='\t')
     sim_fdc_sku_kpi.append(kpi_result_sku_fdc)
 
     #按照系统参数进行计算，system_flag=1
@@ -395,11 +397,11 @@ for sku_id in sku_list:
     #按照SKU保存数据
     if write_daily_data:
         daily_data = fdc_allocation.get_daily_data()
-        daily_data.to_csv(path_or_buf=output_dir + str(sku_id) +'_'+system_label+'.csv', index=False, sep='\t')
+        # daily_data.to_csv(path_or_buf=output_dir + str(sku_id) +'_'+system_label+'.csv', index=False, sep='\t')
         system_retail_datasets.append(daily_data)
     #KPI计算函数，计算出各个FDC的SKU对应的KPI
     kpi_result_sku_fdc=fdc_allocation.calc_kpi()
-    kpi_result_sku_fdc.to_csv(path_or_buf=output_dir + str(sku_id)+'_' +system_label+'_kpi.csv', index=False, sep='\t')
+    # kpi_result_sku_fdc.to_csv(path_or_buf=output_dir + str(sku_id)+'_' +system_label+'_kpi.csv', index=False, sep='\t')
     system_fdc_sku_kpi.append(kpi_result_sku_fdc)
 
 
