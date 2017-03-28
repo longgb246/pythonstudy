@@ -161,8 +161,9 @@ def calc_replacement(fdc, date_s, sku_lop, bp=10, cr=0.99):
     max_qtty = sku_sales_mean * system_bigger_S[index]
     inv = fdc_inv[index]['inv']
     open_on = fdc_inv[index]['open_po']
+    cons_open_po = fdc_inv[index]['cons_open_po']
     if system_flag == 1:
-        lop_replacement = max(max_qtty - inv - open_on, 0)                  # 【标记】
+        lop_replacement = max(max_qtty - inv - open_on + cons_open_po, 0)                  # 【标记】
     else:
         lop_replacement = sku_sales_mean * 7
     # 调整补货量
@@ -403,7 +404,7 @@ def allocationSimulation():
             fdc_sales_retail[index] = min(sales_retail[index],
                                           fdc_inv[index]['inv'] + fdc_inv[index]['open_po'] - fdc_inv[index]['cons_open_po'])
             sim_sales_retail[index] = min(sales_retail[index],
-                                          fdc_inv[index]['inv'] + fdc_inv[index]['open_po'] - fdc_inv[index]['cons_open_po'] + rdc_inv[rdc_index])      # 【记录】
+                                          fdc_inv[index]['inv'] + fdc_inv[index]['open_po'] - fdc_inv[index]['cons_open_po'] + rdc_inv[rdc_index])
             # 记录消耗在途的数量
             if sales_retail[index] > fdc_inv[index]['inv']:
                 # 该递推公式保证了 fdc_inv[index]['cons_open_po'] 小于等于  fdc_inv[index]['open_po']
@@ -416,7 +417,7 @@ def allocationSimulation():
             fdc_inv[index]['inv'] = 0 if sku_gap >= 0 else abs(sku_gap)
             # 在模拟中有些订单会不被满足，所以需要在0 和实际值之间取最大值，无效订单在simu_order里面会被标记
             sku_gap = sales_retail[index] - (fdc_inv[index]['inv'] + fdc_inv[index]['open_po'] - fdc_inv[index]['cons_open_po'])
-            rdc_inv[rdc_index] = rdc_inv[rdc_index] if sku_gap < 0 else max(rdc_inv[rdc_index] - sku_gap, 0)                                            # rdc 保留量的考虑？
+            rdc_inv[rdc_index] = rdc_inv[rdc_index] if sku_gap < 0 else max(rdc_inv[rdc_index] - sku_gap, 0)
             # ----------------------------------------------------------------------------------------------------------------#
         # 更新下一天库存，将当天剩余库存标记为第二天库存,第二天到达库存会在开始增加上，将每天最后的在途消耗 更新为第二天的初始在途消耗，在第二天更新调拨的时候
         # 在途消耗与第二天的到达量做运算，如果有到达，则在途消耗做减法运算，即 不入库直接发给用户
