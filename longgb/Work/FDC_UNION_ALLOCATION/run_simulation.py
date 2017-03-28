@@ -349,7 +349,12 @@ for sku_id in sku_list:
         if type(row['ofdsales']) == float and math.isnan(row['ofdsales']):
             fdc_forecast_sales[index].append(None)
         else:
-            fdc_forecast_sales[index].extend(ast.literal_eval(row['ofdsales']))
+            try:
+                fdc_forecast_sales[index].extend(ast.literal_eval(row['ofdsales']))
+            except:
+                print sku_id
+                print row['ofdsales']
+                print ast.literal_eval(row['ofdsales'])
         #加入预测标准差
         # if type(row['varsales']) == float and math.isnan(row['varsales']):
         #     fdc_forecast_std[index].append(None)
