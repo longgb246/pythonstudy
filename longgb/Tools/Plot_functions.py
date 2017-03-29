@@ -216,9 +216,13 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     if scale == []:
         tx0 = x_lim[1] - x_range * 0.2
         tx1 = x_lim[1] - x_range * 0.1
+        ty0 = np.nan
+        ty1 = np.nan
     else:
         tx0 = scale[0]
         tx1 = scale[1]
+        ty0 = np.nan if len(scale) < 3 else scale[2]
+        ty1 = np.nan if len(scale) < 4 else scale[3]
     for i, each in enumerate(pair_data):
         each = each[0]
         tmp_max = np.max(each[(each['x'] >= tx0) & (each['x'] <= tx1)]['y'])
@@ -230,8 +234,8 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
             y_max = y_max if y_max > tmp_max else tmp_max
             y_min = y_min if y_min < tmp_min else tmp_min
     y_range = y_max - y_min
-    ty0 = y_min - y_range * 0.16
-    ty1 = y_max + y_range * 0.16
+    ty0 = ty0 if ty0 != np.nan else y_min - y_range * 0.16
+    ty1 = ty1 if ty1 != np.nan else y_max + y_range * 0.16
     ax2.set_xlim(tx0, tx1)
     ax2.set_ylim(ty0, ty1)
     # ax2.axis([tx0, tx1, ty0, ty1])          # 设置不同的范围
