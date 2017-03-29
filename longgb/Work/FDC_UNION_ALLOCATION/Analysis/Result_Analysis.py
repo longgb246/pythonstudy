@@ -78,6 +78,120 @@ def calKpi(kpi_need_fdc, suffix=''):
     return sim_fdc_kpi
 
 
+import matplotlib.pyplot as plt
+# 2.2 主函数
+def plotBoxPlot(data, size=(8, 8), diff_color=False, xlabeln='x', ylabeln='y', titlen='', xticklabels=[]):
+    plt.style.use('seaborn-darkgrid')
+    fig = plt.figure(figsize=size)
+    ax = fig.add_subplot(111)
+    # boxplot的属性
+    boxprops = dict(linewidth=2, facecolor='#4C72B0', alpha=0.35)           # 盒子属性
+    whiskerprops = dict(linewidth=2.5, linestyle='--', color='#797979', alpha=0.8)          # 虚线条属性
+    flierprops = dict(linewidth=2, marker='o', markerfacecolor='none', markersize=6, linestyle='none')  # 异常值
+    medianprops = dict(linestyle='-', linewidth=2.5, color='#FFA455')       # 中位数
+    meanpointprops = dict(marker='D', markeredgecolor='black', markerfacecolor='#C44E52')   # 均值
+    meanlineprops = dict(linestyle='--', linewidth=2.5, color='r', alpha=0.6)               # 均值
+    capprops = dict(linestyle='-', linewidth=2.5, color='#797979', alpha=0.8)               # 边界横线
+    bplot = ax.boxplot(data,
+               vert=True,               # vertical box aligmnent
+               showmeans=True,          # 显示均值
+               meanline=True,           # 均值使用线
+               patch_artist=True,       # fill with color
+               boxprops=boxprops,       # 盒子属性
+               whiskerprops=whiskerprops,   # 虚线条属性
+               capprops=capprops,           # 边界横线
+               flierprops=flierprops,       # 异常值
+               medianprops=medianprops,     # 中位数  #FFA455   #797979    #3E3E3E
+               meanprops=meanlineprops      # 异常值
+                )
+    colors = ['pink', 'lightblue', 'lightgreen', '#6AB27B', '#a27712', '#8172B2', '#4C72B0', '#C44E52', '#FFA455', '#797979'] * 4
+    # 添加 box 的颜色
+    if diff_color:
+        for patch, color in zip(bplot['boxes'], colors[:len(bplot['boxes'])]):
+            patch.set_facecolor(color)
+    ax.yaxis.grid(True)
+    ax.set_xticks([y + 1 for y in range(len(data))], )
+    if xticklabels == []:
+        xticklabels = ['x{0}'.format(x) for x in range(1, len(data)+1)]
+    ax.set_xticklabels(xticklabels)
+    ax.set_xlabel(xlabeln)
+    ax.set_ylabel(ylabeln)
+    ax.set_title(titlen)
+    return [fig, ax]
+
+
+def plotHistPer_this(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_path='', cum_True=True, size=(12,8), is_int=True, is_save=False, is_drop_zero=False):
+    '''
+    画hist的百分比图，指定bins
+    :param data: pd.DataFrame 单列数据
+    :param binsn: numeric 指定的bins
+    :param xlabeln: unicode x轴名称
+    :param ylabeln: unicode y轴名称
+    :param titlen: unicode 图的标题
+    :param save_path: string 文件路径
+    :param cum_True: boolean 是否添加累计概率线
+    :param size: tuple 画图的size大小
+    :param is_int: boolean 是否把标签变成整数
+    :return: None 仅用于作图
+    '''
+    # plot_data=z_value_frame.z_value; binsn=[-np.inf, 0, 2, 4, 6, 8, 10, 12, 14, np.inf]
+    # xlabeln = u'z值'; ylabeln = u'频数'; titlen = u"Z值分布图"; size=(12,8); intshu=True
+    plt.style.use('seaborn-darkgrid')
+    if binsn == []:
+        ret = plt.hist(plot_data, label='Z', color='#0070C0', histtype='bar', rwidth=0.6)
+    else:
+        ret = plt.hist(plot_data, bins=binsn, label='Z', color='#0070C0',histtype='bar', rwidth=0.6)
+    plt.close()
+    counts, bins, patches = ret[0], ret[1], ret[2]
+    if is_int:
+        bins = map(lambda x: int(x) if (x != -np.inf) and (x != np.inf) and (x != np.nan) else x,bins)
+    bins_name = ["["+str(bins[i])+","+str(bins[i+1])+")" for i in range(len(bins)-1)]
+    bins_name[0] = bins_name[0].replace('[','(')
+    bins_name = ['0'] + bins_name
+    counts = list(counts)
+    plot_data_count0 = np.sum(plot_data==0)
+    counts = [plot_data_count0] + counts
+    counts[1] = counts[1] - counts[0]
+    counts = np.array(counts)
+    if is_drop_zero:
+        tmp_counts = []
+        tmp_bins_name = []
+        for i, each in enumerate(counts):
+            if each != 0:
+                tmp_counts.append(counts[i])
+                tmp_bins_name.append(bins_name[i])
+        counts = tmp_counts
+        bins_name = tmp_bins_name
+    ind = np.arange(len(counts))
+    fig1, ax1 = plt.subplots(figsize=size)
+    ax1.set_xlabel(xlabeln)
+    ax1.set_ylabel(ylabeln)
+    width = 0.5
+    width2 = 0
+    ax1.bar(ind + width2, counts, width, color="#0070C0", tick_label=bins_name, align='center', alpha=0.6)
+    counts_per = counts/np.sum(counts)
+    counts_per_cum = np.cumsum(counts_per)
+    i = 0
+    ymin, ymax = plt.ylim()
+    ax1.set_ylim(ymin - ymax * 0.05, ymax * 1.05)
+    # ax1.set_xlim(-1, len(bins_name)+1)
+    for x, y in zip(ind, counts):
+        ax1.text(x + width2, y + 0.05, '{0:.2f}%'.format(counts_per[i]*100), ha='center', va='bottom')
+        i += 1
+    plt.title(titlen)
+    if cum_True:
+        ax2 = ax1.twinx()
+        ax2.set_ylabel('Cumulative probability distribution')
+        ax2.plot(ind + width2, counts_per_cum, '--', color="red")
+        ax2.yaxis.grid(False)
+        ax2.set_ylim(-0.05, 1.05)
+        ax2.set_xlim(-0.5, len(bins_name) - 0.5)
+    plt.show()
+    if is_save:
+        plt.savefig(save_path)
+    return [fig1, ax1, ax2, bins_name, counts]
+
+
 def count_diff():
     sim_all_sku_retail = pd.read_table(read_path + os.sep + 'sim_all_sku_retail.csv')
     this_need = sim_all_sku_retail.loc[:,['dt', 'fdc_id', 'sku_id', 'allocation_retail_real', 'allocation_retail_cacl']]
@@ -165,7 +279,7 @@ def analysis_detail_01():
 
     kpi_total = kpi_need_fdc.merge(kpi_need_fdc_system, left_on=['fdc_id', 'label_sim'], right_on=['fdc_id', 'label_system'])
 
-    # 计算分段的总量
+    # 1、计算分段的总量
     count_list = []
     for key, value in sim_all_sku_retail_need.groupby(['fdc_id']):
         tmp_count = dict(Counter(value['label']))
@@ -285,4 +399,64 @@ def arrangeData():
     pd_data = pd_data.loc[:,['fdc_id', 'sku_id', 'SR', 'T']]
     pd_data = pd_data.sort_values(['sku_id', 'fdc_id'])
     pd_data.to_csv(read_path + os.sep + 'sr_T_values_sim.csv', index=False)
+
+
+def allocationQttyDiff():
+    skulist = pd.read_csv(read_path + os.sep + 'skulist.csv')
+    skulist_need = skulist[skulist['countalloctionreal'] > 0]
+
+    sim_all_sku_retail = pd.read_table(read_path + os.sep + 'sim_all_sku_retail.csv')
+    system_all_sku_retail = pd.read_table(read_path + os.sep + 'system_all_sku_retail.csv')
+    sim_all_sku_retail['allocation_retail_diff'] = sim_all_sku_retail['allocation_retail_cacl'] - sim_all_sku_retail['allocation_retail_real']
+    system_all_sku_retail['allocation_retail_diff'] = system_all_sku_retail['allocation_retail_cacl'] - system_all_sku_retail['allocation_retail_real']
+
+    # 1、存储明细信息1
+    sim_all_sku_retail_save = skulist_need.merge(sim_all_sku_retail, on=['fdc_id','sku_id'])
+    sim_all_sku_retail_save = sim_all_sku_retail_save.loc[:,['dt', 'fdc_id', 'sku_id', 'allocation_retail_cacl', 'allocation_retail_real', 'allocation_retail_diff']]
+    system_all_sku_retail_save = skulist_need.merge(system_all_sku_retail, on=['fdc_id','sku_id'])
+    system_all_sku_retail_save = system_all_sku_retail_save.loc[:,['dt', 'fdc_id', 'sku_id', 'allocation_retail_cacl', 'allocation_retail_real', 'allocation_retail_diff']]
+    sim_all_sku_retail_save.to_csv(read_path + os.sep + 'allocationQttyDiff_sim_detail.csv', index=False)
+    system_all_sku_retail_save.to_csv(read_path + os.sep + 'allocationQttyDiff_system_detail.csv', index=False)
+
+    # 仿真
+    sim_all_sku_retail_keep = pd.DataFrame()
+    for key, value in sim_all_sku_retail.groupby(['fdc_id','sku_id']):
+        tmp_pd = pd.DataFrame.from_dict({'fdc_id':key[0],'sku_id':key[1],'diff_sum':np.sum(value['allocation_retail_diff'])}, orient='index').T
+        sim_all_sku_retail_keep = pd.concat([sim_all_sku_retail_keep, tmp_pd])
+    sim_all_sku_retail_keep.index = range(len(sim_all_sku_retail_keep))
+
+    diff_pd = skulist_need.merge(sim_all_sku_retail_keep, on=['fdc_id','sku_id'])
+    fdc_list = diff_pd['fdc_id'].unique()
+    count_table = pd.DataFrame()
+    for fdc_id in fdc_list:
+        diff_pd_fdc = diff_pd[diff_pd['fdc_id']==fdc_id]
+        binsn = [0, 10, 20, 30, 40, 50, 100, 200, 300, np.inf]
+        fig1, ax1, ax2, bins_name, counts = plotHistPer_this(diff_pd_fdc['diff_sum'], binsn=binsn)
+        tmp_pd = pd.DataFrame(np.matrix([fdc_id] + list(counts) + [np.sum(counts)]), columns=['fdc_id'] + bins_name + ['Total'])
+        count_table = pd.concat([count_table, tmp_pd])
+    count_table.to_csv(read_path + os.sep + 'allocationQttyDiff_sim.csv', index=False)
+
+    # 系统
+    system_all_sku_retail_keep = pd.DataFrame()
+    for key, value in system_all_sku_retail.groupby(['fdc_id','sku_id']):
+        tmp_pd = pd.DataFrame.from_dict({'fdc_id':key[0],'sku_id':key[1],'diff_sum':np.sum(value['allocation_retail_diff'])}, orient='index').T
+        system_all_sku_retail_keep = pd.concat([system_all_sku_retail_keep, tmp_pd])
+    system_all_sku_retail_keep.index = range(len(system_all_sku_retail_keep))
+
+    diff_pd_system = skulist_need.merge(system_all_sku_retail_keep, on=['fdc_id', 'sku_id'])
+    fdc_list = diff_pd_system['fdc_id'].unique()
+    count_table = pd.DataFrame()
+    for fdc_id in fdc_list:
+        diff_pd_fdc = diff_pd_system[diff_pd_system['fdc_id'] == fdc_id]
+        binsn = [0, 10, 20, 30, 40, 50, 100, 200, 300, np.inf]
+        fig1, ax1, ax2, bins_name, counts = plotHistPer_this(diff_pd_fdc['diff_sum'], binsn=binsn)
+        tmp_pd = pd.DataFrame(np.matrix([fdc_id] + list(counts) + [np.sum(counts)]), columns=['fdc_id'] + bins_name + ['Total'])
+        count_table = pd.concat([count_table, tmp_pd])
+    count_table.to_csv(read_path + os.sep + 'allocationQttyDiff_system.csv', index=False)
+
+    # 2、存储明细信息2
+    diff_pd_save = diff_pd.loc[:,['fdc_id','sku_id','diff_sum']]
+    diff_pd_system_save = diff_pd_system.loc[:,['fdc_id','sku_id','diff_sum']]
+    diff_pd_save.to_csv(read_path + os.sep + 'allocationQttyDiff_sim_detail2.csv', index=False)
+    diff_pd_system_save.to_csv(read_path + os.sep + 'allocationQttyDiff_system_detail2.csv', index=False)
 
