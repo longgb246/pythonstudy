@@ -23,6 +23,10 @@ cross join
 	    	dt = '2017-02-19' and
 		    fdcid in ('605', '634', '633')
     ) g
+
+    -关联band表，2月17号，28天，陈博士，；
+    --去除 在2-19  320 有逆配
+    --保留 2月19 RDC 库存>0
 #-------------------------------------------------------采购单数据-----------------------------------------------------------------------------#
 
 ####获取7月1号之后的采购单数据#############################
@@ -313,3 +317,51 @@ as
 		    t2.int_org_num,
 		    to_date(t2.complete_dt),
 		    t2.sku_id;
+
+
+
+
+
+
+
+
+
+###-----------------------------RDC销量#####################################################################3333
+ drop table if exists  dev.dev_inv_opt_simulation_rdc_sale_data_sample_no;
+create table dev.dev_inv_opt_simulation_rdc_sale_data_sample_no
+as
+    select a.* from app.app_sfs_sales_dc a join
+    (select distinct sku_id from dev.dev_inv_opt_simulation_sku_list) b
+    on a.sku_id=b.sku_id
+    where a.dc_id = 4  and a.dt >= '2017-02-19' and a.dt <=  '2017-03-20'
+
+
+####采购单抽样##############################333
+	 drop table if exists  dev.dev_inv_opt_simulation_order_1_sample_no;
+create table dev.dev_inv_opt_simulation_order_1_sample_no
+as
+		SELECT
+			to_date(t2.complete_dt) as arrive_time,
+			t2.sku_id as item_sku_id,
+			sum(t2.actual_pur_qtty) as arrive_quantity,
+			t2.int_org_num
+	    FROM
+	        gdm.gdm_m04_pur_det_basic_sum t2 join
+	        (select distinct sku_id from dev.dev_inv_opt_simulation_sku_list) b
+	        on t2.sku_id=b.sku_id
+	    WHERE
+	        t2.dt = sysdate(-1) AND
+	        t2.valid_flag = 1 AND  						-- 有效标志
+	        t2.cgdetail_yn = 1 AND 						-- 采购明细单有效标志
+	        to_date(t2.create_tm) BETWEEN '2017-01-01' AND '2017-03-20' AND
+	        t2.int_org_num = 4
+	    group by
+		    t2.int_org_num,
+		    to_date(t2.complete_dt),
+		    t2.sku_id;
+
+-----------------band 数据表----------------------------
+adm_s03_item_band_region
+http://bdp.jd.com/think/meta/table/columns.html?tbUuid=172.22.170.109-dd_edw_hive-603431
+stat_type_cd 统计类型代码 1代表一级品类；2代表二级品类；3代表三级品类。
+stat_ct_type_cd 统计周期代码 7代表此条数据的信息基于7天BAND；14，28同理

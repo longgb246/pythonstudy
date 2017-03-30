@@ -9,10 +9,6 @@ plt.style.use('seaborn-darkgrid')
 # ========================================================================
 # =                                 功能函数                             =
 # ========================================================================
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-
 from matplotlib.patches import ConnectionPatch
 def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xlabel='X', ylabel='Y', title=['Origin Figure', 'Enlarge Figure']):
     '''
@@ -104,15 +100,16 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     return [fig, ax1, ax2]
 
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
 # ========================================================================
 # =                                 实用函数                             =
 # ========================================================================
 def script_01_plotSigmoid():
     data_x = [np.arange(-60,60,1)]
     data_y = [sigmoid(data_x[0])]
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-    # ax.plot(x, y, color='#4C72B0', linewidth=2)
     plotEnlarge(data_x, data_y, scale=[-6, 6, 0, 1])
 
 
