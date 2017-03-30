@@ -21,9 +21,9 @@ SELECT
     dt,
     sku_id,
     sum(in_transit_qtty) AS open_po,        -- 在途
-    sum(stock_qtty) AS inv                  -- 库存数量
+    sum(stock_qtty) AS inv                  -- 库存数量           更改：sum(stock_qtty + in_transit_qtty - sale_reserve_qtty)  as stock_qtty
 FROM
-    gdm.gdm_m08_item_stock_day_sum	     	-- 商品库存日汇总              后改为 app.app_sim_act_inventory 数据，来源：旭波。
+    gdm.gdm_m08_item_stock_day_sum	     	-- 商品库存日汇总     期间：app.app_sim_act_inventory，来源：旭波。【注：旭波这张表又有错误，还是改为 m08 那张表】
 WHERE
     dt>='${start_date}'
     AND dt<='${end_date}'
@@ -50,3 +50,36 @@ where
     dt >= '${start_date}'
     and dt <= '${end_date}'
     and dc_id in (3, 4, 5, 6, 9, 10, 316, 682)
+
+
+
+
+
+
+-- 1、【之后总结】
+SELECT
+    dt,
+    sku_id,
+    dc_id,
+    total_sales
+FROM
+	app.app_sfs_sales_dc                    -- 是 RDC 与 FDC 分开的销量
+where
+    dt = '2017-02-02'  and
+    dc_id in ('4', '605', '634', '633')
+order by
+    sku_id
+
+-- 2、【之后总结】
+SELECT
+    dt,
+    sku_id,
+    dc_id,
+    total_sales
+FROM
+	app.app_sfs_sales_region                -- 是 RDC 覆盖区域下的销量
+where
+    dt = '2017-02-02'  and
+    dc_id in ('4', '605', '634', '633')
+order by
+    sku_id
