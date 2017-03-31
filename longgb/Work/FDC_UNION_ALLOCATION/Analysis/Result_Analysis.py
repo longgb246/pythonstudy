@@ -24,10 +24,13 @@ def calKpi_label(kpi_need_fdc, suffix=''):
     '''
     需要字段：sku_id, fdc_id, inv_his, inv_sim, fdc_sales_sim, sales_his_origin
     '''
-    sku_cnt = len(np.unique(kpi_need_fdc.sku_id))
+    # # kpi_need_fdc = sim_all_sku_retail_keep
+    # kpi_need_fdc.columns
+    # rdc_inv
     sim_fdc_kpi=[]
     for label_fdcid, fdcdata in kpi_need_fdc.groupby(['fdc_id', 'label']):
-        tmp_fdcid,label=label_fdcid[0],label_fdcid[1]
+        sku_cnt = len(np.unique(fdcdata.sku_id))
+        tmp_fdcid, label = label_fdcid[0], label_fdcid[1]
         fdc_kpi = defaultdict(lambda: defaultdict(float))
         # 现货率（cr）：有货天数除以总天数
         fdc_kpi['cr_his'][tmp_fdcid] = sum(fdcdata.inv_his > 0) / float(30 * sku_cnt)
@@ -43,11 +46,16 @@ def calKpi_label(kpi_need_fdc, suffix=''):
         fdc_kpi['ts_rate'][tmp_fdcid] = -1 if float(fdc_kpi['ts_his'][tmp_fdcid]) <= 0 else float(
             fdc_kpi['ts_sim'][tmp_fdcid]) / float(fdc_kpi['ts_his'][tmp_fdcid])
         fdc_kpi['label'][tmp_fdcid]=label
+        fdc_kpi['cr_his_new_0'][tmp_fdcid] = sum((fdcdata.inv_his > 0) | (fdcdata.rdc_inv > 0)) / float(30 * sku_cnt)
+        fdc_kpi['cr_sim_new_0'][tmp_fdcid] = sum((fdcdata.inv_sim > 0) | (fdcdata.rdc_inv > 0)) / float(30 * sku_cnt)
+        fdc_kpi['cr_his_new_12'][tmp_fdcid] = sum((fdcdata.inv_his > 0) | (fdcdata.rdc_inv > 12)) / float(30 * sku_cnt)
+        fdc_kpi['cr_sim_new_12'][tmp_fdcid] = sum((fdcdata.inv_sim > 0) | (fdcdata.rdc_inv > 12)) / float(30 * sku_cnt)
         sim_fdc_kpi.append(pd.DataFrame(fdc_kpi))
     sim_fdc_kpi=pd.concat(sim_fdc_kpi)
     sim_fdc_kpi.columns = map(lambda x: x + suffix,list(sim_fdc_kpi.columns))
     sim_fdc_kpi.reset_index(inplace=True)
     sim_fdc_kpi.rename(columns={'index': 'fdc_id'}, inplace=True)
+    sim_fdc_kpi.rename(columns={'label'+suffix: 'label'}, inplace=True)
     return sim_fdc_kpi
 
 
@@ -55,6 +63,9 @@ def calKpi(kpi_need_fdc, suffix=''):
     '''
     需要字段：sku_id, fdc_id, inv_his, inv_sim, sales_sim, sales_his_origin
     '''
+    # # kpi_need_fdc = sim_all_sku_retail_keep
+    # kpi_need_fdc.columns
+    # rdc_inv
     sku_cnt = len(np.unique(kpi_need_fdc.sku_id))
     fdc_kpi = defaultdict(lambda: defaultdict(float))
     for tmp_fdcid, fdcdata in kpi_need_fdc.groupby(['fdc_id']):
@@ -71,6 +82,10 @@ def calKpi(kpi_need_fdc, suffix=''):
         fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
         fdc_kpi['ts_rate'][tmp_fdcid] = -1 if float(fdc_kpi['ts_his'][tmp_fdcid]) <= 0 else float(
             fdc_kpi['ts_sim'][tmp_fdcid]) / float(fdc_kpi['ts_his'][tmp_fdcid])
+        fdc_kpi['cr_his_new_0'][tmp_fdcid] = sum((fdcdata.inv_his > 0) | (fdcdata.rdc_inv > 0)) / float(30 * sku_cnt)
+        fdc_kpi['cr_sim_new_0'][tmp_fdcid] = sum((fdcdata.inv_sim > 0) | (fdcdata.rdc_inv > 0)) / float(30 * sku_cnt)
+        fdc_kpi['cr_his_new_12'][tmp_fdcid] = sum((fdcdata.inv_his > 0) | (fdcdata.rdc_inv > 12)) / float(30 * sku_cnt)
+        fdc_kpi['cr_sim_new_12'][tmp_fdcid] = sum((fdcdata.inv_sim > 0) | (fdcdata.rdc_inv > 12)) / float(30 * sku_cnt)
     sim_fdc_kpi=pd.DataFrame(fdc_kpi)
     sim_fdc_kpi.columns = map(lambda x: x + suffix,list(sim_fdc_kpi.columns))
     sim_fdc_kpi.reset_index(inplace=True)
@@ -192,6 +207,9 @@ def plotHistPer_this(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', s
     return [fig1, ax1, ax2, bins_name, counts]
 
 
+# ======================================================================
+# =                                 计算函数                           =
+# ======================================================================
 def count_diff():
     sim_all_sku_retail = pd.read_table(read_path + os.sep + 'sim_all_sku_retail.csv')
     this_need = sim_all_sku_retail.loc[:,['dt', 'fdc_id', 'sku_id', 'allocation_retail_real', 'allocation_retail_cacl']]
@@ -459,4 +477,94 @@ def allocationQttyDiff():
     diff_pd_system_save = diff_pd_system.loc[:,['fdc_id','sku_id','diff_sum']]
     diff_pd_save.to_csv(read_path + os.sep + 'allocationQttyDiff_sim_detail2.csv', index=False)
     diff_pd_system_save.to_csv(read_path + os.sep + 'allocationQttyDiff_system_detail2.csv', index=False)
+
+
+def kpi_analysis():
+    analysis_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy'
+    files = ['simulation_results_L_std', 'simulation_results_S', 'simulation_results_select']
+    suffix = ['_L_std', '_S', '_8']
+    band = pd.read_table(analysis_path + os.sep + 'SKUABCband_20170330153011.csv')
+    band.columns = ['sku_id', 'label']
+    first = 1
+    kpi_list = []
+    kpi_band_list = []
+    for i, each_file in enumerate(files):
+        # 1、--------------------------- 读取文件 ---------------------------
+        sim_all_sku_kpi = pd.read_table(analysis_path + os.sep + each_file + os.sep + 'sim_all_sku_kpi.csv')
+        system_all_sku_kpi = pd.read_table(analysis_path + os.sep + each_file + os.sep + 'system_all_sku_kpi.csv')
+        sim_all_sku_retail = pd.read_table(analysis_path + os.sep + each_file + os.sep + 'sim_all_sku_retail.csv')
+        system_all_sku_retail = pd.read_table(analysis_path + os.sep + each_file + os.sep + 'system_all_sku_retail.csv')
+        sim_all_sku_retail = sim_all_sku_retail.merge(band, on=['sku_id'])
+        system_all_sku_retail = system_all_sku_retail.merge(band, on=['sku_id'])
+        if first == 0:
+            sku_del_list = []
+            # 2、--------------------------- 筛选 剔除总销量 为0的 ---------------------------
+            for key, value in sim_all_sku_retail.groupby(['fdc_id', 'sku_id']):
+                if np.sum(value['sales_his_origin']) == 0:
+                    sku_del_list.append(key)
+            first += 1
+            sku_all_list = map(lambda x: (x[0], x[1]),sim_all_sku_retail.loc[:, ['fdc_id', 'sku_id']].drop_duplicates().values)
+            sku_keep_list = set(sku_all_list) - set(sku_del_list)
+            sku_del_list_pd = pd.DataFrame(sku_del_list, columns=['fdc_id', 'sku_id'])
+            sku_del_list_pd.to_csv(analysis_path + os.sep + 'sku_del_list.csv', index=False)
+            sku_keep_list_pd = pd.DataFrame(list(sku_keep_list), columns=['fdc_id', 'sku_id'])
+            sku_keep_list_pd.to_csv(analysis_path + os.sep + 'sku_keep_list.csv', index=False)
+        else:
+            sku_del_list_pd = pd.read_csv(analysis_path + os.sep + 'sku_del_list.csv')
+            sku_keep_list_pd = pd.read_csv(analysis_path + os.sep + 'sku_keep_list.csv')
+        sim_all_sku_retail_keep = sim_all_sku_retail.merge(sku_keep_list_pd, on=['fdc_id', 'sku_id'])
+        system_all_sku_retail_keep = system_all_sku_retail.merge(sku_keep_list_pd, on=['fdc_id', 'sku_id'])
+        # 3、--------------------------- 计算 KPI ---------------------------
+        sim_all_sku_retail_keep_kpi = calKpi(sim_all_sku_retail_keep, suffix='_sim' + suffix[i])
+        system_all_sku_retail_keep_kpi = calKpi(system_all_sku_retail_keep, suffix='_system' + suffix[i])
+        kpi_list.append(sim_all_sku_retail_keep_kpi)
+        kpi_list.append(system_all_sku_retail_keep_kpi)
+        sim_all_sku_retail_keep_kpi_band = calKpi_label(sim_all_sku_retail_keep, suffix='_sim' + suffix[i])
+        system_all_sku_retail_keep_kpi_band = calKpi_label(system_all_sku_retail_keep, suffix='_system' + suffix[i])
+        kpi_band_list.append(sim_all_sku_retail_keep_kpi_band)
+        kpi_band_list.append(system_all_sku_retail_keep_kpi_band)
+    # 4、--------------------------- 合并 KPI ---------------------------
+    kpi_list_1 = kpi_list[0].merge(kpi_list[1], on=['fdc_id']).merge(kpi_list[2], on=['fdc_id']).merge(kpi_list[4], on=['fdc_id'])
+
+    sorted(kpi_list_1.columns)
+
+    kpi_list_2 = kpi_band_list[0].merge(kpi_band_list[1], on=['fdc_id', 'label']).merge(kpi_band_list[2], on=['fdc_id', 'label']).merge(kpi_band_list[4], on=['fdc_id', 'label'])
+    kpi_list_1_keep = kpi_list_1.loc[:,['fdc_id',
+                                        'cr_his_sim_8', 'cr_sim_sim_L_std', 'cr_sim_sim_S', 'cr_sim_sim_8', 'cr_sim_system_L_std',
+                                        'ito_his_sim_8', 'ito_sim_sim_L_std', 'ito_sim_sim_S', 'ito_sim_sim_8', 'ito_sim_system_L_std',
+                                        'ts_his_sim_8', 'ts_sim_sim_L_std', 'ts_sim_sim_S', 'ts_sim_sim_8', 'ts_sim_system_L_std',
+                                        'ts_rate_sim_L_std', 'ts_rate_sim_S', 'ts_rate_sim_8', 'ts_rate_system_L_std']]
+    kpi_list_2_keep = kpi_list_2.loc[:,['fdc_id', 'label',
+                                        'cr_his_sim_8', 'cr_sim_sim_L_std', 'cr_sim_sim_S', 'cr_sim_sim_8', 'cr_sim_system_L_std',
+                                        'ito_his_sim_8', 'ito_sim_sim_L_std', 'ito_sim_sim_S', 'ito_sim_sim_8', 'ito_sim_system_L_std',
+                                        'ts_his_sim_8', 'ts_sim_sim_L_std', 'ts_sim_sim_S', 'ts_sim_sim_8', 'ts_sim_system_L_std',
+                                        'ts_rate_sim_L_std', 'ts_rate_sim_S', 'ts_rate_sim_8', 'ts_rate_system_L_std']]
+    # 5、--------------------------- 存储 KPI ---------------------------
+    kpi_list_1_keep.to_csv(analysis_path + os.sep + 'kpi_list_1_keep.csv', index=False)
+    kpi_list_2_keep.to_csv(analysis_path + os.sep + 'kpi_list_2_keep.csv', index=False)
+    # 6、new 分析
+    kpi_list_3_keep = kpi_list_1.loc[:,['fdc_id',
+                                        'cr_his_sim_8', 'cr_sim_sim_L_std', 'cr_sim_sim_S', 'cr_sim_sim_8', 'cr_sim_system_L_std',
+                                        'ito_his_sim_8', 'ito_sim_sim_L_std', 'ito_sim_sim_S', 'ito_sim_sim_8', 'ito_sim_system_L_std',
+                                        'ts_his_sim_8', 'ts_sim_sim_L_std', 'ts_sim_sim_S', 'ts_sim_sim_8', 'ts_sim_system_L_std',
+                                        'ts_rate_sim_L_std', 'ts_rate_sim_S', 'ts_rate_sim_8', 'ts_rate_system_L_std',
+                                        'cr_his_new_0_sim_L_std', 'cr_sim_new_0_sim_L_std', 'cr_his_new_12_sim_L_std', 'cr_sim_new_12_sim_L_std']]
+    kpi_list_4_keep = kpi_list_2.loc[:,['fdc_id', 'label',
+                                        'cr_his_sim_8', 'cr_sim_sim_L_std', 'cr_sim_sim_S', 'cr_sim_sim_8', 'cr_sim_system_L_std',
+                                        'ito_his_sim_8', 'ito_sim_sim_L_std', 'ito_sim_sim_S', 'ito_sim_sim_8', 'ito_sim_system_L_std',
+                                        'ts_his_sim_8', 'ts_sim_sim_L_std', 'ts_sim_sim_S', 'ts_sim_sim_8', 'ts_sim_system_L_std',
+                                        'ts_rate_sim_L_std', 'ts_rate_sim_S', 'ts_rate_sim_8', 'ts_rate_system_L_std',
+                                        'cr_his_new_0_sim_L_std', 'cr_sim_new_0_sim_L_std', 'cr_his_new_12_sim_L_std', 'cr_sim_new_12_sim_L_std']]
+    kpi_list_3_keep.to_csv(analysis_path + os.sep + 'kpi_list_3_keep.csv', index=False)
+    sorted(kpi_list_3_keep.columns)
+    kpi_list_4_keep.to_csv(analysis_path + os.sep + 'kpi_list_4_keep.csv', index=False)
+
+
+def kpi_cr_new():
+
+    pass
+
+
+if __name__ == '__main__':
+    pass
 

@@ -104,6 +104,33 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
+def gradAscent(dataMatIn, classLabels):
+    dataMatrix = np.mat(dataMatIn)
+    labelMat = np.mat(classLabels).transpose()
+    m, n = np.shape(dataMatrix)
+    alpha =  0.01
+    maxCycles = 500
+    weights = np.ones((n, 1))
+    for k in range(maxCycles):
+        h = sigmoid(dataMatrix * weights)
+        error = (labelMat - h)
+        weights = weights + alpha * dataMatrix.transpose() * error
+    return weights
+
+
+def dataset_fixed_cov():
+    '''
+    形成 2 个 Gaussians 样本使用相同的方差矩阵
+    '''
+    n, dim = 300, 2
+    np.random.seed(0)
+    C = np.array([[0., -0.23], [0.83, .23]])
+    X = np.r_[np.dot(np.random.randn(n, dim), C),
+              np.dot(np.random.randn(n, dim), C) + np.array([1, 1])]
+    y = np.hstack((np.zeros(n), np.ones(n)))
+    return X, y
+
+
 # ========================================================================
 # =                                 实用函数                             =
 # ========================================================================
@@ -111,6 +138,51 @@ def script_01_plotSigmoid():
     data_x = [np.arange(-60,60,1)]
     data_y = [sigmoid(data_x[0])]
     plotEnlarge(data_x, data_y, scale=[-6, 6, 0, 1])
+
+
+def script_02_gradAscent():
+    dataMat = []
+    labelMat = []
+    filepath = r''
+    fr = open(filepath)
+    for line in fr.readlines():
+        lineArr = line.strip().split()
+        dataMat.append([1.0, float(lineArr[0]), float(lineArr[1])])
+        labelMat.append(int(lineArr[2]))
+    # 其实 dataMat 把所有的截距都为1，其他的都是x的值。labelMat 即为 Y 值。
+    # 造数据
+    a1, a2 = 0.8, 3
+    x1, x2 = np.arange(0, 10, 0.01), np.arange(3, 14, 0.01)
+    b1, b2 = 2, 5
+    err1, err2 = np.random.rand(len(x1)), np.random.rand(len(x2))
+    y1 = a1 * x1 + b1 + err1
+    y2 = a2 * x2 + b2 + err2
+    label1, label2 = [1] * len(x1), [0] * len(x2)
+    data1 = pd.DataFrame([x1, y1, label1]).T
+    data1.columns = ['x1', 'x2', 'label']
+    data2 = pd.DataFrame([x2, y2, label2]).T
+    data2.columns = ['x1', 'x2', 'label']
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(data1['x1'], data1['x2'], '.')
+
+
+    dataMatIn = x
+    classLabels = y
+    x = [[1,3], [1,2], [1,22]]
+    y = [1,0,1]
+    dataMatrix = np.mat(x)
+    labelMat = np.mat(y).transpose()
+    weights = np.mat([1,2,1]).transpose()
+    m, n = np.shape(dataMatrix)
+    weights = np.ones((n, 1))
+    dataMatrix * weights
+    alpha = 0.01
+    h = sigmoid(dataMatrix * weights)
+    error = (labelMat - h)
+    weights = weights + alpha * dataMatrix.transpose() * error
+    # 【使用 numpy 进行矩阵运算。学习！！】
+
 
 
 if __name__ == '__main__':
