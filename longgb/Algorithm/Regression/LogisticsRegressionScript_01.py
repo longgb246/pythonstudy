@@ -118,8 +118,18 @@ def secondaryFun(x):
 
 
 def secondaryGrad(dataMatIn, yLabels):
-    dataMatrix = np.mat(dataMatIn)
-    labelMat = np.mat(yLabels).transpose()
+    dataMatIn, yLabels = x, y
+    if len(np.shape(dataMatIn)) == 1:
+        dataMatrix = np.matrix(dataMatIn).transpose()
+    else:
+        try:
+            if np.shape(dataMatIn)[1] == 1:
+                dataMatrix = np.matrix(dataMatIn).transpose()
+            else:
+                dataMatrix = np.matrix(dataMatIn)
+        except:
+            dataMatrix = np.matrix(dataMatIn)
+    labelMat = np.matrix(yLabels).transpose()
     m, n = np.shape(dataMatrix)
     alpha = 0.01
     maxCycles = 500
@@ -220,6 +230,8 @@ def script_03_plotGradAscent():
     ax.plot(x, y)
     point2 = np.array([-5, 5])
     point2_y, point2_y_d = secondaryFun(point2)
+
+    weights = secondaryGrad(x, y)
     pass
 
 
