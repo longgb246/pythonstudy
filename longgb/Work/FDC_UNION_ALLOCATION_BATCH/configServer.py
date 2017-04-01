@@ -5,8 +5,8 @@ import sys
 import time
 import numpy as np
 data_dir        ='D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/'
-output_dir      = 'D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/analysis_3_policy/Simulation_Results/simulation_results_select/'
-log_path         ='D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/analysis_3_policy/Simulation_Results/log/log.txt'
+output_dir      = 'D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/analysis_3_policy/Simulation_Results/NewResult/simulation_results_inverse/'
+log_path         ='D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/analysis_3_policy/Simulation_Results/NewResult/log/log.txt'
 data_file_name='fdc_sales_select_20170330124541.csv'
 rdc_inv_file_name='rdc_inv_select_20170330125151.csv'
 order_file_name='order_select_20170330125041.csv'

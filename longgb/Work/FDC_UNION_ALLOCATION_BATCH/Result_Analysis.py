@@ -117,7 +117,7 @@ def getFileSuffix():
     suffix = []
     for each_file in all_files:
         each_suffix = each_file.split('_')
-        suffix_2 = ['std', 'L', 'lop']
+        suffix_2 = ['std', 'L', 'lop', 'inverse']
         not_2 = True
         try:
             for each_suffix_2 in suffix_2:
@@ -234,9 +234,9 @@ def kpi_analysis(all_files=[], all_suffix=[]):
 # ======================================================================
 # =                                 配置参数                            =
 # ======================================================================
-read_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy\Simulation_Results'
+read_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy\Simulation_Results\NewResult'
 band_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy\SKUABCband_20170330153011.csv'
-save_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy\Simulation_Results\TestResult'
+save_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy\Simulation_Results\NewResult\Result'
 del_sale_zero = True        # 是否剔除销量为 0
 ifBand = True               # 是否计算分 band 的值
 add_true = False            # 是否单独储存某文件夹下的 kpi，如果 True 则需 all_files、all_suffix 值， False 则计算 read_path 下所有文件夹的 kpi

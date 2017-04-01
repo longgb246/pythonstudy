@@ -255,8 +255,9 @@ else:
     filename.close()
 logger.info(u'加工处理rdc库存数据完成')
 #-------------------------------------------------------补充其他变量-------------------------------------------------------#
+# 7，LOP-Inverse模型：模型参数与LOP-std-7模型一致，更改了FDC顺序，将重庆与贵阳对换。
+fdc_list=[634,633,605]
 # fdc_list=[605,633,634]
-fdc_list=[605,633,634]
 mid_date_range=configServer.date_range[1]
 date_range=datelist(mid_date_range[0],mid_date_range[1])
 save_data_path=configServer.output_dir

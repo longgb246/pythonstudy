@@ -184,12 +184,14 @@ class inventory_proess:
         if self.system_flag==1:
             lop = sku_sales_mean* self.system_small_s[index]
         else:
-            # 2、L_std 标准差拦截
+            # 2、标准差修正模型 : 调拨点=三天预测销量+1.96*标准差（针对标准差进行拦截，if std>10 and (std/mean)>2 then std=2*mean else std），调拨量=7天预测销量均值*8
             # if float(sku_sales_mean)==0:
             #     sku_std=0
             # elif sku_std > 10 and float(float(sku_std)/float(sku_sales_mean)) > 2:
             #     sku_std=2*sku_sales_mean
-            lop=(sku_sales[0]+sku_sales[1]+sku_sales[2]+1.96*sku_std)
+            lop=(sku_sales[0] + sku_sales[1] + sku_sales[2] + 1.96 * sku_std)
+            # 6、LOP-1/2模型 : 调拨点=1/2(三天预测销量+1.96*标准差)，调拨量=7天预测销量均值*8+1.96*1.53*三天标准差-可用库存
+            # lop=lop*1.0/2
         # # # 默认将数据延展12周
         # sku_sales = np.tile(sku_sales, 12)
         # sku_std = np.tile(sku_std, 12)
@@ -220,7 +222,7 @@ class inventory_proess:
 
     def calc_replacement(self,self_sku,fdc, date_s, sku_lop, bp=10, cr=0.99):
         '''
-        #计算某个FDC的SKU的补货量
+        计算某个FDC的SKU的补货量
         计算补货量补货量为lop+bp-在途-当前库存
         '''
         # sku的FDC销量预测，与RDC的cv系数
@@ -235,15 +237,23 @@ class inventory_proess:
         inv = self.fdc_inv[index]['inv']
         open_on = self.fdc_inv[index]['open_po']
         cons_open_po=self.fdc_inv[index]['cons_open_po']
+        arrive_qtty = self.fdc_inv[index]['arrive_quantity']
         if self.system_flag==1:
-            lop_replacement = max(max_qtty - inv - open_on + cons_open_po,0)
+            lop_replacement = max(max_qtty - inv - open_on - arrive_qtty + cons_open_po,0)
         else:
-            # 1、销量均值*8
-            lop_replacement=sku_sales_mean * 8
-            # lop_replacement = max(max_qtty - inv - open_on + cons_open_po,0)
-            #  lop_replacement = max(sku_sales_mean * 7+1.53*1.96*sku_std- inv - open_on + cons_open_po,0)
+            # 1、LOP模型 : 调拨点=三天预测销量+1.96*标准差，调拨量=7天预测销量均值*8
+            # lop_replacement = sku_sales_mean * 8
+            # 3、LOP-S模型 : 调拨点=三天预测销量+1.96*标准差，调拨量=7天预测销量均值*S-可用库存
+            # lop_replacement = max(max_qtty - inv - open_on - arrive_qtty + cons_open_po,0)
+            # 4、LOP-std模型 : 调拨点=三天预测销量+1.96*标准差，调拨量=7天预测销量均值*8+1.96*三天标准差-可用库存
+            # 【7、LOP-std模型 + 标准差拦截】
+            # lop_replacement = max(sku_sales_mean * 7 + 1.96 * sku_std - inv - open_on - arrive_qtty + cons_open_po,0)
+            # 5、LOP-std-7模型 : 调拨点=三天预测销量+1.96*标准差，调拨量=7天预测销量均值*8+1.96*1.53*三天标准差-可用库存。此处将3天标准差转换为了7天标准差。
+            # 【8、LOP-std-7模型 + 标准差拦截】
+            lop_replacement = max(sku_sales_mean * 7 + 1.53 * 1.96 * sku_std - inv - open_on - arrive_qtty + cons_open_po,0)
+            # 6、LOP-Mix模型 : 调拨点=三天预测销量+1.96*标准差，调拨量= if 预测销量为0  then 1.96*1.53*三天标准差-可用库存  else  7天预测销量均值*7。此处将3天标准差转换为了7天标准差。
             # if sku_sales_mean==0:
-            #     lop_replacement=max(1.53*1.96*sku_std- inv - open_on + cons_open_po,0)
+            #     lop_replacement=max(1.53 * 1.96 * sku_std - inv - open_on - arrive_qtty + cons_open_po,0)
             # else:
             #     lop_replacement=sku_sales_mean * 7
         # 调整补货量
@@ -285,14 +295,14 @@ class inventory_proess:
                 lop_tmp = self.calc_lop(self_sku,f, date_s)
                 index = self.gene_index(f, self_sku, date_s)
                 # 在途加上库存减去在途消耗低于补货点
-                if (self.fdc_inv[index]['inv'] +self.fdc_inv[index]['arrive_quantity']+ self.fdc_inv[index]['open_po']-self.fdc_inv[index]['cons_open_po']) < lop_tmp:
+                if (self.fdc_inv[index]['inv'] + self.fdc_inv[index]['arrive_quantity'] + self.fdc_inv[index]['open_po'] - self.fdc_inv[index]['cons_open_po']) < lop_tmp:
                     fdc_replacement[f] = self.calc_replacement(self_sku,f, date_s, lop_tmp)
-                    self.all_cnt_sim[f]=self.all_cnt_sim[f]+1
+                    self.all_cnt_sim[f] = self.all_cnt_sim[f] + 1
                 else:
                     fdc_replacement[f] = 0
         index_rdc = self.gene_index('rdc', self_sku, date_s)
         rdc_inv_avail = max(np.min([self.rdc_inv[index_rdc] - 12, np.floor(self.rdc_inv[index_rdc] * 0.2)]),0)
-        #记录FDC的库存
+        # 记录FDC的库存
         self.allocation_retail[date_s][self_sku]['rdc']=self.rdc_inv[index_rdc]
         # 更新实际调拨，记录理论调拨和实际调拨，之所以将
         for f in self.fdc_list:

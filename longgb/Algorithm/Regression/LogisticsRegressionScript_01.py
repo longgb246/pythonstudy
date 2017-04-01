@@ -3,14 +3,17 @@ from __future__ import division
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-plt.style.use('seaborn-darkgrid')
 
+plt.style.use('seaborn-darkgrid')
 
 # ========================================================================
 # =                                 功能函数                             =
 # ========================================================================
 from matplotlib.patches import ConnectionPatch
-def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xlabel='X', ylabel='Y', title=['Origin Figure', 'Enlarge Figure']):
+
+
+def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xlabel='X', ylabel='Y',
+                title=['Origin Figure', 'Enlarge Figure']):
     '''
     data_x: list
     data_y: list
@@ -29,9 +32,9 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     # ax2 = fig.add_subplot(122, aspect=5 / 2.5)
     ax2 = fig.add_subplot(122)
     if colors == []:
-        colors = ['#6AB27B', '#C44E52', '#4C72B0', '#FFA455']*4
+        colors = ['#6AB27B', '#C44E52', '#4C72B0', '#FFA455'] * 4
     if linestyle == []:
-        linestyle = ['-', '--', '-.', ':']*4
+        linestyle = ['-', '--', '-.', ':'] * 4
     pair_data = []
     for i, x in enumerate(data_x):
         pair_data.append([pd.DataFrame(np.array([x, data_y[i]]).T, columns=['x', 'y'])])
@@ -43,7 +46,7 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     # ax1.axis([0.0, 5.01, -1.0, 1.5])
     ax1.set_ylabel(ylabel, fontsize=14)
     ax1.set_xlabel(xlabel, fontsize=14)
-    ax1.set_title(title[0],fontsize=18)
+    ax1.set_title(title[0], fontsize=18)
     ax1.grid(True)
     ax1.legend(loc='best')
     # ax1.text(tx, ty, label_f0, fontsize=15, verticalalignment="top", horizontalalignment="left")
@@ -78,7 +81,7 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     ax2.set_title(title[1], fontsize=18)
     ax2.grid(True)
     ax2.legend(loc='best')
-    sx = [tx0, tx1, tx1, tx0, tx0]          # 画方框
+    sx = [tx0, tx1, tx1, tx0, tx0]  # 画方框
     sy = [ty0, ty0, ty1, ty1, ty0]
     ax1.plot(sx, sy, "purple")
     # plot patch lines
@@ -88,9 +91,9 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
     xy2 = (tx0 + x_a, ty1 - y_a)
     # 重点：连接线
     con = ConnectionPatch(xyA=xy2, xyB=xy,
-                          coordsA="data", coordsB="data",           # 这个参数必须要！
+                          coordsA="data", coordsB="data",  # 这个参数必须要！
                           axesA=ax2, axesB=ax1)
-    ax2.add_artist(con)                      # 在p2上添加
+    ax2.add_artist(con)  # 在p2上添加
     xy = (tx1 - x_a, ty0 + y_a)
     xy2 = (tx0 + x_a, ty0 + y_a)
     con = ConnectionPatch(xyA=xy2, xyB=xy, coordsA="data", coordsB="data",
@@ -107,11 +110,31 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
+def secondaryFun(x):
+    a = 3
+    b = 2
+    c = 1.5
+    return [a + b * x + c * x ** 2, b + 2 * c * x]
+
+
+def secondaryGrad(dataMatIn, yLabels):
+    dataMatrix = np.mat(dataMatIn)
+    labelMat = np.mat(yLabels).transpose()
+    m, n = np.shape(dataMatrix)
+    alpha = 0.01
+    maxCycles = 500
+    weights = np.ones((n, 1))
+    for k in range(maxCycles):
+        error = (labelMat - secondaryFun(dataMatrix))
+        weights = weights + alpha * dataMatrix.transpose() * error
+    return weights
+
+
 def gradAscent(dataMatIn, classLabels):
     dataMatrix = np.mat(dataMatIn)
     labelMat = np.mat(classLabels).transpose()
     m, n = np.shape(dataMatrix)
-    alpha =  0.01
+    alpha = 0.01
     maxCycles = 500
     weights = np.ones((n, 1))
     for k in range(maxCycles):
@@ -138,7 +161,10 @@ def dataset_fixed_cov():
 # =                                 实用函数                             =
 # ========================================================================
 def script_01_plotSigmoid():
-    data_x = [np.arange(-60,60,1)]
+    '''
+    画一个简单的 sigmoid 以及放大函数
+    '''
+    data_x = [np.arange(-60, 60, 1)]
     data_y = [sigmoid(data_x[0])]
     plotEnlarge(data_x, data_y, scale=[-6, 6, 0, 1])
 
@@ -169,14 +195,13 @@ def script_02_gradAscent():
     ax = fig.add_subplot(111)
     ax.plot(data1['x1'], data1['x2'], '.')
 
-
     dataMatIn = x
     classLabels = y
-    x = [[1,3], [1,2], [1,22]]
-    y = [1,0,1]
+    x = [[1, 3], [1, 2], [1, 22]]
+    y = [1, 0, 1]
     dataMatrix = np.mat(x)
     labelMat = np.mat(y).transpose()
-    weights = np.mat([1,2,1]).transpose()
+    weights = np.mat([1, 2, 1]).transpose()
     m, n = np.shape(dataMatrix)
     weights = np.ones((n, 1))
     dataMatrix * weights
@@ -186,6 +211,16 @@ def script_02_gradAscent():
     weights = weights + alpha * dataMatrix.transpose() * error
     # 【使用 numpy 进行矩阵运算。学习！！】
 
+
+def script_03_plotGradAscent():
+    x = np.linspace(-10, 10, 100)
+    y, y_d = secondaryFun(x)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(x, y)
+    point2 = np.array([-5, 5])
+    point2_y, point2_y_d = secondaryFun(point2)
+    pass
 
 
 if __name__ == '__main__':
