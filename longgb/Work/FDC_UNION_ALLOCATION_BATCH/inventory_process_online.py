@@ -153,6 +153,7 @@ class inventory_proess:
         self.fdc_begin_inv=defaultdict(int)
 
 
+
     def gene_whitelist(self,self_sku,date_s):
         '''获取该时间点的白名单,调用户一次刷新一次，只保存最新的白名单列表'''
         self.white_list = defaultdict(int)
@@ -320,13 +321,11 @@ class inventory_proess:
             # rdc_index = self.gene_index('rdc', s, date_s)
             # self.rdc_inv[rdc_index] = max(self.rdc_inv[rdc_index] - sum(fdc_replacement.values()), 0)
 
-
     def gene_index(self, fdc, sku, date_s=''):
         '''
         #生成调用索引,将在多个地方调用该函数
         '''
         return str(date_s) +':'+str(fdc)+':'+ str(sku)
-
 
     def gene_alt(self, fdc):
         '''
@@ -339,7 +338,6 @@ class inventory_proess:
             return 3
         alt_distribution = rv_discrete(values=(fdc_vlt, fdc_vlt_porb))
         return alt_distribution.rvs()
-
 
     def calc_fdc_allocation(self,self_sku,date_s, fdc):
         '''
@@ -388,275 +386,6 @@ class inventory_proess:
         self.fdc_inv[index]['inv'] = self.fdc_inv[index]['inv'] + \
                                      max(self.fdc_inv[index]['arrive_quantity']-self.fdc_inv[index]['cons_open_po'],0)
         self.fdc_inv[index]['cons_open_po']=max(self.fdc_inv[index]['cons_open_po']-self.fdc_inv[index]['arrive_quantity'],0)
-
-
-    def gene_fdc_datasets(self):
-        self.sku_allocation=defaultdict(int)
-        self.sku_open_po=defaultdict(int)
-        self.sku_arrive_quantity=defaultdict(int)
-        self.sku_inv=defaultdict(int)
-        self.sku_cons_open_po=defaultdict(int)
-        for k,v in self.fdc_inv.items():
-            self.sku_allocation[k] = v['allocation']
-            self.sku_open_po[k] = v['open_po']
-            self.sku_arrive_quantity[k] = v['arrive_quantity']
-            self.sku_inv[k] = v['inv']
-            self.sku_cons_open_po[k] = v['cons_open_po']
-        self.allocation_retail_real=defaultdict(int)
-        self.allocation_retail_cacl=defaultdict(int)
-        self.allocation_retail_rdc=defaultdict(int)
-        for k_date,v in self.allocation_retail.items():
-            for k_sku,v1 in v.items():
-                for k_fdc,v2 in v1.items():
-                    if 'rdc' not in k_fdc:
-                        allocation_value_type=k_fdc.split('_')[0]
-                        allocation_fdc=k_fdc.split('_')[1]
-                        if allocation_value_type=='real':
-                            tmp_index=self.gene_index(allocation_fdc,k_sku,k_date)
-                            self.allocation_retail_real[tmp_index]=v2
-                        elif allocation_value_type=='calc':
-                            tmp_index=self.gene_index(allocation_fdc,k_sku,k_date)
-                            self.allocation_retail_cacl[tmp_index]=v2
-                    else:
-                        tmp_index=self.gene_index('rdc',k_sku,k_date)
-                        self.allocation_retail_rdc[tmp_index]=v2
-
-
-    def get_daily_data(self):
-        self.gene_fdc_datasets()
-        rdc_mid_inv=pd.DataFrame({"index":self.rdc_inv.keys(),"rdc_inv":self.rdc_inv.values()})
-        # rdc_mid2_inv=pd.DataFrame(list(rdc_mid_inv['index'].apply(lambda x:x.split(':'),1)))
-        #
-        # rdc_mid2_inv.columns=['dt','rdc','sku_id']
-        #
-        # del rdc_mid_inv['index']
-        #
-        # rdc_inv_df=rdc_mid2_inv.join(rdc_mid_inv)
-        # rdc_inv_df=rdc_inv_df.loc[:,['dt','sku_id','rdc_inv']]
-
-        daily_data = {'sales_his_origin': self.sales_retail,
-                      'inv_his': self.fdc_his_inv,
-                      'inv_sim':self.fdc_begin_inv,
-                      'cons_open_po':self.sku_cons_open_po,
-                      'sales_sim': self.sim_sales_retail,
-                       'fdc_sales_sim':self.fdc_sales_retail,
-                      'lop': self.lop,
-                      'allocation_qtty_sim': self.sku_allocation,
-                      'open_po_sim': self.sku_open_po,
-                      'alt_sim': self.alt_sim,
-                      'arrive_qtty_sim': self.sku_arrive_quantity,
-                      'allocation_retail_real':self.allocation_retail_real,
-                      'allocation_retail_cacl':self.allocation_retail_cacl}
-        daily_data_mid=pd.DataFrame(daily_data, columns=['sales_his_origin','inv_his','inv_sim',
-                                                         'cons_open_po','sales_sim','fdc_sales_sim','lop',
-                                                         'allocation_qtty_sim','open_po_sim','alt_sim','arrive_qtty_sim',
-                                                         'allocation_retail_real','allocation_retail_cacl'])
-        return rdc_mid_inv,daily_data_mid
-        # daily_data_mid.fillna(0,inplace=True)
-        # daily_data_mid.reset_index(inplace=True)
-        # daily_data_mid2=pd.DataFrame(list(daily_data_mid['index'].apply(lambda x:x.split(':'),1)))
-        # daily_data_mid2.columns=['dt','fdc_id','sku_id']
-        # # print 'fdc_id',pd.unique(daily_data_mid2.fdc_id)
-        # del daily_data_mid['index']
-        # self.reuslt_daily_data=daily_data_mid2.join(daily_data_mid)
-        # self.reuslt_daily_data=pd.merge(self.reuslt_daily_data,rdc_inv_df,on=['dt','sku_id'])
-        # return self.reuslt_daily_data[self.reuslt_daily_data['fdc_id']!='rdc']
-
-
-    def calc_kpi(self):
-        fdc_kpi=defaultdict(lambda :defaultdict(float))
-        for tmp_fdcid,fdcdata in self.reuslt_daily_data.groupby(['fdc_id']):
-            if 'rdc' not in tmp_fdcid:
-                # 现货率（cr）：有货天数除以总天数
-                fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(self.date_range))
-                fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(self.date_range))
-                # 周转天数（ito）：平均库存除以平均销量
-                fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.sales_sim))
-                fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
-                # 总销量（ts）
-                fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.sales_sim)
-                fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
-                fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
-        tmp_mid_kpi=pd.DataFrame(fdc_kpi)
-        tmp_mid_kpi.reset_index(inplace=True)
-        tmp_mid_kpi.rename(columns={'index':'fdc_id'},inplace=True)
-        tmp_mid_kpi['sku_id']=self.sku
-        # print tmp_mid_kpi
-        return tmp_mid_kpi
-
-
-    def calKpi_label(self, kpi_need_fdc, suffix=''):
-        '''
-        需要字段：sku_id, fdc_id, inv_his, inv_sim, fdc_sales_sim, sales_his_origin
-        '''
-        # # kpi_need_fdc = sim_all_sku_retail_keep
-        # kpi_need_fdc.columns
-        # rdc_inv
-        sim_fdc_kpi=[]
-        for label_fdcid, fdcdata in kpi_need_fdc.groupby(['fdc_id', 'label']):
-            sku_cnt = len(np.unique(fdcdata.sku_id))
-            tmp_fdcid, label = label_fdcid[0], label_fdcid[1]
-            fdc_kpi = defaultdict(lambda: defaultdict(float))
-            # 现货率（cr）：有货天数除以总天数
-            fdc_kpi['cr_his'][tmp_fdcid] = sum(fdcdata.inv_his > 0) / float(30 * sku_cnt)
-            # print label_fdcid[0]
-            # print sku_cnt
-            # print sum(fdcdata.inv_his > 0)
-            # print float(30 * sku_cnt)
-            fdc_kpi['cr_sim'][tmp_fdcid] = sum(fdcdata.inv_sim > 0) / float(30 * sku_cnt)
-            # 周转天数（ito）：平均库存除以平均销量
-            fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim)) <= 0 else float(
-                np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
-            fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin)) <= 0 else float(
-                np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
-            # 总销量（ts）
-            fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
-            fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
-            fdc_kpi['ts_rate'][tmp_fdcid] = -1 if float(fdc_kpi['ts_his'][tmp_fdcid]) <= 0 else float(
-                fdc_kpi['ts_sim'][tmp_fdcid]) / float(fdc_kpi['ts_his'][tmp_fdcid])
-            fdc_kpi['label'][tmp_fdcid]=label
-            fdc_kpi['cr_his_new_0'][tmp_fdcid] = sum((fdcdata.inv_his > 0) | (fdcdata.rdc_inv > 0)) / float(30 * sku_cnt)
-            fdc_kpi['cr_sim_new_0'][tmp_fdcid] = sum((fdcdata.inv_sim > 0) | (fdcdata.rdc_inv > 0)) / float(30 * sku_cnt)
-            fdc_kpi['cr_his_new_12'][tmp_fdcid] = sum((fdcdata.inv_his > 0) | (fdcdata.rdc_inv > 12)) / float(30 * sku_cnt)
-            fdc_kpi['cr_sim_new_12'][tmp_fdcid] = sum((fdcdata.inv_sim > 0) | (fdcdata.rdc_inv > 12)) / float(30 * sku_cnt)
-            sim_fdc_kpi.append(pd.DataFrame(fdc_kpi))
-        sim_fdc_kpi=pd.concat(sim_fdc_kpi)
-        sim_fdc_kpi.columns = map(lambda x: x + suffix,list(sim_fdc_kpi.columns))
-        sim_fdc_kpi.reset_index(inplace=True)
-        sim_fdc_kpi.rename(columns={'index': 'fdc_id'}, inplace=True)
-        sim_fdc_kpi.rename(columns={'label'+suffix: 'label'}, inplace=True)
-        return sim_fdc_kpi
-
-
-    def calKpi(self, kpi_need_fdc, suffix=''):
-        '''
-        需要字段：sku_id, fdc_id, inv_his, inv_sim, sales_sim, sales_his_origin
-        '''
-        # # kpi_need_fdc = sim_all_sku_retail_keep
-        # kpi_need_fdc.columns
-        # rdc_inv
-        fdc_kpi = defaultdict(lambda: defaultdict(float))
-        for tmp_fdcid, fdcdata in kpi_need_fdc.groupby(['fdc_id']):
-            sku_cnt = len(np.unique(fdcdata.sku_id))
-            # 现货率（cr）：有货天数除以总天数
-            fdc_kpi['cr_his'][tmp_fdcid] = sum(fdcdata.inv_his > 0) / float(30 * sku_cnt)
-            # print sku_cnt
-            # print sum(fdcdata.inv_his > 0)
-            # print float(30 * sku_cnt)
-            fdc_kpi['cr_sim'][tmp_fdcid] = sum(fdcdata.inv_sim > 0) / float(30 * sku_cnt)
-            # 周转天数（ito）：平均库存除以平均销量
-            fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim)) <= 0 else float(
-                np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
-            fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin)) <= 0 else float(
-                np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
-            # 总销量（ts）
-            fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
-            fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
-            fdc_kpi['ts_rate'][tmp_fdcid] = -1 if float(fdc_kpi['ts_his'][tmp_fdcid]) <= 0 else float(
-                fdc_kpi['ts_sim'][tmp_fdcid]) / float(fdc_kpi['ts_his'][tmp_fdcid])
-            fdc_kpi['cr_his_new_0'][tmp_fdcid] = sum((fdcdata.inv_his > 0) | (fdcdata.rdc_inv > 0)) / float(30 * sku_cnt)
-            fdc_kpi['cr_sim_new_0'][tmp_fdcid] = sum((fdcdata.inv_sim > 0) | (fdcdata.rdc_inv > 0)) / float(30 * sku_cnt)
-            fdc_kpi['cr_his_new_12'][tmp_fdcid] = sum((fdcdata.inv_his > 0) | (fdcdata.rdc_inv > 12)) / float(30 * sku_cnt)
-            fdc_kpi['cr_sim_new_12'][tmp_fdcid] = sum((fdcdata.inv_sim > 0) | (fdcdata.rdc_inv > 12)) / float(30 * sku_cnt)
-        sim_fdc_kpi=pd.DataFrame(fdc_kpi)
-        sim_fdc_kpi.columns = map(lambda x: x + suffix,list(sim_fdc_kpi.columns))
-        sim_fdc_kpi.reset_index(inplace=True)
-        sim_fdc_kpi.rename(columns={'index': 'fdc_id'}, inplace=True)
-        return sim_fdc_kpi
-
-
-    def kpi_analysis(self):
-        analysis_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy\Simulation_Results'
-        all_files = ['simulation_results_L_std', 'simulation_results_S', 'simulation_results_select',
-                     'simulation_results_replace_std',
-                     'simulation_results_replace_std_7', 'simulation_results_replace_std_lop0.5',
-                     'simulation_results_replace_std_lop1.5',
-                     'simulation_results_inverse']
-        all_suffix = ['_L_std', '_S', '_8', '_std', '_std_7', '_lop0.5', '_lop1.5', 'inverse']
-        # files = ['simulation_results_replace_std_7', 'simulation_results_inverse',
-        #          'system_all_sku_retail_inverse_system', 'sim_all_sku_retail_mix']
-        # suffix = ['_std_7', 'inverse', '_inverse_system', '_mix']
-        files = all_files
-        suffix = all_suffix
-        band = pd.read_table(r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy\SKUABCband_20170330153011.csv')
-        band.columns = ['sku_id', 'label']
-        first = 0
-        add_true = True
-        kpi_list = []
-        kpi_band_list = []
-        for i, each_file in enumerate(files):
-            t1 = time.time()
-            print "[ Read the File ]: {0}".format(each_file)
-            # 1、--------------------------- 读取文件 ---------------------------
-            # sim_all_sku_kpi = pd.read_table(analysis_path + os.sep + each_file + os.sep + 'sim_all_sku_kpi.csv')
-            # system_all_sku_kpi = pd.read_table(analysis_path + os.sep + each_file + os.sep + 'system_all_sku_kpi.csv')
-            sim_all_sku_retail = pd.read_table(analysis_path + os.sep + each_file + os.sep + 'sim_all_sku_retail.csv')
-            system_all_sku_retail = pd.read_table(
-                analysis_path + os.sep + each_file + os.sep + 'system_all_sku_retail.csv')
-            sim_all_sku_retail = sim_all_sku_retail.merge(band, on=['sku_id'])
-            system_all_sku_retail = system_all_sku_retail.merge(band, on=['sku_id'])
-            printRunTime(t1, 'Read File')
-            t1 = time.time()
-            if first == 0:
-                print '[ Calculate Del ] Calculate Del sku for Sale is zero ...'
-                sku_del_list = []
-                # 2、--------------------------- 筛选 剔除总销量 为0的 ---------------------------
-                for key, value in sim_all_sku_retail.groupby(['fdc_id', 'sku_id']):
-                    if np.sum(value['sales_his_origin']) == 0:
-                        sku_del_list.append(key)
-                first += 1
-                sku_all_list = map(lambda x: (x[0], x[1]),
-                                   sim_all_sku_retail.loc[:, ['fdc_id', 'sku_id']].drop_duplicates().values)
-                sku_keep_list = set(sku_all_list) - set(sku_del_list)
-                sku_del_list_pd = pd.DataFrame(sku_del_list, columns=['fdc_id', 'sku_id'])
-                sku_del_list_pd.to_csv(analysis_path + os.sep + 'sku_del_list.csv', index=False)
-                sku_keep_list_pd = pd.DataFrame(list(sku_keep_list), columns=['fdc_id', 'sku_id'])
-                sku_keep_list_pd.to_csv(analysis_path + os.sep + 'sku_keep_list.csv', index=False)
-                print '[ Calculate Del ] Finish the Calculate Del sku !'
-            else:
-                sku_del_list_pd = pd.read_csv(analysis_path + os.sep + 'sku_del_list.csv')
-                sku_keep_list_pd = pd.read_csv(analysis_path + os.sep + 'sku_keep_list.csv')
-            print '[ Calculate KPI ] ...'
-            sim_all_sku_retail_keep = sim_all_sku_retail.merge(sku_keep_list_pd, on=['fdc_id', 'sku_id'])
-            system_all_sku_retail_keep = system_all_sku_retail.merge(sku_keep_list_pd, on=['fdc_id', 'sku_id'])
-            # 3、--------------------------- 计算 KPI ---------------------------
-            sim_all_sku_retail_keep_kpi = calKpi(sim_all_sku_retail_keep, suffix='_sim' + suffix[i])
-            system_all_sku_retail_keep_kpi = calKpi(system_all_sku_retail_keep, suffix='_system' + suffix[i])
-            if i == 0:
-                kpi_list.append(sim_all_sku_retail_keep_kpi)
-                kpi_list.append(system_all_sku_retail_keep_kpi)
-            else:
-                kpi_list.append(sim_all_sku_retail_keep_kpi)
-            sim_all_sku_retail_keep_kpi_band = calKpi_label(sim_all_sku_retail_keep, suffix='_sim' + suffix[i])
-            system_all_sku_retail_keep_kpi_band = calKpi_label(system_all_sku_retail_keep, suffix='_system' + suffix[i])
-            if i == 0:
-                kpi_band_list.append(sim_all_sku_retail_keep_kpi_band)
-                kpi_band_list.append(system_all_sku_retail_keep_kpi_band)
-            else:
-                kpi_band_list.append(sim_all_sku_retail_keep_kpi_band)
-            printRunTime(t1, 'Calculate KPI')
-        # 4、--------------------------- 合并 KPI ---------------------------
-        kpi_list_1 = reduce(lambda x, y: x.merge(y, on=['fdc_id']), kpi_list)
-        kpi_list_2 = reduce(lambda x, y: x.merge(y, on=['fdc_id', 'label']), kpi_band_list)
-        need_columns = ['cr_his_sim{0}'.format(suffix[0])] + ['cr_sim_sim{0}'.format(x) for x in suffix] + [
-            'cr_sim_system{0}'.format(suffix[0])] + \
-                       ['ito_his_sim{0}'.format(suffix[0])] + ['ito_sim_sim{0}'.format(x) for x in suffix] + [
-                           'ito_sim_system{0}'.format(suffix[0])] + \
-                       ['ts_his_sim{0}'.format(suffix[0])] + ['ts_sim_sim{0}'.format(x) for x in suffix] + [
-                           'ts_sim_system{0}'.format(suffix[0])] + \
-                       ['ts_rate_sim{0}'.format(x) for x in suffix] + ['ts_rate_system{0}'.format(suffix[0])]
-        # ['cr_his_new_0_sim{0}'.format(suffix[0]) for x in ['his'] ]
-        kpi_list_1_keep = kpi_list_1.loc[:, ['fdc_id'] + need_columns]
-        kpi_list_2_keep = kpi_list_2.loc[:, ['fdc_id', 'label'] + need_columns]
-        # 5、--------------------------- 存储 KPI ---------------------------
-        if add_true:
-            kpi_list_1_keep.to_csv(analysis_path + os.sep + 'kpi_list_1_keep_add.csv', index=False)
-            kpi_list_2_keep.to_csv(analysis_path + os.sep + 'kpi_list_2_keep_add.csv', index=False)
-        else:
-            kpi_list_1_keep.to_csv(analysis_path + os.sep + 'kpi_list_1_keep.csv', index=False)
-            kpi_list_2_keep.to_csv(analysis_path + os.sep + 'kpi_list_2_keep.csv', index=False)
-            # 6、new 分析
-            # 'cr_his_new_0_sim_L_std', 'cr_sim_new_0_sim_L_std', 'cr_his_new_12_sim_L_std', 'cr_sim_new_12_sim_L_std'
 
 
     def allocationSimulation(self):
@@ -738,3 +467,100 @@ class inventory_proess:
             complete_sku += 1
             self.logger.info( 'Finish SKU=' + str(complete_sku) + ' | ' + 'Used seconds=' +
                 str(used_seconds))
+
+    def gene_fdc_datasets(self):
+        self.sku_allocation=defaultdict(int)
+        self.sku_open_po=defaultdict(int)
+        self.sku_arrive_quantity=defaultdict(int)
+        self.sku_inv=defaultdict(int)
+        self.sku_cons_open_po=defaultdict(int)
+        for k,v in self.fdc_inv.items():
+            self.sku_allocation[k] = v['allocation']
+            self.sku_open_po[k] = v['open_po']
+            self.sku_arrive_quantity[k] = v['arrive_quantity']
+            self.sku_inv[k] = v['inv']
+            self.sku_cons_open_po[k] = v['cons_open_po']
+        self.allocation_retail_real=defaultdict(int)
+        self.allocation_retail_cacl=defaultdict(int)
+        self.allocation_retail_rdc=defaultdict(int)
+        for k_date,v in self.allocation_retail.items():
+            for k_sku,v1 in v.items():
+                for k_fdc,v2 in v1.items():
+                    if 'rdc' not in k_fdc:
+                        allocation_value_type=k_fdc.split('_')[0]
+                        allocation_fdc=k_fdc.split('_')[1]
+                        if allocation_value_type=='real':
+                            tmp_index=self.gene_index(allocation_fdc,k_sku,k_date)
+                            self.allocation_retail_real[tmp_index]=v2
+                        elif allocation_value_type=='calc':
+                            tmp_index=self.gene_index(allocation_fdc,k_sku,k_date)
+                            self.allocation_retail_cacl[tmp_index]=v2
+                    else:
+                        tmp_index=self.gene_index('rdc',k_sku,k_date)
+                        self.allocation_retail_rdc[tmp_index]=v2
+
+
+
+    def get_daily_data(self):
+        self.gene_fdc_datasets()
+        rdc_mid_inv=pd.DataFrame({"index":self.rdc_inv.keys(),"rdc_inv":self.rdc_inv.values()})
+        # rdc_mid2_inv=pd.DataFrame(list(rdc_mid_inv['index'].apply(lambda x:x.split(':'),1)))
+        #
+        # rdc_mid2_inv.columns=['dt','rdc','sku_id']
+        #
+        # del rdc_mid_inv['index']
+        #
+        # rdc_inv_df=rdc_mid2_inv.join(rdc_mid_inv)
+        # rdc_inv_df=rdc_inv_df.loc[:,['dt','sku_id','rdc_inv']]
+
+        daily_data = {'sales_his_origin': self.sales_retail,
+                      'inv_his': self.fdc_his_inv,
+                      'inv_sim':self.fdc_begin_inv,
+                      'cons_open_po':self.sku_cons_open_po,
+                      'sales_sim': self.sim_sales_retail,
+                       'fdc_sales_sim':self.fdc_sales_retail,
+                      'lop': self.lop,
+                      'allocation_qtty_sim': self.sku_allocation,
+                      'open_po_sim': self.sku_open_po,
+                      'alt_sim': self.alt_sim,
+                      'arrive_qtty_sim': self.sku_arrive_quantity,
+                      'allocation_retail_real':self.allocation_retail_real,
+                      'allocation_retail_cacl':self.allocation_retail_cacl}
+        daily_data_mid=pd.DataFrame(daily_data, columns=['sales_his_origin','inv_his','inv_sim',
+                                                         'cons_open_po','sales_sim','fdc_sales_sim','lop',
+                                                         'allocation_qtty_sim','open_po_sim','alt_sim','arrive_qtty_sim',
+                                                         'allocation_retail_real','allocation_retail_cacl'])
+        return rdc_mid_inv,daily_data_mid
+        # daily_data_mid.fillna(0,inplace=True)
+        # daily_data_mid.reset_index(inplace=True)
+        # daily_data_mid2=pd.DataFrame(list(daily_data_mid['index'].apply(lambda x:x.split(':'),1)))
+        # daily_data_mid2.columns=['dt','fdc_id','sku_id']
+        # # print 'fdc_id',pd.unique(daily_data_mid2.fdc_id)
+        # del daily_data_mid['index']
+        # self.reuslt_daily_data=daily_data_mid2.join(daily_data_mid)
+        # self.reuslt_daily_data=pd.merge(self.reuslt_daily_data,rdc_inv_df,on=['dt','sku_id'])
+        # return self.reuslt_daily_data[self.reuslt_daily_data['fdc_id']!='rdc']
+
+
+
+
+    def calc_kpi(self):
+        fdc_kpi=defaultdict(lambda :defaultdict(float))
+        for tmp_fdcid,fdcdata in self.reuslt_daily_data.groupby(['fdc_id']):
+            if 'rdc' not in tmp_fdcid:
+                # 现货率（cr）：有货天数除以总天数
+                fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(self.date_range))
+                fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(self.date_range))
+                # 周转天数（ito）：平均库存除以平均销量
+                fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.sales_sim))
+                fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
+                # 总销量（ts）
+                fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.sales_sim)
+                fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
+                fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
+        tmp_mid_kpi=pd.DataFrame(fdc_kpi)
+        tmp_mid_kpi.reset_index(inplace=True)
+        tmp_mid_kpi.rename(columns={'index':'fdc_id'},inplace=True)
+        tmp_mid_kpi['sku_id']=self.sku
+        # print tmp_mid_kpi
+        return tmp_mid_kpi

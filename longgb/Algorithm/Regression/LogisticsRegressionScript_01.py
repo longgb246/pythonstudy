@@ -101,6 +101,9 @@ def plotEnlarge(data_x, data_y, scale=[], label=[], colors=[], linestyle=[], xla
 
 
 def sigmoid(x):
+    '''
+    sigmoid 函数
+    '''
     return 1 / (1 + np.exp(-x))
 
 
