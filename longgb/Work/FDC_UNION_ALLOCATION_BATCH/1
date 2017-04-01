@@ -1,0 +1,42 @@
+nohup: ignoring input
+2017-01-04 18:36:35,794 - allocation .. logger - INFO - 开始读取sku数据并转化
+2017-01-04 18:37:40,726 - allocation .. logger - INFO - SKU数据读取完成
+2017-01-04 18:37:40,740 - allocation .. logger - INFO - 开始读取fdc数据并转化
+2017-01-04 18:37:40,876 - allocation .. logger - INFO - fdc数据读取完成
+2017-01-04 18:37:40,876 - allocation .. logger - INFO - fdc初始化库存数据读取
+2017-01-04 18:37:59,170 - allocation .. logger - INFO - fdc初始化库存数据读取完成
+2017-01-04 18:37:59,170 - allocation .. logger - INFO - 开始读取order数据并转化
+2017-01-04 18:38:05,342 - allocation .. logger - INFO - order数据读取完成
+2017-01-04 18:38:05,343 - allocation .. logger - INFO - 开始读取详单明细数据
+2017-01-04 18:38:34,792 - allocation .. logger - INFO - 详单明细数据读取完成
+2017-01-04 18:38:34,792 - allocation .. logger - INFO - 开始读取sku预测数据并转化
+2017-01-04 18:38:43,656 - allocation .. logger - INFO - sku预测数据转化完成
+2017-01-04 18:39:05,389 - allocation .. logger - INFO - 开始生成白名单字典
+2017-01-04 18:39:06,130 - allocation .. logger - INFO - 白名单生成完成
+2017-01-04 18:39:10,819 - allocation .. logger - INFO - 开始处理采购单数据
+2017-01-04 18:39:10,995 - allocation .. logger - INFO - 进行字典推导更新
+2017-01-04 18:41:29,026 - allocation .. logger - INFO - order字典更新完成
+2017-01-04 18:41:29,027 - allocation .. logger - INFO - 遍历中间字典，更新采购单字典
+2017-01-04 18:41:29,027 - allocation .. logger - INFO - 采购单数据处理完成
+2017-01-04 18:41:29,027 - allocation .. logger - INFO - 开始处理订单明细数据并转化
+2017-01-04 18:44:50,119 - allocation .. logger - INFO - 订单明细数据处理完成
+2017-01-04 18:44:50,119 - allocation .. logger - INFO - 生成基于sku表的sku列表累计长度为
+2017-01-04 18:44:50,434 - allocation .. logger - INFO - 841831
+2017-01-04 18:44:50,434 - allocation .. logger - INFO - 增加基于order表的sku列表累计长度为
+2017-01-04 18:44:50,693 - allocation .. logger - INFO - 1287971
+2017-01-04 18:45:09,234 - allocation .. logger - INFO - 开始进行仿真运算
+2017-01-04 18:45:15,149 - allocation .. logger - INFO - begin to deal with 2016-10-02
+2017-01-04 18:45:15,149 - allocation .. logger - INFO - 更新白名单信息
+2017-01-04 18:45:15,149 - allocation .. logger - INFO - 当前日期--2016-10-02当前FDC--628拥有的白名单数量为：57884
+2017-01-04 18:45:15,150 - allocation .. logger - INFO - 当前日期--2016-10-02当前FDC--630拥有的白名单数量为：68171
+2017-01-04 18:45:15,150 - allocation .. logger - INFO - 当前日期--2016-10-02当前FDC--658拥有的白名单数量为：47883
+2017-01-04 18:45:15,167 - allocation .. logger - INFO - 更新当天rdc库存
+2017-01-04 18:45:20,567 - allocation .. logger - INFO - 计算每个SKU的调拨量
+Traceback (most recent call last):
+  File "data_process_batch.py", line 439, in <module>
+    allocation.OrdersSimulation()
+  File "/data0/cmo_ipc/inv_opt/Allocation_shell/simu_02/inventory_process_batch.py", line 382, in OrdersSimulation
+    self.calc_sku_allocation(d)
+  File "/data0/cmo_ipc/inv_opt/Allocation_shell/simu_02/inventory_process_batch.py", line 186, in calc_sku_allocation
+    tmp=np.floor(fdc_replacement[f]/need_replacement * rdc_inv_avail)
+ZeroDivisionError: integer division or modulo by zero
