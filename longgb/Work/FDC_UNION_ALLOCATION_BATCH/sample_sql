@@ -299,27 +299,33 @@ from dev.dev_inv_opt_simulation_data_seconde_pre_mid05
 
 ###增加标准差数据#########################
 drop table if exists dev.dev_inv_opt_simulation_data_seconde_pre_mid08;
-create table dev.dev_inv_opt_simulation_data_seconde_pre_mid08
-as
+create table dev.dev_inv_opt_simulation_data_seconde_pre_mid08 as
 select
-a.*,
-coalesce(b.std,0) std
+    a.*,
+    coalesce(b.std,0) std
 from
-dev.dev_inv_opt_simulation_data_seconde_pre_mid07 a left join
-dev.dev_tmp_wx_fdc_std_1020_60 b
-on a.sku_id=b.sku_id and a.fdcid=b.fdc_id and a.dt=b.dt
+    dev.dev_inv_opt_simulation_data_seconde_pre_mid07 a 
+left join
+    dev.dev_tmp_wx_fdc_std_1020_60 b
+on 
+    a.sku_id=b.sku_id and 
+    a.fdcid=b.fdc_id and 
+    a.dt=b.dt
 
 ###增加标记白名单#################
 drop table if exists dev.dev_inv_opt_simulation_data_seconde_pre_mid09;
-create table dev.dev_inv_opt_simulation_data_seconde_pre_mid09
-as
+create table dev.dev_inv_opt_simulation_data_seconde_pre_mid09 as
 select
-a.*,
-case when b.wid is not null then 1 else 0 end white_flag
+    a.*,
+    case when b.wid is not null then 1 else 0 end white_flag
 from
-dev.dev_inv_opt_simulation_data_seconde_pre_mid08 a left join
-dev.dev_inv_opt_fdc_sku_daily_summary_mid01 B
-on a.fdcid=b.fdcid and a.sku_id=b.wid and a.dt=b.dt
+    dev.dev_inv_opt_simulation_data_seconde_pre_mid08 a 
+left join
+    dev.dev_inv_opt_fdc_sku_daily_summary_mid01 B
+on 
+    a.fdcid=b.fdcid and 
+    a.sku_id=b.wid and 
+    a.dt=b.dt
 
 ##################抽取样本数据##################
 drop table if exists dev.dev_inv_opt_simulation_data_seconde_pre_mid09_sample;
@@ -736,4 +742,258 @@ on
 group by
     a.band,
     a.fdcid
+
+-- ===========================================================================================================
+-- =                      全量sku获取，在过去一个月发生过调拨行为或者band属于ABC的SKU                        =
+-- ===========================================================================================================
+
+-- 0、创建一个band在ABC的，发生调拨且在白名单里的sku，时间“2017-01-18”-“2017-02-19”之间
+create table dev.dev_inv_opt_simulation_sku_list_fdcall as
+select
+    a.*
+from
+    (
+        select
+            *
+        from
+            dev.dev_inv_opt_simulation_sku_list_select          -- 白名单sku+band
+    )  a
+full join
+    (
+        select DISTINCT
+            SKU_id  as sku_id
+        from
+            dev.dev_inv_opt_fdc_sku_allocation_data             -- 发生调拨的sku
+        where
+            rdc_id is not null AND
+            (plan_num_auto + delivered_num_manual)>0  and
+            dt > '2017-01-18' AND
+            dt < '2017-02-19'
+    )  b
+on
+    a.sku_id = b.sku_id
+where
+    a.band in ('A','B','C') or
+    (b.sku_id is not null and a.sku_id is not null)             -- 发生调拨且是白名单的 sku
+
+
+-- ------------------------------------------- 仅取 ABC band 的数据 ------------------------------------------
+
+-- 1.1、下面是取数据的 SQL【ABCband】
+drop table if exists dev.dev_inv_opt_simulation_data_seconde_pre_mid09_select;
+create table dev.dev_inv_opt_simulation_data_seconde_pre_mid09_select as
+SELECT
+    C.*
+from
+    (
+        select DISTINCT
+            sku_id
+        from
+            dev.dev_inv_opt_simulation_sku_list_select          -- 白名单中取ABC的sku
+        where
+            band in ('A','B','C')
+    ) B
+JOIN
+    dev.dev_inv_opt_simulation_data_seconde_pre_mid09 C           -- 【未知表1：很多信息都有的一张表】
+on
+    B.sku_id=C.sku_id
+
+
+-- 1.2、采购单数据，时间“2017-01-01”-“2017-03-20”之间，取出到达时间、到达量信息【ABCband】
+drop table if exists  dev.dev_inv_opt_simulation_order_select;
+create table dev.dev_inv_opt_simulation_order_select as
+SELECT
+    to_date(t2.complete_dt) as arrive_time,
+    t2.sku_id as item_sku_id,
+    sum(t2.actual_pur_qtty) as arrive_quantity,
+    t2.int_org_num
+FROM
+    gdm.gdm_m04_pur_det_basic_sum t2                              -- 采购信息表
+join
+    (
+        select DISTINCT
+            sku_id
+        from
+            dev.dev_inv_opt_simulation_sku_list_select
+        where
+            band in ('A','B','C')
+    ) b
+on 
+    t2.sku_id=b.sku_id
+WHERE
+    t2.dt = sysdate(-1) AND
+    t2.valid_flag = 1 AND  						-- 有效标志
+    t2.cgdetail_yn = 1 AND 						-- 采购明细单有效标志
+    to_date(t2.create_tm) BETWEEN '2017-01-01' AND '2017-03-20' AND
+    t2.int_org_num = 4
+group by
+    t2.int_org_num,
+    to_date(t2.complete_dt),
+    t2.sku_id;
+
+
+
+-- 1.3、rdc销量数据，时间“2017-02-19”-“2017-03-20”之间【ABCband】
+drop table if exists  dev.dev_inv_opt_simulation_rdc_sale_data_select;
+create table dev.dev_inv_opt_simulation_rdc_sale_data_select as
+select
+    a.*
+from
+    app.app_sfs_sales_dc a
+join
+    (
+        select DISTINCT
+            sku_id
+        from
+            dev.dev_inv_opt_simulation_sku_list_select
+        where
+            band in ('A','B','C')
+    ) b
+on
+    a.sku_id=b.sku_id
+where
+    a.dc_id = 4  and
+    a.dt >= '2017-02-19' and
+    a.dt <=  '2017-03-20'
+
+
+-- 1.4、RDC库存数据，时间“2017-02-19”-“2017-03-20”之间，库存量【ABCband】
+drop table if exists  dev.dev_inv_opt_simulation_rdc_inv_data_select;
+create table dev.dev_inv_opt_simulation_rdc_inv_data_select as
+select
+    dt,
+    delv_center_num,
+    a.sku_id,
+    sum(stock_qtty+in_transit_qtty-sale_reserve_qtty)  as stock_qtty
+from
+    gdm.gdm_m08_item_stock_day_sum a
+join
+    (
+        select DISTINCT
+            sku_id
+        from
+            dev.dev_inv_opt_simulation_sku_list_select
+        where
+            band in ('A','B','C')
+    ) b
+on
+    a.sku_id=b.sku_id
+where
+    dt between '2017-02-19' and '2017-03-20'
+    and delv_center_num='4'
+group by
+    dt,
+    delv_center_num,
+    a.sku_id
+
+
+
+-- --------------------------- 取 ABC band 或者 发生调拨且在白名单里的sku 的数据 ---------------------------
+
+
+-- 2.1、根据 dev_inv_opt_simulation_sku_list_fdcall 重构一张表
+drop table if exists dev.dev_inv_opt_simulation_data_seconde_pre_mid09_fdcall;
+create table dev.dev_inv_opt_simulation_data_seconde_pre_mid09_fdcall as
+SELECT
+    C.*
+from
+    (
+        select DISTINCT
+            sku_id
+        from
+            dev.dev_inv_opt_simulation_sku_list_fdcall
+    ) B
+JOIN
+    dev.dev_inv_opt_simulation_data_seconde_pre_mid09 C
+on
+    B.sku_id=C.sku_id
+
+
+-- 2.2、采购单数据
+drop table if exists  dev.dev_inv_opt_simulation_order_fdcall;
+create table dev.dev_inv_opt_simulation_order_fdcall as
+SELECT
+    to_date(t2.complete_dt) as arrive_time,
+    t2.sku_id as item_sku_id,
+    sum(t2.actual_pur_qtty) as arrive_quantity,
+    t2.int_org_num
+FROM
+    gdm.gdm_m04_pur_det_basic_sum t2
+join
+    (
+        select DISTINCT
+            sku_id
+        from
+            dev.dev_inv_opt_simulation_sku_list_fdcall
+    ) b
+on
+    t2.sku_id=b.sku_id
+WHERE
+    t2.dt = sysdate(-1) AND
+    t2.valid_flag = 1 AND  						-- 有效标志
+    t2.cgdetail_yn = 1 AND 						-- 采购明细单有效标志
+    to_date(t2.create_tm) BETWEEN '2017-01-01' AND '2017-03-20' AND
+    t2.int_org_num = 4
+group by
+    t2.int_org_num,
+    to_date(t2.complete_dt),
+    t2.sku_id;
+
+
+-- 2.3、rdc销量数据
+drop table if exists  dev.dev_inv_opt_simulation_rdc_sale_data_fdcall;
+create table dev.dev_inv_opt_simulation_rdc_sale_data_fdcall as
+select
+    a.*
+from
+    app.app_sfs_sales_dc a
+join
+    (
+        select DISTINCT
+            sku_id
+        from
+            dev.dev_inv_opt_simulation_sku_list_fdcall
+    ) b
+on
+    a.sku_id=b.sku_id
+where
+    a.dc_id = 4  and
+    a.dt >= '2017-02-19' and
+    a.dt <=  '2017-03-20'
+
+
+
+-- 2.4、RDC库存数据
+drop table if exists  dev.dev_inv_opt_simulation_rdc_inv_data_fdcall;
+create table dev.dev_inv_opt_simulation_rdc_inv_data_fdcall as
+select
+    dt,
+    delv_center_num,
+    a.sku_id,
+    sum(stock_qtty+in_transit_qtty-sale_reserve_qtty)  as stock_qtty
+from
+    gdm.gdm_m08_item_stock_day_sum a
+join
+    (
+        select DISTINCT
+            sku_id
+        from
+            dev.dev_inv_opt_simulation_sku_list_fdcall
+    ) b
+on
+    a.sku_id=b.sku_id
+where
+    dt between '2017-02-19' and '2017-03-20'
+    and delv_center_num='4'
+group by
+    dt,
+    delv_center_num,
+    a.sku_id
+
+
+-- 取数据
+SELECT
+    *
+FROM
+    dev.dev_inv_opt_simulation_data_seconde_pre_mid09_fdcall
 

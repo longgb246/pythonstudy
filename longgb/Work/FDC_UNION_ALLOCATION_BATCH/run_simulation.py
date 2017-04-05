@@ -73,13 +73,13 @@ write_daily_data = True
 write_original_data = True
 ## 设置flag值为1 则表示第一次跑，后面运行 直接设置flag为0即可
 train_simulation_name = 'train_kpi'
-order_flag=0
+order_flag=1
 order_list_file_name='order_list_dict'
-rdc_sale_flag=0
+rdc_sale_flag=1
 rdc_sale_file_dict_name='rdc_sale_list_dict'
-rdc_inv_flag=0
+rdc_inv_flag=1
 rdc_inv_file_dict_name='rdc_list_inv_dict'
-fdc_info_flag=0
+fdc_info_flag=1
 fdc_info_file_name='fdc_info_file_name_list'
 # sys.exit(0)
 # Utils
@@ -256,8 +256,8 @@ else:
 logger.info(u'加工处理rdc库存数据完成')
 #-------------------------------------------------------补充其他变量-------------------------------------------------------#
 # 7，LOP-Inverse模型：模型参数与LOP-std-7模型一致，更改了FDC顺序，将重庆与贵阳对换。
-fdc_list=[634,633,605]
-# fdc_list=[605,633,634]
+# fdc_list=[634,633,605]
+fdc_list=[605,633,634]
 mid_date_range=configServer.date_range[1]
 date_range=datelist(mid_date_range[0],mid_date_range[1])
 save_data_path=configServer.output_dir
