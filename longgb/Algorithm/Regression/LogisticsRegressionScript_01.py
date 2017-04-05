@@ -127,7 +127,7 @@ def secondaryGrad(dataMatIn, yLabels):
     yLabelsT = yLabels.reshape(100,-1)
     for k in range(maxCycles):
         error = (yLabelsT - dataMat.dot(weights))
-        weights = weights - alpha * dataMat.T.dot(error)
+        weights = weights + alpha * dataMat.T.dot(error)
     return weights
 
 
