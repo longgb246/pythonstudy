@@ -118,25 +118,16 @@ def secondaryFun(x):
 
 
 def secondaryGrad(dataMatIn, yLabels):
-    dataMatIn, yLabels = x, y
-    if len(np.shape(dataMatIn)) == 1:
-        dataMatrix = np.matrix(dataMatIn).transpose()
-    else:
-        try:
-            if np.shape(dataMatIn)[1] == 1:
-                dataMatrix = np.matrix(dataMatIn).transpose()
-            else:
-                dataMatrix = np.matrix(dataMatIn)
-        except:
-            dataMatrix = np.matrix(dataMatIn)
-    labelMat = np.matrix(yLabels).transpose()
-    m, n = np.shape(dataMatrix)
-    alpha = 0.01
+    # dataMatIn, yLabels = x, y
+    dataMat = np.array([np.ones(len(dataMatIn)),dataMatIn, dataMatIn**2]).T
+    n = np.shape(dataMat)
+    alpha = 0.0001
     maxCycles = 500
-    weights = np.ones((n, 1))
+    weights = np.ones((n[1], 1))
+    yLabelsT = yLabels.reshape(100,-1)
     for k in range(maxCycles):
-        error = (labelMat - secondaryFun(dataMatrix))
-        weights = weights + alpha * dataMatrix.transpose() * error
+        error = (yLabelsT - dataMat.dot(weights))
+        weights = weights - alpha * dataMat.T.dot(error)
     return weights
 
 
