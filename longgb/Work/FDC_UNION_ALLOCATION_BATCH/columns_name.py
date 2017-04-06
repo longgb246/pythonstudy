@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 
-path = r'D:\Lgb\data_sz\data'
+path = '/data0/cmo_ipc/inv_opt/Allocation_shell/longgb/newAllocations/data'
 
 file1_st = 'dev_inv_opt_simulation_data_seconde_pre_mid09_fdcall.csv'
 file2_st = 'dev_inv_opt_simulation_order_fdcall.csv'

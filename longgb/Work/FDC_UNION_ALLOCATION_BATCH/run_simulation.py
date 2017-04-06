@@ -73,13 +73,13 @@ write_daily_data = True
 write_original_data = True
 ## 设置flag值为1 则表示第一次跑，后面运行 直接设置flag为0即可
 train_simulation_name = 'train_kpi'
-order_flag=1
+order_flag=0
 order_list_file_name='order_list_dict'
-rdc_sale_flag=1
+rdc_sale_flag=0
 rdc_sale_file_dict_name='rdc_sale_list_dict'
-rdc_inv_flag=1
+rdc_inv_flag=0
 rdc_inv_file_dict_name='rdc_list_inv_dict'
-fdc_info_flag=1
+fdc_info_flag=0
 fdc_info_file_name='fdc_info_file_name_list'
 # sys.exit(0)
 # Utils
@@ -470,27 +470,27 @@ sim_reuslt_daily_data.to_csv(path_or_buf=output_dir +sim_lable+'_all_sku_retail.
 # assert 1==2
 sim_reuslt_daily_data=sim_reuslt_daily_data[sim_reuslt_daily_data.dt<=date_end]
 #计算各个KPI
-for fdcsku,fdcdata in sim_reuslt_daily_data.groupby(['fdc_id','sku_id']):
-    tmp_fdcid,sku_id=fdcsku[0],fdcsku[1]
-    fdc_kpi=defaultdict(lambda :defaultdict(float))
-    if 'rdc' not in tmp_fdcid:
-        # 现货率（cr）：有货天数除以总天数
-        fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(fdcdata.inv_his))
-        fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(fdcdata.inv_sim))
-        # 周转天数（ito）：平均库存除以平均销量
-        fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
-        fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
-        # 总销量（ts）
-        fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
-        fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
-        fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
-    tmp_mid_kpi=pd.DataFrame(fdc_kpi)
-    tmp_mid_kpi.reset_index(inplace=True)
-    tmp_mid_kpi.rename(columns={'index':'fdc_id'},inplace=True)
-    tmp_mid_kpi['sku_id']=sku_id
-    sim_fdc_sku_kpi.append(tmp_mid_kpi)
-sim_result_kpi_df = pd.concat(sim_fdc_sku_kpi)
-sim_result_kpi_df.to_csv(path_or_buf=output_dir +sim_lable+'_all_sku_kpi.csv', index=False, sep='\t')
+# for fdcsku,fdcdata in sim_reuslt_daily_data.groupby(['fdc_id','sku_id']):
+#     tmp_fdcid,sku_id=fdcsku[0],fdcsku[1]
+#     fdc_kpi=defaultdict(lambda :defaultdict(float))
+#     if 'rdc' not in tmp_fdcid:
+#         # 现货率（cr）：有货天数除以总天数
+#         fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(fdcdata.inv_his))
+#         fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(fdcdata.inv_sim))
+#         # 周转天数（ito）：平均库存除以平均销量
+#         fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
+#         fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
+#         # 总销量（ts）
+#         fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
+#         fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
+#         fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
+#     tmp_mid_kpi=pd.DataFrame(fdc_kpi)
+#     tmp_mid_kpi.reset_index(inplace=True)
+#     tmp_mid_kpi.rename(columns={'index':'fdc_id'},inplace=True)
+#     tmp_mid_kpi['sku_id']=sku_id
+#     sim_fdc_sku_kpi.append(tmp_mid_kpi)
+# sim_result_kpi_df = pd.concat(sim_fdc_sku_kpi)
+# sim_result_kpi_df.to_csv(path_or_buf=output_dir +sim_lable+'_all_sku_kpi.csv', index=False, sep='\t')
 
 #按照系统参数进行计算，system_flag=1
 fdc_allocation=inventory_proess(sku_list=sku_list,fdc_forecast_sales=fdc_forecast_sales, fdc_forecast_std=fdc_forecast_std,
@@ -522,68 +522,68 @@ system_reuslt_daily_data=pd.merge(system_reuslt_daily_data,system_rdc_inv_df,on=
 system_reuslt_daily_data=system_reuslt_daily_data[system_reuslt_daily_data['fdc_id']!='rdc']
 system_reuslt_daily_data.to_csv(path_or_buf=output_dir +system_label+'_all_sku_retail.csv', index=False, sep='\t')
 #计算各个SKU的KPI
-system_reuslt_daily_data=system_reuslt_daily_data[system_reuslt_daily_data.dt<=date_end]
-for fdcsku,fdcdata in system_reuslt_daily_data.groupby(['fdc_id','sku_id']):
-    tmp_fdcid,sku_id=fdcsku[0],fdcsku[1]
-    # print tmp_fdcid,sku_id
-    fdc_kpi=defaultdict(lambda :defaultdict(float))
-    if 'rdc' not in tmp_fdcid:
-        # 现货率（cr）：有货天数除以总天数
-        fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(fdcdata.inv_his))
-        fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(fdcdata.inv_sim))
-        # 周转天数（ito）：平均库存除以平均销量
-        fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
-        fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
-        # 总销量（ts）
-        fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
-        fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
-        fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
-    tmp_mid_kpi=pd.DataFrame(fdc_kpi)
-    tmp_mid_kpi.reset_index(inplace=True)
-    tmp_mid_kpi.rename(columns={'index':'fdc_id'},inplace=True)
-    tmp_mid_kpi['sku_id']=sku_id
-    system_fdc_sku_kpi.append(tmp_mid_kpi)
-system_result_kpi_df = pd.concat(system_fdc_sku_kpi)
-system_result_kpi_df.to_csv(path_or_buf=output_dir +system_label+'_all_sku_kpi.csv', index=False, sep='\t')
-
-
-sku_cnt=len(np.unique(sim_reuslt_daily_data.sku_id))
+# system_reuslt_daily_data=system_reuslt_daily_data[system_reuslt_daily_data.dt<=date_end]
+# for fdcsku,fdcdata in system_reuslt_daily_data.groupby(['fdc_id','sku_id']):
+#     tmp_fdcid,sku_id=fdcsku[0],fdcsku[1]
+#     # print tmp_fdcid,sku_id
+#     fdc_kpi=defaultdict(lambda :defaultdict(float))
+#     if 'rdc' not in tmp_fdcid:
+#         # 现货率（cr）：有货天数除以总天数
+#         fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(fdcdata.inv_his))
+#         fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(fdcdata.inv_sim))
+#         # 周转天数（ito）：平均库存除以平均销量
+#         fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
+#         fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
+#         # 总销量（ts）
+#         fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
+#         fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
+#         fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
+#     tmp_mid_kpi=pd.DataFrame(fdc_kpi)
+#     tmp_mid_kpi.reset_index(inplace=True)
+#     tmp_mid_kpi.rename(columns={'index':'fdc_id'},inplace=True)
+#     tmp_mid_kpi['sku_id']=sku_id
+#     system_fdc_sku_kpi.append(tmp_mid_kpi)
+# system_result_kpi_df = pd.concat(system_fdc_sku_kpi)
+# system_result_kpi_df.to_csv(path_or_buf=output_dir +system_label+'_all_sku_kpi.csv', index=False, sep='\t')
+#
+#
+# sku_cnt=len(np.unique(sim_reuslt_daily_data.sku_id))
 
 #计算补货点计算的KPI
-fdc_kpi=defaultdict(lambda :defaultdict(float))
-for tmp_fdcid,fdcdata in sim_reuslt_daily_data.groupby(['fdc_id']):
-    if 'rdc' not in tmp_fdcid:
-        # 现货率（cr）：有货天数除以总天数
-        fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(fdcdata.sku_id))
-        fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(fdcdata.sku_id))
-        # 周转天数（ito）：平均库存除以平均销量
-        fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
-        fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
-        # 总销量（ts）
-        fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
-        fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
-        fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
-sim_fdc_kpi=pd.DataFrame(fdc_kpi)
-sim_fdc_kpi.reset_index(inplace=True)
-sim_fdc_kpi.rename(columns={'index':'fdc_id'},inplace=True)
-#计算系统的KPI
-sku_cnt=len(np.unique(sim_reuslt_daily_data.sku_id))
-fdc_kpi=defaultdict(lambda :defaultdict(float))
-for tmp_fdcid,fdcdata in system_reuslt_daily_data.groupby(['fdc_id']):
-    if 'rdc' not in tmp_fdcid:
-        # 现货率（cr）：有货天数除以总天数
-        fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(date_range)*sku_cnt)
-        fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(date_range)*sku_cnt)
-        # 周转天数（ito）：平均库存除以平均销量
-        fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
-        fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
-        # 总销量（ts）
-        fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
-        fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
-        fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
-system_fdc_kpi=pd.DataFrame(fdc_kpi)
-system_fdc_kpi.reset_index(inplace=True)
-system_fdc_kpi.rename(columns={'index':'fdc_id'},inplace=True)
-fdc_kpi=pd.merge(sim_fdc_kpi,system_fdc_kpi,on=['fdc_id'],suffixes=['_sim','_system'])
-fdc_kpi.to_csv(path_or_buf=output_dir+'fdc_kpi.csv', index=False, sep='\t')
+# fdc_kpi=defaultdict(lambda :defaultdict(float))
+# for tmp_fdcid,fdcdata in sim_reuslt_daily_data.groupby(['fdc_id']):
+#     if 'rdc' not in tmp_fdcid:
+#         # 现货率（cr）：有货天数除以总天数
+#         fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(fdcdata.sku_id))
+#         fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(fdcdata.sku_id))
+#         # 周转天数（ito）：平均库存除以平均销量
+#         fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
+#         fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
+#         # 总销量（ts）
+#         fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
+#         fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
+#         fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
+# sim_fdc_kpi=pd.DataFrame(fdc_kpi)
+# sim_fdc_kpi.reset_index(inplace=True)
+# sim_fdc_kpi.rename(columns={'index':'fdc_id'},inplace=True)
+# #计算系统的KPI
+# sku_cnt=len(np.unique(sim_reuslt_daily_data.sku_id))
+# fdc_kpi=defaultdict(lambda :defaultdict(float))
+# for tmp_fdcid,fdcdata in system_reuslt_daily_data.groupby(['fdc_id']):
+#     if 'rdc' not in tmp_fdcid:
+#         # 现货率（cr）：有货天数除以总天数
+#         fdc_kpi['cr_his'][tmp_fdcid]=sum(fdcdata.inv_his>0)/float(len(date_range)*sku_cnt)
+#         fdc_kpi['cr_sim'][tmp_fdcid]=sum(fdcdata.inv_sim>0)/float(len(date_range)*sku_cnt)
+#         # 周转天数（ito）：平均库存除以平均销量
+#         fdc_kpi['ito_sim'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.fdc_sales_sim))<=0 else float(np.nanmean(fdcdata.inv_sim)) / float(np.nanmean(fdcdata.fdc_sales_sim))
+#         fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin))<=0 else float(np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
+#         # 总销量（ts）
+#         fdc_kpi['ts_sim'][tmp_fdcid] = np.sum(fdcdata.fdc_sales_sim)
+#         fdc_kpi['ts_his'][tmp_fdcid] = np.sum(fdcdata.sales_his_origin)
+#         fdc_kpi['ts_rate'][tmp_fdcid]=-1 if float(fdc_kpi['ts_his'][tmp_fdcid])<=0 else float(fdc_kpi['ts_sim'][tmp_fdcid])/float(fdc_kpi['ts_his'][tmp_fdcid])
+# system_fdc_kpi=pd.DataFrame(fdc_kpi)
+# system_fdc_kpi.reset_index(inplace=True)
+# system_fdc_kpi.rename(columns={'index':'fdc_id'},inplace=True)
+# fdc_kpi=pd.merge(sim_fdc_kpi,system_fdc_kpi,on=['fdc_id'],suffixes=['_sim','_system'])
+# fdc_kpi.to_csv(path_or_buf=output_dir+'fdc_kpi.csv', index=False, sep='\t')
 # print sku_return_result
