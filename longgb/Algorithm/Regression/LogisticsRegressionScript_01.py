@@ -224,11 +224,13 @@ def script_03_plotGradAscent():
     y, y_d = secondaryFun(x)
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(x, y, label=r'$y=%d+%d*x+%d*x^{2}$'%(3,2,1.5))
+    # ax.plot(x, y, label=r'$y=%d+%d*x+%d*x^{2}$'%(3,2,1.5))
+    ax.plot(x, y, label=r'$y={0}+{1}*x+{2}*x^{{2}}$'.format(3,2,1.5))
     weights = secondaryGrad(x, y)
     dataMat = np.array([np.ones(len(x)), x, x ** 2]).T
     y2 = dataMat.dot(weights)
-    ax.plot(x, y2, 'g-', label=r'$y=%.2f+%.2f*x+%.2f*x^{2}$'% (weights[0][0],weights[1][0],weights[2][0]))
+    # ax.plot(x, y2, 'g-', label=r'$y=%.2f+%.2f*x+%.2f*x^{2}$'% (weights[0][0],weights[1][0],weights[2][0]))
+    ax.plot(x, y2, 'g-', label=r'$y={0:.2f}+{1:.2f}*x+{2:.2f}*x^{{2}}$'.format(weights[0][0],weights[1][0],weights[2][0]))
     calLoss(y2, y)
     ax.legend(loc='best')
     pass
