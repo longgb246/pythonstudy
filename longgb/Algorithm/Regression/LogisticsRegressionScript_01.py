@@ -123,18 +123,12 @@ def secondaryGrad(dataMatIn, yLabels):
     dataMat = np.array([np.ones(len(dataMatIn)),dataMatIn, dataMatIn**2]).T
     n = np.shape(dataMat)
     alpha = 0.0001
-    maxCycles = 500
+    maxCycles = 1000
     weights = np.ones((n[1], 1))
     yLabelsT = yLabels.reshape(100,-1)
-    test_path = r'C:\Users\sunwenxiu\Desktop\test'
-    with open(test_path + os.sep + 'test.txt', 'w') as f:
-        for k in range(maxCycles):
-            error = (dataMat.dot(weights) - yLabelsT)
-            weights = weights - alpha * dataMat.T.dot(error)
-            f.write("{0:.4f},   ".format(weights[0][0]))
-            f.write("{0:.4f},   ".format(weights[1][0]))
-            f.write("{0:.4f}    ".format(weights[2][0]))
-            f.write('\n')
+    for k in range(maxCycles):
+        error = (dataMat.dot(weights) - yLabelsT)
+        weights = weights - alpha * dataMat.T.dot(error) / len(dataMat)
     return weights
 
 
@@ -163,6 +157,11 @@ def dataset_fixed_cov():
               np.dot(np.random.randn(n, dim), C) + np.array([1, 1])]
     y = np.hstack((np.zeros(n), np.ones(n)))
     return X, y
+
+
+def calLoss(calY, y):
+    # calY, y = y2, y
+    return 1/(2*len(y))*np.sum((calY-y)**2)
 
 
 # ========================================================================
@@ -225,11 +224,13 @@ def script_03_plotGradAscent():
     y, y_d = secondaryFun(x)
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.plot(x, y)
-    point2 = np.array([-5, 5])
-    point2_y, point2_y_d = secondaryFun(point2)
-
+    ax.plot(x, y, label=r'$y=%d+%d*x+%d*x^{2}$'%(3,2,1.5))
     weights = secondaryGrad(x, y)
+    dataMat = np.array([np.ones(len(x)), x, x ** 2]).T
+    y2 = dataMat.dot(weights)
+    ax.plot(x, y2, 'g-', label=r'$y=%.2f+%.2f*x+%.2f*x^{2}$'% (weights[0][0],weights[1][0],weights[2][0]))
+    calLoss(y2, y)
+    ax.legend(loc='best')
     pass
 
 
