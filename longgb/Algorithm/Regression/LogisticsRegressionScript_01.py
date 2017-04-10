@@ -126,9 +126,15 @@ def secondaryGrad(dataMatIn, yLabels):
     maxCycles = 500
     weights = np.ones((n[1], 1))
     yLabelsT = yLabels.reshape(100,-1)
-    for k in range(maxCycles):
-        error = (yLabelsT - dataMat.dot(weights))
-        weights = weights + alpha * dataMat.T.dot(error)
+    test_path = r'C:\Users\sunwenxiu\Desktop\test'
+    with open(test_path + os.sep + 'test.txt', 'w') as f:
+        for k in range(maxCycles):
+            error = (dataMat.dot(weights) - yLabelsT)
+            weights = weights - alpha * dataMat.T.dot(error)
+            f.write("{0:.4f},   ".format(weights[0][0]))
+            f.write("{0:.4f},   ".format(weights[1][0]))
+            f.write("{0:.4f}    ".format(weights[2][0]))
+            f.write('\n')
     return weights
 
 

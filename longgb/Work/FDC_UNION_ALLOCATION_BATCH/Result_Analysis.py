@@ -176,12 +176,19 @@ def kpi_analysis(all_files=[], all_suffix=[]):
         files, suffix = getFileSuffix()
     else:
         files, suffix = all_files, all_suffix
+    print files
     # 2、------------------------------ 读取band数据 ------------------------------------
     if ifBand:
-        band = pd.read_table(band_path)
-        band.columns = ['sku_id', 'label']
+        band_all = pd.read_table(band_path, header=None)
+        band_all.columns = ['date','fdc_id','sku_id', 'label']
+        band = band_all.loc[:,['sku_id', 'label']].drop_duplicates()
+        band.index = range(len(band))
+        # band_all_count = band_all.groupby(['sku_id']).count().reset_index()
+        # band = pd.read_table(band_path)
+        # band.columns = ['sku_id', 'label']
     kpi_list = []
     kpi_band_list = []
+    kpi_abc_band_list = []
     for i, each_file in enumerate(files):
         print "[ Read the File ]: [ {0} ]".format(each_file)
         # 3.1、------------------------------ 读取文件 ------------------------------
@@ -209,7 +216,81 @@ def kpi_analysis(all_files=[], all_suffix=[]):
         kpi_list.append(sim_all_sku_retail_kpi)
         if i == 0:
             kpi_list.append(system_all_sku_retail_kpi)
+        # 仅仅统计 ABC band 的数据
+        band_abc = True
+        if band_abc:
+            sim_all_sku_retail_band_cp = sim_all_sku_retail.copy()
+            system_all_sku_retail_band_cp = system_all_sku_retail.copy()
+            band_cp = band.copy()
+            band_cp['sku_id'] = map(lambda x: str(int(x)), band_cp['sku_id'].values)
+            band_cp_keep = band_cp[map(lambda x: x in list("ABC"), band_cp['label'].values)]
+            band_cp_keep['sku_id'] = map(lambda x: str(int(x)), band_cp_keep['sku_id'].values)
+            sim_all_sku_retail_band_cp['sku_id'] = map(lambda x: str(int(x)), sim_all_sku_retail_band_cp['sku_id'].values)
+            sim_all_sku_retail_band_cp_keep = sim_all_sku_retail_band_cp.merge(band_cp_keep, on=['sku_id'])
+            system_all_sku_retail_band_cp['sku_id'] = map(lambda x: str(int(x)), system_all_sku_retail_band_cp['sku_id'].values)
+            system_all_sku_retail_band_cp_keep = system_all_sku_retail_band_cp.merge(band_cp_keep, on=['sku_id'])
+            print '1\n',sim_all_sku_retail_band_cp_keep
+            sim_all_sku_retail_kpi_cp = calKpi(sim_all_sku_retail_band_cp_keep, suffix='_sim' + suffix[i])
+            print '2\n',sim_all_sku_retail_kpi_cp
+            system_all_sku_retail_kpi_cp = calKpi(system_all_sku_retail_band_cp_keep, suffix='_system' + suffix[i])
+            print '3\n',system_all_sku_retail_kpi_cp
+            kpi_abc_band_list.append(sim_all_sku_retail_kpi_cp)
+            if i == 0:
+                kpi_abc_band_list.append(system_all_sku_retail_kpi_cp)
+            kpi_list_1_keep_cp, kpi_list_2_keep_cp = combineKpi(kpi_abc_band_list, suffix)
+            if add_true:
+                kpi_list_1_keep_cp.to_csv(save_path + os.sep + 'kpi_list_keep_keep_add_abc.csv', index=False)
+        is_check = True
+        if is_check:
+            sim_all_sku_retail.columns
+            sim_all_sku_retail_cp2 = sim_all_sku_retail.copy()
+            band_cp = band.copy()
+            band_cp['sku_id'] = map(lambda x: str(int(x)), band_cp['sku_id'].values)
+            band_cp_keep = band_cp[map(lambda x: x in list("F"), band_cp['label'].values)]
+            band_cp_keep['sku_id'] = map(lambda x: str(int(x)), band_cp_keep['sku_id'].values)
+            sim_all_sku_retail_cp2['sku_id'] = map(lambda x: str(int(x)), sim_all_sku_retail_cp2['sku_id'].values)
+            sim_all_sku_retail_cp2_605 = sim_all_sku_retail_cp2[sim_all_sku_retail_cp2['fdc_id'] == 605]
+            sim_all_sku_retail_cp2_605_f = sim_all_sku_retail_cp2_605.merge(band_cp_keep, on=['sku_id'])
+
+            np.nanmean(sim_all_sku_retail_cp2_605_f.sales_his_origin)
+            float(np.nanmean(sim_all_sku_retail_cp2_605_f.inv_his)) / float(np.nanmean(sim_all_sku_retail_cp2_605_f.sales_his_origin))
+
+            sim_all_sku_retail_cp2_605_f[sim_all_sku_retail_cp2_605_f['inv_his']<0]
+
+
+            # 1120270
+            # 1433099
+            # 3516607
+            # 843462
+
+
+
+            # fdc_kpi['ito_his'][tmp_fdcid] = -1 if float(np.nanmean(fdcdata.sales_his_origin)) <= 0 else float(
+            #     np.nanmean(fdcdata.inv_his)) / float(np.nanmean(fdcdata.sales_his_origin))
+
+
         if ifBand:
+            # 分 band 查看出了问题
+            # sim_all_sku_retail_cp = sim_all_sku_retail.copy()
+            # band_cp = band.copy()
+            # sim_all_sku_retail_cp['sku_id'] = map(lambda x: str(int(x)),sim_all_sku_retail_cp['sku_id'].values)
+            # band_cp['sku_id'] = map(lambda x: str(int(x)),band_cp['sku_id'].values)
+            # band_cp_keep = band[map(lambda x: x in list("ABC"), band['label'].values)]
+            # band_cp_keep['sku_id'] = map(lambda x: str(int(x)),band_cp_keep['sku_id'].values)
+            # sim_all_sku_retail_band_cp_keep = sim_all_sku_retail_cp.merge(band_cp_keep, on=['sku_id'])
+            # sim_all_sku_retail_band_cp = sim_all_sku_retail_cp.merge(band_cp, on=['sku_id'])
+            # sku_1 = list(band_cp['sku_id'].drop_duplicates())
+            # len(sku_1)      # 11026
+            # sku_2 = list(sim_all_sku_retail_cp['sku_id'].drop_duplicates())
+            # len(sku_2)      # 41267
+            # sku_3 = list(sim_all_sku_retail_band_cp['sku_id'].drop_duplicates())
+            # len(sku_3)
+            # sku_4 = set(sku_1) & set(sku_2)
+            # sku_5 = set(sku_2) - sku_4
+            # len(sku_4)      # 10870
+            # len(sku_5)      # 30397
+            # sku_5_pd = pd.DataFrame(list(sku_5),columns=['sku_id'])
+            # loss_cp = sim_all_sku_retail_cp.merge(sku_5_pd, on=['sku_id'])
             sim_all_sku_retail_band = sim_all_sku_retail.merge(band, on=['sku_id'])
             system_all_sku_retail_band = system_all_sku_retail.merge(band, on=['sku_id'])
             sim_all_sku_retail_kpi_band = calKpi_label(sim_all_sku_retail_band, suffix='_sim' + suffix[i])
@@ -234,16 +315,19 @@ def kpi_analysis(all_files=[], all_suffix=[]):
 # ======================================================================
 # =                                 配置参数                            =
 # ======================================================================
-read_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\news\fdcall_std_7'
-band_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\analysis_3_policy\SKUABCband_20170330153011.csv'
-save_path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\news\fdcall_std_7\Result'
+read_path = r'D:\Lgb\data_sz'
+band_path = r'D:\Lgb\data_sz\sku_band.csv'
+save_path = r'D:\Lgb\data_sz\allocation_detail\Result'
 del_sale_zero = True        # 是否剔除销量为 0
 ifBand = True               # 是否计算分 band 的值
-add_true = False            # 是否单独储存某文件夹下的 kpi，如果 True 则需 all_files、all_suffix 值， False 则计算 read_path 下所有文件夹的 kpi
-all_files=[]
-all_suffix=[]
+add_true = True            # 是否单独储存某文件夹下的 kpi，如果 True 则需 all_files、all_suffix 值， False 则计算 read_path 下所有文件夹的 kpi
+all_files=['allocation_detail']
+all_suffix=['_lop']
+# add_true = False            # 是否单独储存某文件夹下的 kpi，如果 True 则需 all_files、all_suffix 值， False 则计算 read_path 下所有文件夹的 kpi
+# all_files=[]
+# all_suffix=[]
 
 
 if __name__ == '__main__':
-    kpi_analysis()
+    kpi_analysis(all_files=all_files, all_suffix=all_suffix)
 

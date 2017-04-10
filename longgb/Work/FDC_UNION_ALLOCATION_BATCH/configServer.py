@@ -4,12 +4,9 @@ import os.path
 import sys
 import time
 import numpy as np
-# data_dir        ='D:/Lgb/data_sz/data/'
-# output_dir      = 'D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/news/simulation_results_replace_std_7/'
-# log_path         ='D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/news/log/log.txt'
-data_dir        ='/data0/cmo_ipc/inv_opt/Allocation_shell/longgb/newAllocations/data/'
-output_dir      = '/data0/cmo_ipc/inv_opt/Allocation_shell/longgb/newAllocations/Result/'
-log_path         ='/data0/cmo_ipc/inv_opt/Allocation_shell/longgb/newAllocations/log/log.txt'
+data_dir        ='D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/'
+output_dir      = 'D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/analysis_3_policy/Simulation_Results/NewResult/simulation_results_inverse/'
+log_path         ='D:/Lgb/WorkFiles/FDC_UNION_ALLOCATION/analysis_3_policy/Simulation_Results/NewResult/log/log.txt'
 data_file_name='fdc_sales_select_20170330124541.csv'
 rdc_inv_file_name='rdc_inv_select_20170330125151.csv'
 order_file_name='order_select_20170330125041.csv'

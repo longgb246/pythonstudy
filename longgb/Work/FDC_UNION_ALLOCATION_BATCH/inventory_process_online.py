@@ -335,7 +335,7 @@ class inventory_proess:
         '''
         #生成调用索引,将在多个地方调用该函数
         '''
-        return str(date_s) +'|'+str(fdc)+'|'+ str(sku)
+        return str(date_s) +':'+str(fdc)+':'+ str(sku)
 
     def gene_alt(self, fdc):
         '''
