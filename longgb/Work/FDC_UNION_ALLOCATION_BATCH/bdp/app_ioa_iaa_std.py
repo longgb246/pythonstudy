@@ -41,21 +41,25 @@ select
     case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
     else
     coalesce(sales_sum1,0)-forecast_daily_override_sales[0]  end day_err1,
+
     case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
     else
     coalesce(sales_sum2,0)-forecast_daily_override_sales[0]-
     forecast_daily_override_sales[1]  end day_err2,
+
     case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
     else
     coalesce(sales_sum3,0)-forecast_daily_override_sales[0]-
     forecast_daily_override_sales[1]-
     forecast_daily_override_sales[2] end day_err3,
+
     case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
     else
     coalesce(sales_sum4,0)-forecast_daily_override_sales[0]-
     forecast_daily_override_sales[1]-
     forecast_daily_override_sales[2]-
     forecast_daily_override_sales[3]  end day_err4,
+
     case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
     else
     coalesce(sales_sum5,0)-forecast_daily_override_sales[0]-
@@ -63,6 +67,7 @@ select
     forecast_daily_override_sales[2]-
     forecast_daily_override_sales[3]-
     forecast_daily_override_sales[4]  end day_err5,
+
     case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
     else
     coalesce(sales_sum6,0)-forecast_daily_override_sales[0]-
@@ -71,6 +76,7 @@ select
     forecast_daily_override_sales[3]-
     forecast_daily_override_sales[4]-
     forecast_daily_override_sales[5]  end day_err6,
+
     case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
     else
     coalesce(sales_sum7,0)-forecast_daily_override_sales[0]-
@@ -118,20 +124,20 @@ join
 (select
     sku_id,
     fdc_id,
-/*    percentile_approx(cast(day_err1 as double),array(0.85,0.90,0.95),9999) percent1,
-    percentile_approx(cast(day_err2 as double),array(0.85,0.90,0.95),9999) percent2,
-    percentile_approx(cast(day_err3 as double),array(0.85,0.90,0.95),9999) percent3,
-    percentile_approx(cast(day_err4 as double),array(0.85,0.90,0.95),9999) percent4,
-    percentile_approx(cast(day_err5 as double),array(0.85,0.90,0.95),9999) percent5,
-    percentile_approx(cast(day_err6 as double),array(0.85,0.90,0.95),9999) percent6,
-    percentile_approx(cast(day_err7 as double),array(0.85,0.90,0.95),9999) percent7,*/
+    --percentile_approx(cast(day_err1 as double),array(0.85,0.90,0.95),9999) percent1,
+    --percentile_approx(cast(day_err2 as double),array(0.85,0.90,0.95),9999) percent2,
+    --percentile_approx(cast(day_err3 as double),array(0.85,0.90,0.95),9999) percent3,
+    --percentile_approx(cast(day_err4 as double),array(0.85,0.90,0.95),9999) percent4,
+    --percentile_approx(cast(day_err5 as double),array(0.85,0.90,0.95),9999) percent5,
+    --percentile_approx(cast(day_err6 as double),array(0.85,0.90,0.95),9999) percent6,
+    --percentile_approx(cast(day_err7 as double),array(0.85,0.90,0.95),9999) percent7,
     percentile_approx(cast(day_err1 as double),0.95,9999) percent1,
     percentile_approx(cast(day_err2 as double),0.95,9999) percent2,
     percentile_approx(cast(day_err3 as double),0.95,9999) percent3,
     percentile_approx(cast(day_err4 as double),0.95,9999) percent4,
     percentile_approx(cast(day_err5 as double),0.95,9999) percent5,
     percentile_approx(cast(day_err6 as double),0.95,9999) percent6,
-    percentile_approx(cast(day_err7 as double),0.95,9999) percent7,
+    percentile_approx(cast(day_err7 as double),0.95,9999) percent7
 from
     app.app_ioa_iaa_dayerr_tmp
 where
@@ -155,6 +161,13 @@ insert overwrite table app.app_ioa_iaa_std partition(dt='""" + end_dt + """')
         app.app_ioa_iaa_dayerr
     where
         dp='""" + end_dt + """'
+        and day_err1 is not null
+        and day_err2 is not null
+        and day_err3 is not null
+        and day_err4 is not null
+        and day_err5 is not null
+        and day_err6 is not null
+        and day_err7 is not null
     group by
         dp,sku_id,fdc_id;
 """

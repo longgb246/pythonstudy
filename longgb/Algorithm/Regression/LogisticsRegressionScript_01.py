@@ -165,6 +165,63 @@ def calLoss(calY, y):
 
 
 # ========================================================================
+# =                                 乱入脚本                             =
+# ========================================================================
+from collections import Counter
+def workSample():
+    path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\news\fdcall_std_7'
+    file = pd.read_table(path + os.sep + 'sim_all_sku_retail.csv')
+    file_system = pd.read_table(path + os.sep + 'system_all_sku_retail.csv')
+
+
+    sku_list = file['sku_id'].drop_duplicates()
+    sku_list = pd.DataFrame(sku_list[:100], columns=['sku_id'])
+    file_need = file.merge(sku_list, on=['sku_id'])
+    file_need.to_csv(path + os.sep + 'sim_all_sku_retail_sample100.csv', index=False)
+    file.columns
+
+    allocations_max = []          # 1、存在调拨期间非第一天，也有很大的调拨量，即不是极端值的影响。
+    allocations_avg = []          # 2、剔除了调拨量为0的值后。发现计算的调拨量的均值、中位数没有明显差异。排除计算过程中的调拨量差生的差异影响。
+    allocations_median = []
+    allocations_count = []        # 3、发现第一天的发生调拨的数量确实远大于其他期的。
+                                  # 综上，仅因为第一天发生调拨的数量过多，即为调拨条件（对第一天有特殊影响）。
+
+    inv_comp = []
+    for key, value in file.groupby(['dt']):
+        tmp_inv = []
+        tmp_inv.append(np.mean(value['inv_his']))
+        tmp_inv.append(np.mean(value['inv_sim']))
+        inv_comp.append(tmp_inv)
+
+        # problem 1
+        value_lt0 = value[value['allocation_retail_real'] > 0].loc[:, ['allocation_retail_real']]
+        allocations_max.append(np.max(value['allocation_retail_real']))
+        avg_tmp = 0 if len(value_lt0) == 0 else np.mean(value_lt0['allocation_retail_real'])
+        allocations_avg.append(avg_tmp)
+        median_tmp = 0 if len(value_lt0) == 0 else np.median(value_lt0['allocation_retail_real'])
+        allocations_median.append(median_tmp)
+        allocations_count.append(Counter(value['allocation_retail_real'] > 0)[True])
+
+    # '2017-02-19' 开始的数据，inv 数据为'2017-02-18'的数据，和'2017-02-19'的在途
+
+    # 猜想：会不会是第一天的 库存量 就是比较低（不符合 系统 以及 策略的调拨）。
+    inv_comp2 = []
+    for key, value in file_system.groupby(['dt']):
+        inv_comp2.append(np.mean(value['inv_sim']))
+
+    inv_comp_pd = pd.DataFrame(inv_comp, columns=['his', 'sim'])
+    inv_comp_pd['system'] = inv_comp2
+
+
+    file['inv_his']
+    file['inv_sim']
+    file_system['inv_sim']
+
+
+    pass
+
+
+# ========================================================================
 # =                                 实用函数                             =
 # ========================================================================
 def script_01_plotSigmoid():
@@ -236,60 +293,19 @@ def script_03_plotGradAscent():
     pass
 
 
-
-from collections import Counter
-def workSample():
-    path = r'D:\Lgb\WorkFiles\FDC_UNION_ALLOCATION\news\fdcall_std_7'
-    file = pd.read_table(path + os.sep + 'sim_all_sku_retail.csv')
-    file_system = pd.read_table(path + os.sep + 'system_all_sku_retail.csv')
-
-
-    sku_list = file['sku_id'].drop_duplicates()
-    sku_list = pd.DataFrame(sku_list[:100], columns=['sku_id'])
-    file_need = file.merge(sku_list, on=['sku_id'])
-    file_need.to_csv(path + os.sep + 'sim_all_sku_retail_sample100.csv', index=False)
-    file.columns
-
-    allocations_max = []          # 1、存在调拨期间非第一天，也有很大的调拨量，即不是极端值的影响。
-    allocations_avg = []          # 2、剔除了调拨量为0的值后。发现计算的调拨量的均值、中位数没有明显差异。排除计算过程中的调拨量差生的差异影响。
-    allocations_median = []
-    allocations_count = []        # 3、发现第一天的发生调拨的数量确实远大于其他期的。
-                                  # 综上，仅因为第一天发生调拨的数量过多，即为调拨条件（对第一天有特殊影响）。
-
-    inv_comp = []
-    for key, value in file.groupby(['dt']):
-        tmp_inv = []
-        tmp_inv.append(np.mean(value['inv_his']))
-        tmp_inv.append(np.mean(value['inv_sim']))
-        inv_comp.append(tmp_inv)
-
-        # problem 1
-        value_lt0 = value[value['allocation_retail_real'] > 0].loc[:, ['allocation_retail_real']]
-        allocations_max.append(np.max(value['allocation_retail_real']))
-        avg_tmp = 0 if len(value_lt0) == 0 else np.mean(value_lt0['allocation_retail_real'])
-        allocations_avg.append(avg_tmp)
-        median_tmp = 0 if len(value_lt0) == 0 else np.median(value_lt0['allocation_retail_real'])
-        allocations_median.append(median_tmp)
-        allocations_count.append(Counter(value['allocation_retail_real'] > 0)[True])
-
-    # '2017-02-19' 开始的数据，inv 数据为'2017-02-18'的数据，和'2017-02-19'的在途
-
-    # 猜想：会不会是第一天的 库存量 就是比较低（不符合 系统 以及 策略的调拨）。
-    inv_comp2 = []
-    for key, value in file_system.groupby(['dt']):
-        inv_comp2.append(np.mean(value['inv_sim']))
-
-    inv_comp_pd = pd.DataFrame(inv_comp, columns=['his', 'sim'])
-    inv_comp_pd['system'] = inv_comp2
-
-
-    file['inv_his']
-    file['inv_sim']
-    file_system['inv_sim']
-
+def script_04_test():
+    '''
+    画一个简单 混合分布 的散点图
+    '''
+    x, y = dataset_fixed_cov()
+    data = pd.DataFrame(x, columns=['x1', 'x2'])
+    data['y'] = y
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(data.loc[data['y'] == 0, ['x1']], data.loc[data['y'] == 0, ['x2']], 'b.', label='type1')
+    ax.plot(data.loc[data['y'] == 1, ['x1']], data.loc[data['y'] == 1, ['x2']], 'r.', label='type2')
 
     pass
-
 
 
 if __name__ == '__main__':
