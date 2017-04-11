@@ -33,134 +33,130 @@ def main():
         end_dt = get_format_yesterday()[1]
 
     sql = """
-insert overwrite table app.app_ioa_iaa_dayerr_tmp partition (dt='""" + end_dt + """')
+insert overwrite table app.app_ioa_iaa_dayerr_tmp partition (dp='""" + end_dt + """')
 select
+    dt,
+    sku_id,
+    fdc_id,
+    case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
+    else
+    coalesce(sales_sum1,0)-forecast_daily_override_sales[0]  end day_err1,
+    case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
+    else
+    coalesce(sales_sum2,0)-forecast_daily_override_sales[0]-
+    forecast_daily_override_sales[1]  end day_err2,
+    case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
+    else
+    coalesce(sales_sum3,0)-forecast_daily_override_sales[0]-
+    forecast_daily_override_sales[1]-
+    forecast_daily_override_sales[2] end day_err3,
+    case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
+    else
+    coalesce(sales_sum4,0)-forecast_daily_override_sales[0]-
+    forecast_daily_override_sales[1]-
+    forecast_daily_override_sales[2]-
+    forecast_daily_override_sales[3]  end day_err4,
+    case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
+    else
+    coalesce(sales_sum5,0)-forecast_daily_override_sales[0]-
+    forecast_daily_override_sales[1]-
+    forecast_daily_override_sales[2]-
+    forecast_daily_override_sales[3]-
+    forecast_daily_override_sales[4]  end day_err5,
+    case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
+    else
+    coalesce(sales_sum6,0)-forecast_daily_override_sales[0]-
+    forecast_daily_override_sales[1]-
+    forecast_daily_override_sales[2]-
+    forecast_daily_override_sales[3]-
+    forecast_daily_override_sales[4]-
+    forecast_daily_override_sales[5]  end day_err6,
+    case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
+    else
+    coalesce(sales_sum7,0)-forecast_daily_override_sales[0]-
+    forecast_daily_override_sales[1]-
+    forecast_daily_override_sales[2]-
+    forecast_daily_override_sales[3]-
+    forecast_daily_override_sales[4]-
+    forecast_daily_override_sales[5]-
+    forecast_daily_override_sales[6]  end day_err7
+from
+    app.app_ioa_iaa_stdpre
+where
+    dp     = '""" + end_dt + """'
+    and sku_status_cd=1;
+
+insert overwrite table app.app_ioa_iaa_dayerr partition(dp='""" + end_dt + """')
+select
+    t1.dt,
     t1.sku_id,
     t1.fdc_id,
+    case when day_err1>=percent1 then NULL else day_err1 end as day_err1,
+    case when day_err2>=percent2 then NULL else day_err2 end as day_err2,
+    case when day_err3>=percent3 then NULL else day_err3 end as day_err3,
+    case when day_err4>=percent4 then NULL else day_err4 end as day_err4,
+    case when day_err5>=percent5 then NULL else day_err5 end as day_err5,
+    case when day_err6>=percent6 then NULL else day_err6 end as day_err6,
+    case when day_err7>=percent7 then NULL else day_err7 end as day_err7
+from
+(select
+    dt,
+    sku_id,
+    fdc_id,
+    day_err1,
+    day_err2,
     day_err3,
-    day_err7,
-    row_number() over (partition by t1.sku_id,t1.fdc_id order by day_err3) as rank3,
-    row_number() over (partition by t1.sku_id,t1.fdc_id order by day_err7) as rank7,
-    t2.cnt
-from 
-    (
-        select
-            dt,
-            sku_id,
-            fdc_id,
-            case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
-                else coalesce(sales_sum3,0)-forecast_daily_override_sales[0]-forecast_daily_override_sales[1]-forecast_daily_override_sales[2] end day_err3,
-            case when forecast_daily_override_sales is null then coalesce(sales_sum3,0)
-                else coalesce(sales_sum7,0)-forecast_daily_override_sales[0]-forecast_daily_override_sales[1]-forecast_daily_override_sales[2]-
-                    forecast_daily_override_sales[3]-forecast_daily_override_sales[4]-forecast_daily_override_sales[5]-forecast_daily_override_sales[6]  end day_err7
-        from
-            app.app_ioa_iaa_stdpre
-        where
-            dp     = '""" + end_dt + """'
-            and sku_status_cd=1
-    ) t1
-join
-    (
-        select
-            sku_id,
-            fdc_id,
-            count(dt) cnt
-        from
-            app.app_ioa_iaa_stdpre
-        where
-            dp     = '""" + end_dt + """'
-            and sku_status_cd=1
-        GROUP BY
-            sku_id,
-            fdc_id
-    )t2
-on
-    t1.sku_id=t2.sku_id and
-    t1.fdc_id=t2.fdc_id;
-
-
-insert overwrite table app.app_ioa_iaa_dayerr  partition(dp='""" + end_dt + """')
-select
-    case when t1.dt is not null then t1.dt else t2.dt end as dt,
-    case when t1.sku_id is not null then t1.sku_id else t2.sku_id end as sku_id,
-    case when t1.fdc_id is not null then t1.fdc_id else t2.fdc_id end as fdc_id,
-    day_err3,
+    day_err4,
+    day_err5,
+    day_err6,
     day_err7
 from
-    (
-        select
-            dt,
-            sku_id,
-            fdc_id,
-            day_err3
-        from
-        app.app_ioa_iaa_dayerr_tmp
-        where
-            rank3<= 0.95*cnt
-            and dt='""" + end_dt + """'
-    ) t1
-full outer join
-    (
-        select
-            dt,
-            sku_id,
-            fdc_id,
-            day_err7
-        from
-            app.app_ioa_iaa_dayerr_tmp
-        where
-            rank7<= 0.95*cnt
-            and dt='""" + end_dt + """'
-    ) t2
-on
-    t1.dt=t2.dt and
-    t1.sku_id=t2.sku_id and
-    t1.fdc_id=t2.fdc_id;
-
+    app.app_ioa_iaa_dayerr_tmp
+where
+    dp='""" + end_dt + """') t1
+join
+(select
+    sku_id,
+    fdc_id,
+/*    percentile_approx(cast(day_err1 as double),array(0.85,0.90,0.95),9999) percent1,
+    percentile_approx(cast(day_err2 as double),array(0.85,0.90,0.95),9999) percent2,
+    percentile_approx(cast(day_err3 as double),array(0.85,0.90,0.95),9999) percent3,
+    percentile_approx(cast(day_err4 as double),array(0.85,0.90,0.95),9999) percent4,
+    percentile_approx(cast(day_err5 as double),array(0.85,0.90,0.95),9999) percent5,
+    percentile_approx(cast(day_err6 as double),array(0.85,0.90,0.95),9999) percent6,
+    percentile_approx(cast(day_err7 as double),array(0.85,0.90,0.95),9999) percent7,*/
+    percentile_approx(cast(day_err1 as double),0.95,9999) percent1,
+    percentile_approx(cast(day_err2 as double),0.95,9999) percent2,
+    percentile_approx(cast(day_err3 as double),0.95,9999) percent3,
+    percentile_approx(cast(day_err4 as double),0.95,9999) percent4,
+    percentile_approx(cast(day_err5 as double),0.95,9999) percent5,
+    percentile_approx(cast(day_err6 as double),0.95,9999) percent6,
+    percentile_approx(cast(day_err7 as double),0.95,9999) percent7,
+from
+    app.app_ioa_iaa_dayerr_tmp
+where
+    dp='""" + end_dt + """'
+group by
+    sku_id,fdc_id) t2
+on t1.sku_id=t2.sku_id and t1.fdc_id =t2.fdc_id;
 
 insert overwrite table app.app_ioa_iaa_std partition(dt='""" + end_dt + """')
-select
-    t1.sku_id,
-    t1.fdc_id,
-    t1.std3,
-    t1.std7,
-    case when forecast_daily_override_sales is null then 0
-        else forecast_daily_override_sales[0]+forecast_daily_override_sales[1]+forecast_daily_override_sales[2]+1.96*std3 end as lop,
-    (8/7)*(forecast_daily_override_sales[0]+forecast_daily_override_sales[1]+forecast_daily_override_sales[2]+forecast_daily_override_sales[3]+
-        forecast_daily_override_sales[4]+forecast_daily_override_sales[5]+forecast_daily_override_sales[6])+1.96*std3 as ti3,
-    (8/7)*(forecast_daily_override_sales[0]+forecast_daily_override_sales[1]+forecast_daily_override_sales[2]+forecast_daily_override_sales[3]+
-        forecast_daily_override_sales[4]+forecast_daily_override_sales[5]+forecast_daily_override_sales[6])+1.96*std7 as ti7
-from
-    (
-        select
-            dp,
-            sku_id,
-            fdc_id,
-            stddev_pop(day_err3) std3,
-            stddev_pop(day_err7) std7
-        from
-            app.app_ioa_iaa_dayerr
-        where
-            dp='""" + end_dt + """'
-        group by
-            dp,sku_id,fdc_id
-    ) t1
-left join
-    (
-        select
-            dt,
-            dc_id  as  fdc_id,
-            sku_id,
-            forecast_daily_override_sales
-        from
-            app.app_pf_forecast_result_fdc_di
-        where
-            dt = '""" + end_dt + """'
-    ) t2
-on
-    t1.sku_id=t2.sku_id
-    and t1.fdc_id=t2.fdc_id
-    and t1.dp=t2.dt;
+    select
+        sku_id,
+        fdc_id,
+        stddev_pop(day_err1) std1,
+        stddev_pop(day_err2) std2,
+        stddev_pop(day_err3) std3,
+        stddev_pop(day_err4) std4,
+        stddev_pop(day_err5) std5,
+        stddev_pop(day_err6) std6,
+        stddev_pop(day_err7) std7
+    from
+        app.app_ioa_iaa_dayerr
+    where
+        dp='""" + end_dt + """'
+    group by
+        dp,sku_id,fdc_id;
 """
     print(sql)
     ht = HiveTask()

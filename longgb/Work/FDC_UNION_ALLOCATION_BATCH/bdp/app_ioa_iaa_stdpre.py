@@ -22,40 +22,45 @@ def get_format_yesterday(num=1, format='%Y-%m-%d'):
     format =‘%d' 获取昨天是本月中第几天
     """
     end_dt = (datetime.date.today() - datetime.timedelta(num)).strftime(format)
-    start_dt = (datetime.date.today() - datetime.timedelta(num + 60)).strftime(format)
-    return start_dt, end_dt
+    start_dt = (datetime.date.today() - datetime.timedelta(num + 61)).strftime(format)
+    byesterday = (datetime.date.today() - datetime.timedelta(num + 1)).strftime(format)
+    return start_dt, end_dt, byesterday
 
 
 def main():
     if (len(sys.argv) > 1):  # 传了系统参数
         end_dt = sys.argv[1]
-        start_dt = (datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d') - datetime.timedelta(60)).strftime('%Y-%m-%d')
+        start_dt = (datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d') - datetime.timedelta(61)).strftime('%Y-%m-%d')
+        byesterday = (datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d') - datetime.timedelta(1)).strftime('%Y-%m-%d')
     else:
         end_dt = get_format_yesterday()[1]
         start_dt = get_format_yesterday()[0]
+        byesterday = get_format_yesterday()[2]
 
     sql = """
-insert overwrite table app.app_ioa_iaa_stdpre partition(dp='""" + end_dt + """')
-select
-	t1.sku_id,
-	t1.fdc_id,
-	t2.dt,
-	t2.sku_status_cd,
-	t3.forecast_daily_override_sales,
-	t4.total_sales,
-	sum(coalesce(t4.total_sales,0))over(partition  by t4.sku_id order by t4.dt  ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) as sales_sum3,
-	sum(coalesce(t4.total_sales,0))over(partition  by t4.sku_id order by t4.dt  ROWS BETWEEN CURRENT ROW AND 6 FOLLOWING) as sales_sum7
-from
-	(--每日白名单
+    insert overwrite table app.app_ioa_iaa_stdpre partition(dp='""" + end_dt + """')
+    select
+        t2.sku_id,
+        t2.fdc_id,
+        t2.dt,
+        t2.sku_status_cd,
+        t3.forecast_daily_override_sales,
+        coalesce(t4.total_sales,0) as sales_sum1,
+        sum(coalesce(t4.total_sales,0))over(partition  by t4.sku_id order by t4.dt  ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) as sales_sum3,
+        sum(coalesce(t4.total_sales,0))over(partition  by t4.sku_id order by t4.dt  ROWS BETWEEN CURRENT ROW AND 6 FOLLOWING) as sales_sum7,
+        sum(coalesce(t4.total_sales,0))over(partition  by t4.sku_id order by t4.dt  ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING) as sales_sum2,
+        sum(coalesce(t4.total_sales,0))over(partition  by t4.sku_id order by t4.dt  ROWS BETWEEN CURRENT ROW AND 3 FOLLOWING) as sales_sum4,
+        sum(coalesce(t4.total_sales,0))over(partition  by t4.sku_id order by t4.dt  ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) as sales_sum5,
+        sum(coalesce(t4.total_sales,0))over(partition  by t4.sku_id order by t4.dt  ROWS BETWEEN CURRENT ROW AND 5 FOLLOWING) as sales_sum6
+    from
+        (--FDC仓编号
         select
-            sku_id,
-            fdc_id
+             dc_id as fdc_id
         from
-            app.app_ioa_iaa_whitelist
-        where dt='""" + end_dt + """'
-    ) t1
-join
-	(--上下柜
+             dim.dim_dc_info
+        where dc_type = 1) t1
+    join
+        (--上下柜
         select
             -- 它有重复记录，可能存在 同一个dt、fdc_id、sku_id，但是库存、sku_status_cd不相同的情况
             dt,
@@ -66,17 +71,14 @@ join
             app.app_sfs_vendibility
         where
             dt >= '""" + start_dt + """'
-            and dt <= '""" + end_dt + """'
+            and dt <= '""" + byesterday + """'
         group by
             dt,
             dim_delv_center_num,
-            sku_id
-    ) t2
-on
-    t1.sku_id=t2.sku_id and
-    t1.fdc_id=t2.fdc_id
-join
-	(--销量预测（60天）
+            sku_id) t2
+    on t1.fdc_id=t2.fdc_id
+    join
+        (--销量预测（60天）
         select
             dt,
             dc_id  as  fdc_id,
@@ -86,14 +88,10 @@ join
             app.app_pf_forecast_result_fdc_di
         where
             dt >= '""" + start_dt + """'
-            and dt <= '""" + end_dt + """'
-    ) t3
-on
-    t1.sku_id=t3.sku_id and
-    t1.fdc_id=t3.fdc_id and
-    t2.dt=t3.dt
-join
-	(--每日销量，取60天。已验证无重复数据
+            and dt <= '""" + byesterday + """') t3
+    on t2.sku_id=t3.sku_id and t1.fdc_id=t3.fdc_id and t2.dt=t3.dt
+    join
+        (--每日销量，取60天。已验证无重复数据
         select
             dt,
             dc_id  as  fdc_id,
@@ -103,13 +101,9 @@ join
             app.app_sfs_sales_dc
         where
             dt >= '""" + start_dt + """'
-            and dt <= '""" + end_dt + """'
-    ) t4
-on
-    t3.sku_id=t4.sku_id and
-    t3.fdc_id=t4.fdc_id and
-    t3.dt=t4.dt;
-"""
+            and dt <= '""" + byesterday + """') t4
+    on t3.sku_id=t4.sku_id and t3.fdc_id=t4.fdc_id and t3.dt=t4.dt;
+    """
     print(sql)
     ht = HiveTask()
     ht.exec_sql(schema_name='app', sql=sql)
