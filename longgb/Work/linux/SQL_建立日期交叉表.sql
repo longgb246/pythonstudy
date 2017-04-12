@@ -25,3 +25,6 @@ cross join
 	    	dt = '2017-02-19' and
 		    fdcid in ('605', '634', '633')
     ) g
+
+
+

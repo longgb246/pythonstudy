@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import calendar
+import datetime
 
 plt.style.use('seaborn-darkgrid')
 
@@ -164,6 +166,35 @@ def calLoss(calY, y):
     return 1/(2*len(y))*np.sum((calY-y)**2)
 
 
+def getDateRange(start_date, end_date, freq='D'):
+    date_range = map(lambda x: str(x)[:10],pd.date_range(start_date, end_date, freq=freq).values)
+    return date_range
+
+
+def getDateWeek(start_date, end_date):
+    date_list = pd.date_range(start_date, end_date)
+    date_1 = map(lambda x: str(x)[:10], date_list.values)
+    date_2 = map(lambda x: [calendar.weekday(y.year, y.month, y.day) + 1 for y in [pd.to_datetime(x)]][0], date_list.values)
+    date_list_pd = pd.DataFrame(date_1, columns=['date'])
+    date_list_pd['weekday'] = date_2
+    return date_list_pd
+
+
+def createDateTable():
+    sql = """drop table if exists dev.dev_lgb_date_range;
+    create table dev.dev_lgb_date_range
+    (
+        date_string string,
+        weekday     string
+    )
+    row format delimited fields terminated by '\t'
+    ;
+    """
+    load_sql = """LOAD DATA local INPATH '/data0/cmo_ipc/inv_opt/Allocation_shell/longgb/date_range.csv' INTO TABLE dev.dev_lgb_date_range;
+    """
+    pass
+
+
 # ========================================================================
 # =                                 乱入脚本                             =
 # ========================================================================
@@ -218,6 +249,14 @@ def workSample():
     file_system['inv_sim']
 
 
+    pass
+
+
+def generateDateRange():
+    start_date = '1998-01-01'
+    end_date = '2100-01-01'
+    date_range = getDateWeek(start_date, end_date)
+    date_range.to_csv(r'D:\Lgb\data_rz\date_range.csv', index=False, header=None, sep='\t')
     pass
 
 
@@ -304,7 +343,6 @@ def script_04_test():
     ax = fig.add_subplot(111)
     ax.plot(data.loc[data['y'] == 0, ['x1']], data.loc[data['y'] == 0, ['x2']], 'b.', label='type1')
     ax.plot(data.loc[data['y'] == 1, ['x1']], data.loc[data['y'] == 1, ['x2']], 'r.', label='type2')
-
     pass
 
 
