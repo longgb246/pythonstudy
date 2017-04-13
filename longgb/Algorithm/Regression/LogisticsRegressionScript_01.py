@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import calendar
 import datetime
+from string import Template
 
 plt.style.use('seaborn-darkgrid')
 
@@ -195,6 +196,10 @@ def createDateTable():
     pass
 
 
+def hive_sql(sql_str, file_name):
+    os.system('''hive -e "{0}" > {1}.out; '''.format(sql_str, file_name))
+
+
 # ========================================================================
 # =                                 乱入脚本                             =
 # ========================================================================
@@ -258,6 +263,61 @@ def generateDateRange():
     date_range = getDateWeek(start_date, end_date)
     date_range.to_csv(r'D:\Lgb\data_rz\date_range.csv', index=False, header=None, sep='\t')
     pass
+
+
+def checkSku():
+    sql = '''
+    select
+    a.item_sku_id,
+    a.dt1,
+    b.dt2
+from
+    (
+        select
+            dt as dt1,
+            item_sku_id
+        from
+            gdm.gdm_m03_item_sku_da
+        where
+            dt = '$this_date'
+    )  a
+left join
+    (
+        select
+            dt as dt2,
+            item_sku_id
+        from
+            gdm.gdm_m03_item_sku_da
+        where
+            dt = '$next_date'
+    )  b
+on
+    a.item_sku_id = b.item_sku_id
+    '''
+    sql = Template(sql)
+    start_date = '2013-12-17'
+    end_date = '2017-04-13'
+    date_range = getDateRange(start_date, end_date)
+    for i, each_date in enumerate(date_range):
+        hive_sql(sql.substitute(this_date=each_date, next_date=date_range[i+1]), each_date)
+
+
+    # 方法简易 easy_sql.sql
+    sql2 = '''
+select
+    count(*)
+from
+    gdm.gdm_m03_item_sku_da
+where
+    dt = '$this_date'
+    '''
+    sql2 = Template(sql2)
+    start_date = '2013-12-17'
+    end_date = '2017-04-13'
+    date_range = getDateRange(start_date, end_date)
+    for i, each_date in enumerate(date_range):
+        os.system('echo -n "{0},   " >> easy_sql.out'.format(each_date))
+        os.system('''hive -e "{0}" >> easy_sql.out; '''.format(sql2.substitute(this_date=each_date)))
 
 
 # ========================================================================
