@@ -180,7 +180,7 @@ from
             app.app_ioa_iaa_dayerr_tmp
         where
             dt     <= '"""+byesterday+"""'
-            and dt>='"""+start_dt+"""'
+            and dt >= '"""+start_dt+"""'
     ) t1
 join
     (
@@ -249,7 +249,9 @@ insert overwrite table app.app_ioa_iaa_std partition(dt='"""+byesterday+"""')
                 and day_err6 is not null
                 and day_err7 is not null
             group by
-                dp,sku_id,fdc_id
+                dp,
+                sku_id,
+                fdc_id
         ) t1
     left join
         (
