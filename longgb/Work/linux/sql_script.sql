@@ -62,3 +62,156 @@ on
 where
     b.dt2 is null
 
+
+
+
+
+
+select
+    dt,
+    sku_id,
+    fdc_id,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * std1,0)
+--        else
+--            (b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + 1.96 * std1) end lop1,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 *s td2,0)
+--        else
+--            (b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + 1.96 * std2) end lop2,
+    case when forecast_daily_override_sales is null then null
+        else
+            (b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + 1.96 * std3) end lop3,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * std4,0)
+--        else
+--            (b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + 1.96 * std4) end lop4,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * std5,0)
+--        else
+--            (b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + 1.96 * std5) end lop5,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * std6,0)
+--        else
+--            (b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + 1.96 * std6) end lop6,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * std7,0)
+--        else
+--            (b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + 1.96 * std7) end lop7,
+
+
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * sqrt(8/7) * std1,0)
+--        else
+--            ((b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + b.forecast_daily_override_sales[3] +
+--            b.forecast_daily_override_sales[4] + b.forecast_daily_override_sales[5] + b.forecast_daily_override_sales[6]) +
+--            1.96 * sqrt(8/7) * std1) end target_qtty1,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * sqrt(8/7) * std2,0)
+--        else
+--            ((b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + b.forecast_daily_override_sales[3] +
+--            b.forecast_daily_override_sales[4] + b.forecast_daily_override_sales[5] + b.forecast_daily_override_sales[6]) +
+--            1.96 * sqrt(8/7) * std2) end target_qtty2,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * sqrt(8/7) * std3,0)
+--        else
+--            ((b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + b.forecast_daily_override_sales[3] +
+--            b.forecast_daily_override_sales[4] + b.forecast_daily_override_sales[5] + b.forecast_daily_override_sales[6]) +
+--            1.96 * sqrt(8/7) * std3) end target_qtty3,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * sqrt(8/7) * std4,0)
+--        else
+--            ((b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + b.forecast_daily_override_sales[3] +
+--            b.forecast_daily_override_sales[4] + b.forecast_daily_override_sales[5] + b.forecast_daily_override_sales[6]) +
+--            1.96 * sqrt(8/7) * std4) end target_qtty4,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * sqrt(8/7) * std5,0)
+--        else
+--            ((b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + b.forecast_daily_override_sales[3] +
+--            b.forecast_daily_override_sales[4] + b.forecast_daily_override_sales[5] + b.forecast_daily_override_sales[6]) +
+--            1.96 * sqrt(8/7) * std5) end target_qtty5,
+--    case when forecast_daily_override_sales is null then coalesce(1.96 * sqrt(8/7) * std6,0)
+--        else
+--            ((b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + b.forecast_daily_override_sales[3] +
+--            b.forecast_daily_override_sales[4] + b.forecast_daily_override_sales[5] + b.forecast_daily_override_sales[6]) +
+--            1.96 * sqrt(8/7) * std6) end target_qtty6,
+    case when forecast_daily_override_sales is null then null
+        else
+            ((b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + b.forecast_daily_override_sales[3] +
+            b.forecast_daily_override_sales[4] + b.forecast_daily_override_sales[5] + b.forecast_daily_override_sales[6]) +
+            1.96 * sqrt(8/7) * std7) as target_qtty7
+from
+    (
+        select
+            dt,
+            sku_id,
+            fdc_id,
+            std1,
+            std2,
+            std3,
+            std4,
+            std5,
+            std6,
+            std7
+        from
+            app.app_ioa_iaa_std
+        where
+            dt = 'active'
+    )  a
+join
+    (
+        select
+            dt,
+            dc_id  as  fdc_id,
+            sku_id,
+            forecast_daily_override_sales
+        from
+            app.app_pf_forecast_result_fdc_di
+        where
+            dt = 'active'
+            and dc_type='1'
+    )  b
+on
+    a.sku_id = b.sku_id
+    and a.fdc_id = b.fdc_id
+
+
+
+
+
+CREATE table dev.dev_tmp_check_app_ioa_iaa_std as
+select
+    a.dt,
+    a.sku_id,
+    a.fdc_id,
+    case when forecast_daily_override_sales is null then null
+        else
+            (b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + 1.96 * std3) end lop3,
+    case when forecast_daily_override_sales is null then null
+        else
+            ((b.forecast_daily_override_sales[0] + b.forecast_daily_override_sales[1] + b.forecast_daily_override_sales[2] + b.forecast_daily_override_sales[3] +
+            b.forecast_daily_override_sales[4] + b.forecast_daily_override_sales[5] + b.forecast_daily_override_sales[6]) /7 * 8 +
+            1.96 * sqrt(8/7) * std7) end target_qtty7
+from
+    (
+        select
+            dt,
+            sku_id,
+            fdc_id,
+            std1,
+            std2,
+            std3,
+            std4,
+            std5,
+            std6,
+            std7
+        from
+            app.app_ioa_iaa_std
+        where
+            dt = 'active'
+    )  a
+join
+    (
+        select
+            dt,
+            dc_id  as  fdc_id,
+            sku_id,
+            forecast_daily_override_sales
+        from
+            app.app_pf_forecast_result_fdc_di
+        where
+            dt = 'active'
+            and dc_type='1'
+    )  b
+on
+    a.sku_id = b.sku_id
+    and a.fdc_id = b.fdc_id;
