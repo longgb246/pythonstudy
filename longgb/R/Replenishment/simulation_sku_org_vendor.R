@@ -1,12 +1,11 @@
-library(data.table)
-library(zoo)
+library(data.table);
+library(zoo);
 ############################################
 ####Load the data and preprocessing
 ################################################
-vltDD           <- fread("vltDDInput.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"));
-forecastResult  <- fread("forecastInput.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"));
-forecastResult[is.na(sales),sales:=list(mean(sales,na.rm=T)),by=""]
-bpData          <- fread("bp.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"));
+vltDD           <- fread("C:/Users/Administrator/Downloads/vltDDInput_sku_org_vendor.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"));
+forecastResult  <- fread("C:/Users/Administrator/Downloads/forecastInput.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"));
+bpData          <- fread("C:/Users/Administrator/Downloads/bp.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"));
 
 ### preprocessing
 ####The forecast result checking
@@ -15,9 +14,6 @@ bpData          <- fread("bp.csv", integer64="numeric", na.strings=c("NULL","NA"
 #duplicatedCheck     <- forecastResult[,list(recordCount=length(index)), by=c("rdcSkuid", "curDate")]
 #duplicatedCheck[,table(recordCount)]
 forecastResult      <- unique(forecastResult, by=c("rdcSkuid", "curDate"));
-
-
-
 
 ###The vlt data preprocessing
 vltDD[, rdc:=tstrsplit(metaFlag,'-')[3]];
@@ -50,11 +46,11 @@ simulationData  <- simulationData[rdcSkuid %in% beginRdcSkuidList,];
 
 simulationData[, c("sumSales","sumInventory"):=list(sum(sales,na.rm=T), sum(inventory,na.rm=T)), by=rdcSkuid];
 #The initial inventory is zero
-removeRdcSku1   <- unique(simulationData[curDate==simulateInitialDate & is.na(inventory),]$rdcSkuid)
+removeRdcSku1   <- unique(simulationData[curDate==simulateInitialDate & is.na(inventory),]$rdcSkuid);
 #The initial forecast result is zero
-removeRdcSku2   <- unique(simulationData[curDate==simulateInitialDate & is.na(predMean1), ]$rdcSkuid)
+removeRdcSku2   <- unique(simulationData[curDate==simulateInitialDate & is.na(predMean1), ]$rdcSkuid);
 #The total inventory is zero
-removeRdcSku3   <- unique(simulationData[sumInventory==0,]$rdcSkuid)
+removeRdcSku3   <- unique(simulationData[sumInventory==0,]$rdcSkuid);
 # The total sales is zero
 removeRdcSku4   <- unique(simulationData[sumSales==0,]$rdcSkuid);
 removeRdSkuList     <- unique(c(removeRdcSku1, removeRdcSku2, removeRdcSku3,removeRdcSku4));
@@ -65,29 +61,28 @@ simulationData  <- simulationData[order(rdcSkuid, curDate),];
 #####For every rdcSkuid pair do simulation
 simulationKeyList   <- unique(simulationData$rdcSkuid)
 LOPCalculationList <- lapply(simulationKeyList, function(x){
-                          print(x);
-    subVltData          <- vltDD[rdcSkuid==x & newDD >0.0, ];
+    print(x);
+    subVltData          <- vltDD[rdcSkuid==x & skuDD >0.0, ];
     subForecastData     <- simulationData[rdcSkuid==x,];
-
     #sample vtl from the vlt distribution
     if(nrow(subVltData)>1)
-    { subForecastData$sampleVlt  <- sample(subVltData$intVlt, size=nrow(subForecastData), prob=subVltData$newDD, replace=T)}
-    else{subForecastData$sampleVlt  <- subVltData$intVlt}
+    { subForecastData$sampleVlt  <- sample(subVltData$intVlt, size=nrow(subForecastData), prob=subVltData$skuDD, replace=T)}
+    else{subForecastData$sampleVlt  <- subVltData$intVlt};
     ###The left part of the VLT, the expectation
   	LOPMeanList     <- sapply(subVltData$intVlt, function(y){
         ###The left part of the LOP
-        subProb     <- subVltData[intVlt==y,]$newDD;
+        subProb     <- subVltData[intVlt==y,]$skuDD;
         vltKey      <- ifelse(y<=28, y, 28);
         expectationNames    <- paste('predMean', 1:vltKey, sep='');
         subMeanResult   <- rowSums(subset(subForecastData,select=expectationNames))*subProb;
         subMeanResult   <- subMeanResult*y/vltKey;
         subMeanResult;
-})
-     subForecastData$LOPMean <- rowSums(LOPMeanList)
+});
+     subForecastData$LOPMean <- rowSums(LOPMeanList);
     ###The first part of the condition vairance, expectation of the variance
      expectationOfVarianceList         <- sapply(subVltData$intVlt, function(y){
         ###The left part of the LOP
-        subProb     <- subVltData[intVlt==y,]$newDD;
+        subProb     <- subVltData[intVlt==y,]$skuDD;
         vltKey      <- ifelse(y<=28, y, 28);
         expectationNames    <- paste('predMean', 1:vltKey, sep='');
         subMeanResult   <- rowSums(subset(subForecastData,select=expectationNames));
@@ -95,8 +90,8 @@ LOPCalculationList <- lapply(simulationKeyList, function(x){
         subMeanResult   <- subMeanResult-subForecastData$LOPMean;
         conditionVariance1  <- subMeanResult^2*subProb;
         conditionVariance1;
-})
-     subForecastData$conditionVariance1 <- rowSums(expectationOfVarianceList)
+});
+     subForecastData$conditionVariance1 <- rowSums(expectationOfVarianceList);
 
       ###The second part of the condition vairance, expectation of the variance
     varianceOfConditionMeanList    <- sapply(subVltData$intVlt, function(y){
@@ -105,10 +100,9 @@ LOPCalculationList <- lapply(simulationKeyList, function(x){
         subSdResult     <- rowSums(subset(subForecastData,select=sdNames)^2);
         subSdResult     <- subSdResult*y/vltKey;
         subSdResult;
-})
+});
     subForecastData$conditionVariance2  <- rowSums(varianceOfConditionMeanList);
     subForecastData[, LOPSd:=sqrt(conditionVariance1+conditionVariance2)];
-
 })
 
 LOPCalculationData <- rbindlist(LOPCalculationList)
@@ -124,13 +118,13 @@ LOPCalculationData[, curDate:=as.Date(curDate)];
 setkeyv(LOPCalculationData, c("rdcSkuid", "curDate"));
 setkeyv(bpData, c("rdcSkuid", "dt"));
 
-joinData    <- bpData[LOPCalculationData]
+joinData    <- bpData[LOPCalculationData];
 
 ###
 joinData[, fillBp:=mean(bp, na.rm=T), by=rdcSkuid];
 joinData[is.na(bp), bp:=as.integer(fillBp)];
 
-bpList  <- unique(joinData$bp)
+bpList  <- unique(joinData$bp);
 bpCalculationList   <- lapply(bpList, function(x){
     subData     <- joinData[bp==x, ];
     bpKey       <- ifelse(x<=28, x, 28);
@@ -143,12 +137,12 @@ bpCalculationList   <- lapply(bpList, function(x){
     subData;
 })
 
-bpCalculationData   <- rbindlist(bpCalculationList)
+bpCalculationData   <- rbindlist(bpCalculationList);
 
-save(LOPCalculationData,bpCalculationData, file="temp.rda")
+save(LOPCalculationData,bpCalculationData, file="temp_skudd.rda");
 
 
-finalData   <- subset(bpCalculationData, select=c(1:10, 69,70,73,74,75,76))
+finalData   <- subset(bpCalculationData, select=c(1:10, 69,70,73,74,75,76));
 
 #load("temp.rda")
 ###calculate the 0.95 quantile
@@ -162,8 +156,6 @@ finalData[, bp95:=round(qnorm(0.95, bpMean, bpSd))];
 ##### Initialized the data
 simulateInitialDate   <- as.Date("2016-10-01");
 simulateEndDate	<- as.Date("2016-12-31");
-
-
 
 finalData[,c("AQ", "simuOpenpo", "simuInv","simuSales","pur_qtty"):=0];
 finalData[dt == simulateInitialDate, simuInv:=inventory];
@@ -294,12 +286,37 @@ for(x in totalDates)
 	testData[,simuInvNext:=NULL];
 	
 }
-write.table(testData,"testData.txt",sep="\t",row.names=F);
+write.table(testData,"testData_skuDD.txt",sep="\t",row.names=F);
+
 dat= fread("testData.txt",sep="\t");
 dat[,inv:=0];
 dat[simuInv>0,inv:=1];
 dat[,act_inv:=0];
 dat[inventory>0,act_inv:=1];
 
+dat_skuDD= fread("testData_skuDD.txt",sep="\t");
+dat_skuDD[,inv:=0];
+dat_skuDD[simuInv>0,inv:=1];
+dat_skuDD[,act_inv:=0];
+dat_skuDD[inventory>0,act_inv:=1];
 
-kpi = dat[,list(simuCr=sum(inv,na.rm=T)/length(inv),simuIto=sum(simuInv,na.rm=T)/sum(simuSales,na.rm=T),Cr=sum(act_inv,na.rm=T)/length(act_inv),Ito=sum(inventory,na.rm=T)/sum(sales,na.rm=T)),by=rdcSkuid]
+kpi_total_new = dat[,list(simuCr=sum(inv,na.rm=T)/length(inv),simuIto=sum(simuInv,na.rm=T)/sum(simuSales,na.rm=T),Cr=sum(act_inv,na.rm=T)/length(act_inv),Ito=sum(inventory,na.rm=T)/sum(sales,na.rm=T))];
+setnames(kpi_total_new,c("simuCr_new","simuIto_new","Cr","Ito"));
+kpi_total_skuDD = dat_skuDD[,list(simuCr=sum(inv,na.rm=T)/length(inv),simuIto=sum(simuInv,na.rm=T)/sum(simuSales,na.rm=T),Cr=sum(act_inv,na.rm=T)/length(act_inv),Ito=sum(inventory,na.rm=T)/sum(sales,na.rm=T))];
+setnames(kpi_total_skuDD,c("simuCr_sku","simuIto_sku","Cr","Ito"));
+kpi_total=subset(cbind(kpi_total_new,kpi_total_skuDD),select=c(3,5,1,4,6,2));
+write.table(kpi_total,"kpi_total.csv",sep=",",row.names=F);
+
+kpi = dat[,list(simuCr=sum(inv,na.rm=T)/length(inv),simuIto=sum(simuInv,na.rm=T)/sum(simuSales,na.rm=T),Cr=sum(act_inv,na.rm=T)/length(act_inv),Ito=sum(inventory,na.rm=T)/sum(sales,na.rm=T)),by=rdcSkuid];
+kpi_skuDD = dat_skuDD[,list(simuCr=sum(inv,na.rm=T)/length(inv),simuIto=sum(simuInv,na.rm=T)/sum(simuSales,na.rm=T),Cr=sum(act_inv,na.rm=T)/length(act_inv),Ito=sum(inventory,na.rm=T)/sum(sales,na.rm=T)),by=rdcSkuid];
+
+setnames(kpi_skuDD,c("rdcSkuid","simuCr_Skudd","simuIto_Skudd","Cr","Ito"));
+
+write.table(kpi,"kpi.csv",sep=",",row.names=F);
+write.table(kpi_skuDD,"kpi_skuDD.csv",sep=",",row.names=F);
+
+
+setkey(kpi_skuDD,rdcSkuid);
+setkey(kpi,rdcSkuid);
+kpi_result=kpi_skuDD[kpi][,.(rdcSkuid,Cr,simuCr,simuCr_Skudd,Ito,simuIto,simuIto_Skudd)];
+write.table(kpi_skuDD[kpi],"/home/neidian/gaoyun/test/kpi_result.csv",sep=",",row.names=F);
