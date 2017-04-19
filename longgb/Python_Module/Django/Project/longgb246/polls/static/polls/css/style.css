@@ -1,0 +1,9 @@
+{% load static %}
+
+li a {
+    color: green;
+}
+
+body {
+    background: white url("../images/background_001.jpg") no-repeat right bottom;
+}
