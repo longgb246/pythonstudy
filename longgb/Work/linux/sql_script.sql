@@ -167,7 +167,7 @@ on
 
 
 
-
+drop table if exists dev.dev_tmp_check_app_ioa_iaa_std;
 CREATE table dev.dev_tmp_check_app_ioa_iaa_std as
 select
     a.dt,
@@ -209,7 +209,8 @@ join
         from
             app.app_pf_forecast_result_fdc_di
         where
-            dt = 'active'
+--            dt = 'active'
+            dt = '2017-04-18'
             and dc_type='1'
     )  b
 on
