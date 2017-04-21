@@ -39,7 +39,7 @@ bpData  <- bpData[,.(rdcSkuid, dt, bp)];
 # ========================================================
 # =                   Simulation framework               =
 # ========================================================
-# 3. Simulation ####
+# 3. LOP Simulation ####
 simulateInitialDate   <- as.Date("2016-10-01");
 
 # 3-1. sales data preprocessing ####
@@ -121,16 +121,16 @@ LOPCalculationData <- rbindlist(LOPCalculationList)
 # ========================================================
 # =                       The BP logic                   =
 # ========================================================
-### check if the LOPCalculationData is redundant
+# 3. BP Simulation ####
+# check if the LOPCalculationData is redundant
 LOPCalculationData  <- unique(LOPCalculationData, by=c("rdcSkuid", "curDate"));
 LOPCalculationData[, curDate:=as.Date(curDate)];
 
-setkeyv(LOPCalculationData, c("rdcSkuid", "curDate")); # ÉèÖÃkey£¬ÓÃ´¦£¿
+setkeyv(LOPCalculationData, c("rdcSkuid", "curDate")); 
 setkeyv(bpData, c("rdcSkuid", "dt"));
 
 joinData    <- bpData[LOPCalculationData]
 
-###
 joinData[, fillBp:=mean(bp, na.rm=T), by=rdcSkuid];
 joinData[is.na(bp), bp:=as.integer(fillBp)];
 
@@ -172,13 +172,12 @@ finalData[dt == simulateInitialDate, simuInv:=inventory];
 finalData[is.na(sales), sales:=0];
 
 
-###load vlt from test set
-###
-###
+# load vlt from test set
 vltDD2 <- fread("vltDDInput.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"));
 vltData <- fread("vltData.csv",integer64='numeric',sep="\t",na.strings=c("NULL","NA", "", "\\N"));
 setnames(vltData, c("pur_bill_id","sku_id","item_third_cate_cd","supp_brevity_cd","int_org_num","store_id","create_tm","complete_dt","into_wh_tm","t_6","new_vlt","int_new_vlt","flag","isautopo"));
 skus <-  unique(vltDD2$sku_id);
+
 vltDataList <- vltData[(sku_id %in% skus) & (create_tm>= '2016-10-01'),.(pur_bill_id,sku_id,supp_brevity_cd,int_org_num,create_tm,int_new_vlt)];
 vltDataList[,rdcSkuidSupp:=paste(int_org_num,sku_id,supp_brevity_cd,sep="-")];
 vltDataList[,create_tm:=as.Date(create_tm)];
@@ -189,6 +188,7 @@ vlt <- lapply(unique(vltDataList$rdcSkuidSupp),function(x){
 		sbset <- vltDataList[rdcSkuidSupp==x,];
 		data.table(rdcSkuidSupp=x,vlt=paste(sbset$int_new_vlt,collapse=","))
 });
+
 vltList <- rbindlist(vlt);
 vltList[,rdc:=tstrsplit(rdcSkuidSupp,"-")[1]];
 vltList[,sku:=tstrsplit(rdcSkuidSupp,"-")[2]];
@@ -276,7 +276,7 @@ for(x in totalDates){
         realVltList <- as.integer(unlist(strsplit(RQData[rdcSkuid==y,]$sampleVLT,",")));
 		    len <-  length(realVltList);
 		    realVlt	<- 	ifelse(i%%len==0,len,realVltList[i%%len]);
-        testData[rdcSkuid==y &  dt %in% (1:realVlt+x), simuOpenpo:=simuOpenpo+DQ]; 
+        testData[rdcSkuid==y & dt %in% (1:realVlt+x), simuOpenpo:=simuOpenpo+DQ]; 
         testData[rdcSkuid==y & dt %in% (realVlt+1+x), c("AQ","simuInv"):=list(AQ+DQ,simuInv+DQ)];
     		testData[rdcSkuid==y & dt== x ,pur_qtty:= DQ];
     		testData[rdcSkuid==y & dt== x ,vlt:= realVlt];
