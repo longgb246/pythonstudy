@@ -22,10 +22,10 @@ mm = pd.DataFrame([a, b, c]).T
 mm.columns = list('abc')
 mm.sort_values(['a', 'b'], ascending=[1, 0])
 
-
 import matplotlib.pyplot as plt
+
 plt.style.use('seaborn-dark')
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.plot([1,2],[2,2])
+ax.plot([1, 2], [2, 2])
