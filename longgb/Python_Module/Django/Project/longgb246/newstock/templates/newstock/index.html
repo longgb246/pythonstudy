@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NewStock</title>
+    <meta name="author" content="longgb246">
+	<meta name="description" content="NewStock - A Website For Learning"/>
+    <!-- 网页图标 -->
+    <link href="{% static 'newstock/images/favicon.ico' %}" rel="shortcut icon" />
+    <!-- 对于移动设备的支持 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 使用bootstrap的css -->
+    <link href="{% static 'newstock/css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- 使用bootstrap的js -->
+    <script src="{% static 'newstock/js/bootstrap.min.js' %}"></script>
+    <!-- 使用jquery -->
+    <script src="{% static 'newstock/js/jquery.js' %}"></script>
+
+    <!--&lt;!&ndash; CSS Files &ndash;&gt;-->
+    <!--<link rel="stylesheet" type="text/css" href="{% static 'newstock/css/reset.css' %}">-->
+    <!--<link rel="stylesheet" type="text/css" href="{% static 'newstock/css/animate.css' %}">-->
+    <!--<link rel="stylesheet" type="text/css" href="{% static 'newstock/css/main.css' %}">-->
+    <!--&lt;!&ndash; Javascript Files &ndash;&gt;-->
+    <!--<script type="text/javascript" src="{% static 'newstock/js/jquery.js' %}"></script>-->
+    <!--<script type="text/javascript" src="{% static 'newstock/js/slider.js' %}"></script>-->
+    <!--<script type="text/javascript" src="{% static 'newstock/js/wow.js' %}"></script>-->
+    <!--<script type="text/javascript" src="{% static 'newstock/js/main.js' %}"></script>-->
+</head>
+<body>
+
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        ...
+      </div>
+    </nav>
+	<!-- header Section -->
+	<header>
+		<div class="container">
+			<!-- Logo  -->
+			<a href="#" class="logo">
+				<img src="{% static 'newstock/images/logo.png' %}" alt="Heros"/>
+			</a>
+			<!-- Navigation Menu  -->
+			<nav>
+				<ul>
+					<li><a href="#" class="selected">Home</a></li>
+					<li><a href="#">About</a></li>
+					<li><a href="#">Team</a></li>
+					<li><a href="#">Journal</a></li>
+					<li><a href="#">Contact</a></li>
+				</ul>
+			</nav>
+		</div>
+	</header><!-- end header -->
+
+	<!-- Slider Section -->
+	<section class="slider_wrapper">
+		<div id="slides">
+			<div class="slide">
+				<img src="{% static 'newstock/img/slide1.jpg' %}" alt=""/>
+				<h3 class="caption">sed do eiusmod tempor incididunt.</h3>
+			</div>
+			<div class="slide">
+				<img src="{% static 'newstock/img/slide2.jpg' %}" alt=""/>
+				<h3 class="caption">officia deserunt mollit velit esse.</h3>
+			</div>
+			<div class="slide">
+				<img src="{% static 'newstock/img/slide3.jpg' %}" alt=""/>
+				<h3 class="caption">cillum dolore fugiat pariatur.</h3>
+			</div>
+		</div>
+	</section><!-- end slider -->
+
+</body>
+</html>
