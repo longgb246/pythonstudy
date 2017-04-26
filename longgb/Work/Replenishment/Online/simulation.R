@@ -11,7 +11,7 @@ bpData[, dt:=as.Date(dt)]
 #Check if oneday get multiple record
 #bpData$index    <- 1:nrow(bpData)
 #duplicatedCheck <- bpData[,list(recordCount=length(index)), by=c("rdcSkuid", "dt")]
-bpData  	<- bpData[,.(rdcSkuid, dt,vlt_ref, nrt, bp)]
+bpData  	<- bpData[,.(rdcSkuid, dt, vlt_ref, nrt, bp)]
 
 #####The forecast result checking
 forecastResult      <- forecastResult[rdcSkuid %in% intersectRdcSkuid,]
@@ -45,7 +45,6 @@ bpData              <- bpData[rdcSkuid %in% intersectRdcSkuid,]
 ######################################################3
 #### Simulation framework
 #(1) forecast data preprocessing 
-#(2)
 ######################################################3
 simulateInitialDate   <- as.Date("2016-10-01")
 simulationData  <- forecastResult[curDate>=simulateInitialDate,]
@@ -88,11 +87,28 @@ LOPList     <- lapply(safeVLTList, function(x){
         subMeanResult   <- subMeanResult*x/safeVltKey
         ###The variance
 	sdNames         <- paste('predSd', 1:safeVltKey, sep='')
-        subSdResult     <- rowSums(subset(subData,select=sdNames)^2)
+        subSdResult     <- sd(rowSums(subset(subData,select=sdNames)^2))
         subSdResult     <- subSdResult*x/safeVltKey
 	subData$LOPMean	<- subMeanResult
-	subData$LOPVariance	<- subSdResult
+	subData$LOPSd	<- subSdResult
 	subData
 })
+
 LOPData <- rbindlist(LOPList)
+###
+bpList  <- unique(LOPData$bp)
+bpCalculationList   <- lapply(bpList, function(x){
+    subData     <- LOPData[bp==x, ]
+    bpKey       <- ifelse(x<=28, x, 28);
+    expectationNames    <- paste('predMean', 1:bpKey, sep='');
+    sdNames             <- paste('predSd', 1:bpKey, sep='')
+    bpMean          <- rowSums(subset(subData,select=expectationNames))
+    bpSd            <- sqrt(rowSums(subset(subData, select=sdNames)^2))
+    subData$bpMean  <- bpMean
+    subData$bpSd    <- bpSd
+    subData
+})
+
+bpCalculationData   <- rbindlist(bpCalculationList)
+
 
