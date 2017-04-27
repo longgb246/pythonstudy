@@ -134,7 +134,7 @@ rdcSkuid        <- unique(bpData[,rdcSkuid])
 # ====================================================
 # missing data [ bp vlt_ref nrt ]
 # 使用均值向上取整，填补
-bpDataList      <- lapply(rdcSkuid, function(x){
+bpDataMissList      <- lapply(rdcSkuid, function(x){
   subData     <- bpData[rdcSkuid==x,]
   # 创建日期的list以判断缺失
   date_start      <- as.Date(min(subData[,dt]))
@@ -150,7 +150,7 @@ bpDataList      <- lapply(rdcSkuid, function(x){
   subData[is.na(nrt), nrt:=mean_nrt]
   subData
 })
-bpData_test <- rbindlist(bpDataList)
+bpDataMissing <- rbindlist(bpDataMissList)
 
 
 # 检查缺失情况。
@@ -173,6 +173,28 @@ bpData_test <- rbindlist(bpDataList)
 # ====================================================
 # =                     异常值处理                   =
 # ====================================================
+# outlier   3 sd [ strong outlier ]
+bpDataOutList      <- lapply(rdcSkuid, function(x){
+  subData     <- bpDataMissing[rdcSkuid==x,]
+  # 取3倍标准差以外的，强异常值修改，使用中位数进行替代值。
+  mean_vlt_ref <- mean(subData[,vlt_ref], na.rm = TRUE)
+  median_vlt_ref <- median(subData[,vlt_ref], na.rm = TRUE)
+  sd_vlt_ref <- sd(subData[,vlt_ref], na.rm = TRUE)
+  upper_vlt_ref <- as.integer(ceiling(mean_vlt_ref + 3*sd_vlt_ref))  
+  lower_vlt_ref <- as.integer(floor(mean_vlt_ref - 3*sd_vlt_ref))  
+  subData[(vlt_ref>upper_vlt_ref)|(vlt_ref<lower_vlt_ref), vlt_ref:=median_vlt_ref]
+  subData
+})
+bpDataFinal <- rbindlist(bpDataOutList)
+
+# 检查
+# bpDataFinal[order(vlt_ref, decreasing = TRUE),.(rdcSkuid,vlt_ref)]
+
+# 数据进行存储
+write.table(bpDataFinal, file="bp.csv", sep=",", row.names=F)
+
+
+
 
 
 

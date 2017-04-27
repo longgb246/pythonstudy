@@ -5,13 +5,22 @@ library(data.table)
 forecastResult  <- fread("forecastInput.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"))
 bpData          <- fread("bp.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"))
 
+vltDD           <- fread("vltDDInput.csv", integer64="numeric", na.strings=c("NULL","NA", "", "\\N"))
+
+###The vlt data preprocessing
+vltDD[, rdc:=tstrsplit(metaFlag,'-')[3]]
+vltDD[, supplier:=tstrsplit(metaFlag,'-')[2]]
+vltDD[,rdcSkuid:=paste(rdc, sku_id, sep='-')]
+vltDD   <- unique(vltDD, by=c("rdcSkuid", "intVlt"))
+vltDD               <- vltDD[rdcSkuid %in% intersectRdcSkuid,]
+
 #####  bp data preprocess
 bpData[, rdcSkuid:=paste(int_org_num, sku_id, sep='-')]
 bpData[, dt:=as.Date(dt)]
 #Check if oneday get multiple record
 #bpData$index    <- 1:nrow(bpData)
 #duplicatedCheck <- bpData[,list(recordCount=length(index)), by=c("rdcSkuid", "dt")]
-bpData  	<- bpData[,.(rdcSkuid, dt, vlt_ref, nrt, bp)]
+bpData  	<- bpData[,.(rdcSkuid, dt,vlt_ref, nrt, bp)]
 
 #####The forecast result checking
 forecastResult      <- forecastResult[rdcSkuid %in% intersectRdcSkuid,]
@@ -87,7 +96,7 @@ LOPList     <- lapply(safeVLTList, function(x){
         subMeanResult   <- subMeanResult*x/safeVltKey
         ###The variance
 	sdNames         <- paste('predSd', 1:safeVltKey, sep='')
-        subSdResult     <- sd(rowSums(subset(subData,select=sdNames)^2))
+        subSdResult     <- sd(rowSums(subset(subData,select=sdNames)^2,na.rm=T))
         subSdResult     <- subSdResult*x/safeVltKey
 	subData$LOPMean	<- subMeanResult
 	subData$LOPSd	<- subSdResult
@@ -110,5 +119,73 @@ bpCalculationList   <- lapply(bpList, function(x){
 })
 
 bpCalculationData   <- rbindlist(bpCalculationList)
+finalData   <- subset(bpCalculationData, select=c(1:13,73:76))
 
+finalData[, LOP95:=round(qnorm(0.95, LOPMean, LOPSd))]
+finalData[, bp95:=round(qnorm(0.95, bpMean, bpSd))]
+
+
+##########################################################
+### Do simulation
+### (1) Initial value of the simulation data
+###########################################################
+##### Initialized the data
+simulateInitialDate   <- as.Date("2016-10-01")
+finalData[,c("AQ", "simuOpenpo", "simuInv"):=0]
+finalData[dt == simulateInitialDate, simuInv:=as.numeric(inventory)]
+finalData[is.na(sales), sales:=0]
+
+testData    <- copy(finalData)
+totalDates  <- sort(unique(finalData$dt))
+# Final Simulation ####
+for(x in totalDates){
+    print(x);
+    subData     <- testData[dt==x, ];   
+    subData[, simuInv:=simuInv+AQ];               
+    subData[,simuSales:=sales];
+    subData[sales>simuInv, simuSales:=simuInv];  #In case no inventory sales
+    ###Interate in the testData
+    testData[dt==x, simuSales:=sales];
+    testData[sales>simuInv, simuSales:=simuInv];
+    testData[dt==x, simuInv:=simuInv+AQ]; 
+    
+    RQData  <- subData[simuInv+simuOpenpo < LOP95,];
+    RQData[, DQ:=LOP95 + bp95 -( simuOpenpo + simuInv)];
+    
+    for(y in RQData$rdcSkuid){
+        print(y);
+        i   <-  testData[rdcSkuid==y & dt== x ,vltIndex];
+        DQ  <-  RQData[rdcSkuid==y,]$DQ;
+        if(DQ>0) testData[rdcSkuid==y & dt> x ,vltIndex:= vltIndex+1]; 
+        realVltList <-  as.integer(unlist(strsplit(RQData[rdcSkuid==y,]$sampleVLT,",")));
+	    len         <-  length(realVltList);
+	    realVlt	    <- 	ifelse(i%%len==0,len,realVltList[i%%len]);
+        testData[rdcSkuid==y & dt %in% (1:realVlt+x), simuOpenpo:=simuOpenpo+DQ];
+        testData[rdcSkuid==y & dt %in% (realVlt+1+x), c("AQ","simuInv"):=list(AQ+DQ,simuInv+DQ)];
+    	testData[rdcSkuid==y & dt== x ,pur_qtty:= DQ];
+    	testData[rdcSkuid==y & dt== x ,vlt:= realVlt];
+  	};
+    subData[, simuInvNext:=simuInv-simuSales];
+    subData[, dt:=dt+1];
+    subData <- subset(subData, select=c("rdcSkuid", "dt", "simuInvNext"));
+    setkeyv(subData, c("rdcSkuid", "dt"));
+    setkeyv(testData, c("rdcSkuid", "dt"));
+    testData    <- subData[testData];
+    testData[!is.na(simuInvNext), simuInv:=simuInvNext];
+    testData[,simuInvNext:=NULL];
+}
+write.table(testData,"testData.txt",sep="\t",row.names=F);
+dat <-  fread("testData.txt",sep="\t");
+dat[,inv:=0];
+dat[simuInv>0,inv:=1];
+dat[,act_inv:=0];
+dat[inventory>0,act_inv:=1];
+
+kpi <-  dat[, list(
+                  simuCr=sum(inv,na.rm=T)/length(inv),
+                  simuIto=sum(simuInv,na.rm=T)/sum(simuSales,na.rm=T),
+                  Cr=sum(act_inv,na.rm=T)/length(act_inv),
+                  Ito=sum(inventory,na.rm=T)/sum(sales,na.rm=T)
+              ),
+              by=rdcSkuid]
 
