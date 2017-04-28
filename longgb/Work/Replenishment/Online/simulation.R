@@ -24,7 +24,7 @@ vltDD   <- unique(vltDD, by=c("rdcSkuid", "intVlt"))
 
 
 ####  The bp data preprocess
-bpData[, rdcSkuid:=paste(int_org_num, sku_id, sep='-')]
+# bpData[, rdcSkuid:=paste(int_org_num, sku_id, sep='-')]
 bpData[, dt:=as.Date(dt)]
 # Check if oneday get multiple record
 # bpData$index    <- 1:nrow(bpData)
@@ -100,17 +100,22 @@ simulationData  <- bpData[simulationData]
 simulationData  <- simulationData[!is.na(bp),]
 
 
-# ==================================================================
-# 10-1093041 2016-10-18
-bpData[rdcSkuid=="10-1093041" & dt=="2016-10-18", ]
-bpData[rdcSkuid=="10-1093041", .(rdcSkuid, dt)]
-bpDataFinal[rdcSkuid=="10-1093041", .(rdcSkuid, dt)]
-bpDataFinal[rdcSkuid=="10-1093041" & dt=="2016-10-18", .(rdcSkuid, dt, bp, vlt_ref, nrt)]
-bpDataMissing[rdcSkuid=="10-1093041", .(rdcSkuid, dt)]
-subData[rdcSkuid=="10-1093041", .(rdcSkuid, dt, bp, vlt_ref, nrt)]
-# ==================================================================
+#### Sample the Vlt
+simulationKeyList   <- unique(simulationData[,rdcSkuid])
+LOPCalculationList  <- lapply(simulationKeyList, function(x){
+        subVltData  <- vltDD[rdcSkuid==x & newDD >0.0, ]
+        subForecastData     <- simulationData[rdcSkuid==x,]
+        if(nrow(subVltData)>1){
+            subForecastData$sampleVlt  <- sample(subVltData$intVlt, size=nrow(subForecastData), prob=subVltData$newDD, replace=T)
+        }else{
+            subForecastData$sampleVlt  <- subVltData$intVlt
+        }
+        subForecastData
+})
+simulationData <- rbindlist(LOPCalculationList)
 
 
+#### Calculate the LOP
 safeVLTList     <- unique(simulationData$safeVLT)
 LOPList     <- lapply(safeVLTList, function(x){
         subData <- simulationData[safeVLT==x,]
@@ -120,16 +125,18 @@ LOPList     <- lapply(safeVLTList, function(x){
         subMeanResult   <- rowSums(subset(subData,select=expectationNames))
         subMeanResult   <- subMeanResult*x/safeVltKey
         ###The variance
-	sdNames         <- paste('predSd', 1:safeVltKey, sep='')
+        sdNames         <- paste('predSd', 1:safeVltKey, sep='')
         subSdResult     <- sd(rowSums(subset(subData,select=sdNames)^2,na.rm=T))
-        subSdResult     <- subSdResult*x/safeVltKey
-	subData$LOPMean	<- subMeanResult
-	subData$LOPSd	<- subSdResult
-	subData
+        # Only one record, so sd is NA
+        subSdResult     <- subSdResult * x / safeVltKey
+        subData$LOPMean <- subMeanResult
+        subData$LOPSd   <- subSdResult
+        subData
 })
-
 LOPData <- rbindlist(LOPList)
-###
+
+
+#### Calculate the BP
 bpList  <- unique(LOPData$bp)
 bpCalculationList   <- lapply(bpList, function(x){
     subData     <- LOPData[bp==x, ]
@@ -144,7 +151,7 @@ bpCalculationList   <- lapply(bpList, function(x){
 })
 
 bpCalculationData   <- rbindlist(bpCalculationList)
-finalData   <- subset(bpCalculationData, select=c(1:13,73:76))
+finalData   <- subset(bpCalculationData, select=c(1:13,73:78))
 
 finalData[, LOP95:=round(qnorm(0.95, LOPMean, LOPSd))]
 finalData[, bp95:=round(qnorm(0.95, bpMean, bpSd))]
@@ -161,30 +168,25 @@ finalData[dt == simulateInitialDate, simuInv:=as.numeric(inventory)]
 finalData[is.na(sales), sales:=0]
 
 testData    <- copy(finalData)
+testData[,vltIndex:=1];
+
 totalDates  <- sort(unique(finalData$dt))
 # Final Simulation ####
+
 for(x in totalDates){
     print(x);
-    subData     <- testData[dt==x, ];   
-    subData[, simuInv:=simuInv+AQ];               
+    subData     <- testData[dt==x, ];
+    subData[, simuInv:=simuInv+AQ];
     subData[,simuSales:=sales];
     subData[sales>simuInv, simuSales:=simuInv];  #In case no inventory sales
     ###Interate in the testData
     testData[dt==x, simuSales:=sales];
     testData[sales>simuInv, simuSales:=simuInv];
-    testData[dt==x, simuInv:=simuInv+AQ]; 
-    
+    testData[dt==x, simuInv:=simuInv+AQ];
     RQData  <- subData[simuInv+simuOpenpo < LOP95,];
     RQData[, DQ:=LOP95 + bp95 -( simuOpenpo + simuInv)];
-    
     for(y in RQData$rdcSkuid){
-        print(y);
-        i   <-  testData[rdcSkuid==y & dt== x ,vltIndex];
-        DQ  <-  RQData[rdcSkuid==y,]$DQ;
-        if(DQ>0) testData[rdcSkuid==y & dt> x ,vltIndex:= vltIndex+1]; 
-        realVltList <-  as.integer(unlist(strsplit(RQData[rdcSkuid==y,]$sampleVLT,",")));
-	    len         <-  length(realVltList);
-	    realVlt	    <- 	ifelse(i%%len==0,len,realVltList[i%%len]);
+        realVlt <-  as.integer(RQData[rdcSkuid==y,]$sampleVlt);
         testData[rdcSkuid==y & dt %in% (1:realVlt+x), simuOpenpo:=simuOpenpo+DQ];
         testData[rdcSkuid==y & dt %in% (realVlt+1+x), c("AQ","simuInv"):=list(AQ+DQ,simuInv+DQ)];
     	testData[rdcSkuid==y & dt== x ,pur_qtty:= DQ];
@@ -199,6 +201,7 @@ for(x in totalDates){
     testData[!is.na(simuInvNext), simuInv:=simuInvNext];
     testData[,simuInvNext:=NULL];
 }
+
 write.table(testData,"testData.txt",sep="\t",row.names=F);
 dat <-  fread("testData.txt",sep="\t");
 dat[,inv:=0];
