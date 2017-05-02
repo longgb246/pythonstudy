@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Javascript</title>
+	<link rel="stylesheet" type="text/css" href="source/css/base_04.css">	
+	<script src='source/js/script_05.js'></script>
+</head>
+<body>
+	<hr/>
+	<input type="text" name="clock" id='clock' size='50'/>
+	<input type="button" value="Stop"  onclick='clearInterval(stop_time)'/>	
+	<input type="text" name="clock" id='count' size='50' />
+	<input type="button" value="start" onclick="startCount()" />
+	<input type="button" value="stop" onclick="clearTimeout(stop_count)" />
+
+	<hr/>
+  	<h1>操作成功！</h1>
+  	<p id='back_second'>5秒后回到主页<p><a id='back' href="http://hao123.com">返回</a>
+  
+ 	<hr/>
+	<form>
+		请选择你爱好:<br>
+		<input type="checkbox" name="hobby" id="hobby1">  音乐
+		<input type="checkbox" name="hobby" id="hobby2">  登山
+		<input type="checkbox" name="hobby" id="hobby3">  游泳
+		<input type="checkbox" name="hobby" id="hobby4">  阅读
+		<input type="checkbox" name="hobby" id="hobby5">  打球
+		<input type="checkbox" name="hobby" id="hobby6">  跑步 <br>
+		<input type="button" value = "全选" onclick = "checkall();">
+		<input type="button" value = "全不选" onclick = "clearall();">
+		<p>请输入您要选择爱好的序号，序号为1-6:</p>
+		<input id="wb" name="wb" type="text" >
+		<input name="ok" type="button" value="确定" onclick = "checkone();">
+	</form>
+
+</body>
+</html>

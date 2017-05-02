@@ -1,0 +1,41 @@
+﻿body{
+	margin: 0;
+	padding: 0;
+	font-size: 16px
+}
+
+#header{
+	width: 700px;
+	margin: 0 auto;
+}
+
+ul{
+	list-style: none;
+	height: 50px;
+	border-bottom: 5px solid #f60;
+}
+
+li{
+	float: left;
+	margin-top: 20px;
+	margin-right: 2px;
+}
+
+a{
+	text-decoration: none;
+	display: block;
+	height: 30px;
+	line-height: 30px;
+	width: 120px;
+	background: url(../images/NavigationBar_01.png);
+	margin-bottom: 1px;
+	text-align: center;
+}
+
+.header_on, a:hover{
+	background-color: url(../images/NavigationBar_01.png);
+	background-position: 0 -30px;
+	color: #fff;
+}
+
+
