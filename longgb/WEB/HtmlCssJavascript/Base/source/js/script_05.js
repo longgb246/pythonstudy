@@ -68,28 +68,10 @@ function back_second(){
 
 
 
-function checkall(){
-    var hobby = document.getElementsByTagName("input");
-    document.write(hobby.length);
-    document.write(hobby[1]);
-    for (var i=0; i<hobby.length; i++){
-        if (hobby[i].style.type == 'checkbox'){
-            hobby[i].checked = true;   
-        }
-    }
-  // 任务1 
-   
-}
-function clearall(){
-    var hobby = document.getElementsByName("hobby");
-    document.write(hobby.length);
- // 任务2    
-    
-}
 
-function checkone(){
-    var j=document.getElementById("wb").value;
 
- // 任务3
 
-}
+
+
+
+
