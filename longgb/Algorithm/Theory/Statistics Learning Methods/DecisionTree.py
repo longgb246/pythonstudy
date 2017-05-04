@@ -2,22 +2,8 @@
 from __future__ import division
 import numpy as np
 import pandas as pd
-
-
-def codeVar(train_data):
-    '''
-    字符串编码
-    '''
-    all_categories = {}
-    for each in train_data.columns:
-        each_types = train_data[each].drop_duplicates().tolist()
-        categories = {}
-        for i, each_type in enumerate(each_types):
-            categories[each_type] = i
-        train_data[each] = train_data.loc[:, [each]].applymap(categories.get)
-        all_categories[each] = categories
-    all_categories = all_categories
-    return train_data, all_categories
+import os
+from copy import deepcopy
 
 
 class DecisionTree():
@@ -26,6 +12,12 @@ class DecisionTree():
         self.all_categories = None
         self.tree = None
         self.test_feature_name = None
+        self.dot = None
+        self.deep = None
+        self.method = None
+        self.alpha = 0.8
+        self.style = '''node [shape=box, style="filled, rounded", fontname="SimSun"] ;\nedge [fontname="SimSun"] ;\n'''  # 画树图的风格
+        self.color = ['#EEE9E9', '#FFE4C4', '#FFEC8B', '#9AFF9A', '#AEEEEE', '#CAE1FF', '#B0E2FF', '#AB82FF']  # 画树图的颜色列表
 
     def __codeVar(self, train_data, is_test=0):
         '''
@@ -48,6 +40,10 @@ class DecisionTree():
     def codeVar(self, train_data):
         train_data, all_categories = self.__codeVar(train_data)
         return train_data, all_categories
+
+    def __decodeVar(self, var_name):
+        categories = self.all_categories[var_name]
+        return dict([v, k] for k,v in categories.iteritems())
 
     def decodeVar(self, test_data):
         '''
@@ -83,53 +79,181 @@ class DecisionTree():
             sum_res += - tmp * np.log2(tmp)
         return sum_res
 
-    def infoGain(self, train_data_x, train_data_y):
+    def infoGain(self, train_data_x, train_data_y, method='id3'):
         '''
         计算信息增益，返回信息增益最大的索引
         '''
         HD = self.calH(train_data_y)
+        num_y = len(train_data_y)
+        V1 = num_y*HD
         gDA = []
+        gDA_rate = []
+        V2_list = []
+        n_i = []
         for A in train_data_x.columns:
             x_type = train_data_x[A].drop_duplicates().tolist()
             HD_min = 0
+            tmp_V2_list = []
+            i = 0
             for A_v in x_type:
+                i += 1
                 this_train_data_y = train_data_y.loc[train_data_x[A] == A_v,['y']]
+                num_y2 = len(this_train_data_y)
                 HD_min += len(this_train_data_y)/len(train_data_y)*self.calH(this_train_data_y)
+                tmp_V2_list.append(self.calH(this_train_data_y)*num_y2)
             gDA.append(HD - HD_min)
-        return train_data_x.columns[np.argmax(gDA)], np.max(gDA)
+            gDA_rate.append((HD - HD_min)/HD)
+            V2_list.append(tmp_V2_list)
+            n_i.append(i)
+        # 计算是否剪枝
+        HD_split = V2_list[np.argmax(gDA)]
+        HD_rate_split = V2_list[np.argmax(gDA_rate)]
+        n_i_split = n_i[np.argmax(gDA)] - 1
+        n_i_rate_split = n_i[np.argmax(gDA_rate)] - 1
+        V_split = np.sum(HD_split) + self.alpha*n_i_split - V1
+        V_rate_split = np.sum(HD_rate_split) + self.alpha*n_i_rate_split - V1
+        gDA_list = [train_data_x.columns[np.argmax(gDA)], np.max(gDA), HD, V_split]
+        gDA_rate_list = [train_data_x.columns[np.argmax(gDA_rate)], np.max(gDA_rate), HD, V_rate_split]
+        if method == 'id3':
+            return gDA_list
+        else:
+            return gDA_rate_list
 
-    def __train(self, train_data_x, train_data_y, feature_name):
-        Ck_type = train_data_y['y'].drop_duplicates().tolist()
+    def __cartSplit(self, data_x, data_y):
+        '''
+        变量空间的划分
+        '''
+        def calGini(x):
+            num_x = len(data)
+            data_ge = data[data['x'] > x]
+            data_le = data[data['x'] <= x]
+            gini_ge_min = 0
+            gini_le_min = 0
+            for each in data_y_unique:
+                data_ge_y = data_ge[data_ge['y'] == each]
+                data_le_y = data_le[data_le['y'] == each]
+                gini_ge_min += (len(data_ge_y) / len(data_ge)) ** 2 if len(data_ge) > 0 else 0
+                gini_le_min += (len(data_le_y) / len(data_le)) ** 2 if len(data_le) > 0 else 0
+            gini_ge = 1 - gini_ge_min
+            gini_le = 1 - gini_le_min
+            gini = len(data_ge) / num_x * gini_ge + len(data_le) / num_x * gini_le
+            return gini
+
+        data = pd.concat([pd.DataFrame(data_x), pd.DataFrame(data_y)], axis=1)
+        data.columns = ['x', 'y']
+        data_y_unique = np.unique(data_y).tolist()
+        data_x_unique = np.unique(data_x).tolist()
+        data_x_split = [data_x_unique[0] - (data_x_unique[1] - data_x_unique[0]) / 2] + \
+                       [data_x_unique[i] + (data_x_unique[i + 1] - data_x_unique[i]) / 2 for i in
+                        range(len(data_x_unique) - 1)] + \
+                       [data_x_unique[-1] + (data_x_unique[-1] - data_x_unique[-2]) / 2]
+        ginis = map(calGini, data_x_split)
+        best_split = data_x_split[np.argmin(ginis)]
+        return ginis, best_split
+
+    def __cartSplitBest(self, train_data_x, train_data_y, feature_name):
+        this_train_data_y = train_data_y['y'].values.tolist()
+        ginis_list = []
+        best_split_list = []
+        for each in feature_name:
+            this_train_data_x = train_data_x[each].values.tolist()
+            ginis, best_split = self.__cartSplit(this_train_data_x, this_train_data_y)
+            ginis_list.append(ginis)
+            best_split_list.append(best_split)
+        return feature_name[np.argmin(ginis_list)], np.min(ginis_list)
+
+    def __train(self, train_data_x, train_data_y, feature_name, method):
+        '''
+        ID3 和 C4.5 算法
+        '''
+        Ck_type = train_data_y['y'].drop_duplicates().tolist()          # 目标变量的分类数
         tree = {}
         if len(Ck_type) == 1:                       # 全部都是一个类
             T_type = Ck_type[0]
+            HD = self.calH(train_data_y)
             tree['target_type'] = T_type
+            tree['sample'] = len(train_data_y)
+            tree['HD'] = HD
             return tree
         elif len(feature_name) == 0:                # 特征用完了，用多数的类
             T_type = Ck_type[np.argmax(map(lambda x: np.sum(train_data_y['y'] == x), Ck_type))]
+            HD = self.calH(train_data_y)
             tree['target_type'] = T_type
+            tree['sample'] = len(train_data_y)
+            tree['HD'] = HD
             return tree
         else:
-            infoGain_max_name, infoGain_max_v = self.infoGain(train_data_x, train_data_y)       # 计算信息增益
-            if infoGain_max_v < self.alpha:         # 小于阈值，相当于特征用完了，也是用多数类
+            if method == 'CART':
+                select_var_name, select_var_v = self.__cartSplitBest(train_data_x, train_data_y, feature_name)
+            else:
+                select_var_name, select_var_v, HD, V = self.infoGain(train_data_x, train_data_y, method=method)       # 计算信息增益、信息增益比
+            if select_var_v < self.alpha:         # 小于阈值，相当于特征用完了，也是用多数类
                 T_type = Ck_type[np.argmax(map(lambda x: np.sum(train_data_y['y'] == x), Ck_type))]
                 tree['target_type'] = T_type
+                tree['sample'] = len(train_data_y)
+                if method == 'CART':
+                    pass
+                else:
+                    tree['HD'] = HD
+                    tree['V'] = V
                 return tree
             else:
-                tree['best_split'] = infoGain_max_name
-                best_x_type = train_data_x[infoGain_max_name].drop_duplicates().tolist()
+                T_type = Ck_type[np.argmax(map(lambda x: np.sum(train_data_y['y'] == x), Ck_type))]
+                tree['target_type'] = T_type
+                tree['best_split'] = select_var_name
+                tree['sample'] = len(train_data_y)
+                if method == 'CART':
+                    pass
+                else:
+                    if method == 'id3':
+                        tree['info_gain'] = select_var_v
+                    else:
+                        tree['info_gain_rate'] = select_var_v
+                    tree['HD'] = HD
+                    tree['V'] = V
+                best_x_type = train_data_x[select_var_name].drop_duplicates().tolist()
                 split_x = map(
-                    lambda x: train_data_x[train_data_x[infoGain_max_name] == x].drop(infoGain_max_name, axis=1),
+                    lambda x: train_data_x[train_data_x[select_var_name] == x].drop(select_var_name, axis=1),
                     best_x_type)
-                split_y = map(lambda x: train_data_y.loc[train_data_x[infoGain_max_name] == x, ['y']], best_x_type)
+                split_y = map(lambda x: train_data_y.loc[train_data_x[select_var_name] == x, ['y']], best_x_type)
                 for i, each_type in enumerate(best_x_type):
-                    next_tree = self.__train(split_x[i], split_y[i], split_x[i].columns.tolist())
+                    next_tree = self.__train(split_x[i], split_y[i], split_x[i].columns.tolist(), method)
                     tree[each_type] = next_tree
         return tree
 
-    def train(self, train_data_x, train_data_y, feature_name, alpha=0.00001):
+    def __cutTree(self, tree):
+        '''
+        ID3 和 C4.5 算法 的剪枝
+        '''
+        if tree.has_key('V'):
+            V = tree['V']
+            if V > 0:   # 剪枝
+                sub_list = tree.keys()
+                key_remove = ['HD', 'sample', 'target_type']
+                for each in key_remove:
+                    sub_list.remove(each)
+                for each in sub_list:
+                    tree.pop(each)
+            else:       # 不剪枝
+                sub_list = tree.keys()
+                gain = 'info_gain' if self.method == 'id3' else 'info_gain_rate'
+                key_remove = ['HD', 'V', 'best_split', 'sample', 'target_type'] + [gain]
+                for each in key_remove:
+                    sub_list.remove(each)
+                for each in sub_list:
+                    self.__cutTree(tree[each])
+        else:
+            return
+
+
+    def train(self, train_data_x, train_data_y, feature_name, alpha=0.00001, method='id3', is_cut=True):
         self.alpha = alpha
-        self.tree = self.__train(train_data_x, train_data_y, feature_name)
+        self.method = method
+        if method in ['id3', 'c4.5']:
+            self.tree = self.__train(train_data_x, train_data_y, feature_name, method=method)
+        else:
+            print 'The [ {0} ] method of train model is wrong !'.format(method)
+        self.__cutTree(self.tree)           # 剪枝
         return self.tree
 
     def __pred(self, test_x, tree):
@@ -158,6 +282,72 @@ class DecisionTree():
         result = map(self.__pred_single, test_x_code.values)
         self.pre_result = pd.DataFrame(result, columns=['target_type'])
         return pd.concat([test_x, self.pre_result], axis=1), pd.concat([test_x_code, self.pre_result], axis=1)
+
+    def __plotTree(self, tree, this_index, deep, method):
+        if self.deep is not None:
+            if deep > self.deep:
+                return
+        best_split = tree.pop('best_split') if tree.has_key('best_split') else ''
+        if method == 'id3':
+            info_gain = tree.pop('info_gain') if tree.has_key('info_gain') else ''
+        else:
+            info_gain_rate = tree.pop('info_gain_rate') if tree.has_key('info_gain_rate') else ''
+        sample = tree.pop('sample') if tree.has_key('sample') else ''
+        HD = tree.pop('HD') if tree.has_key('HD') else ''
+        key_list = tree.keys()
+        remove_list = ['V', 'target_type']
+        for each in remove_list:
+            if each in key_list:
+                key_list.remove(each)
+        if best_split != '':
+            categories = self.__decodeVar(best_split)
+            if method == 'id3':
+                str_need = r'best_split : {0}\ninfo_gain : {1:.4f}\nsample : {2}\nHD : {3:.4f}'.format(best_split, info_gain, sample, HD)
+            else:
+                str_need = r'best_split : {0}\ninfo_gain_rate : {1:.4f}\nsample : {2}\nHD : {3:.4f}'.format(best_split, info_gain_rate, sample, HD)
+            self.cont += 'n{0} [label="{1}", fillcolor="{2}"];\n'.format('0'*(3-len(str(this_index)))+str(this_index), str_need, np.random.choice(self.color))
+            if self.deep is not None:
+                if deep == self.deep:
+                    pass
+                else:
+                    for each in key_list:
+                        self.__index += 1
+                        self.cont += 'n{0} ;\n'.format('0'*(3-len(str(self.__index)))+str(self.__index))
+                        self.cont += 'n{0} -> n{1} [label="{2}"] ;\n'.format('0'*(3-len(str(this_index)))+str(this_index), '0'*(3-len(str(self.__index)))+str(self.__index), categories[each])
+                        self.__plotTree(deepcopy(tree[each]), self.__index, deep+1, method)
+            else:
+                for each in key_list:
+                    self.__index += 1
+                    self.cont += 'n{0} ;\n'.format('0' * (3 - len(str(self.__index))) + str(self.__index))
+                    self.cont += 'n{0} -> n{1} [label="{2}"] ;\n'.format('0' * (3 - len(str(this_index))) + str(this_index), '0' * (3 - len(str(self.__index))) + str(self.__index), categories[each])
+                    self.__plotTree(deepcopy(tree[each]), self.__index, deep + 1, method)
+        else:
+            self.__index += 1
+            target_type = tree['target_type']
+            categories = self.__decodeVar('y')
+            str_need = 'target_type : {0}\nsample : {1}\nHD : {2:.4f}'.format(categories[target_type], sample, HD)
+            self.cont += 'n{0} [label="{1}", fillcolor="{2}"];\n'.format('0'*(3-len(str(this_index)))+str(this_index), str_need, np.random.choice(self.color))
+
+    def plotTree(self, is_print=True, save_path=None, plot_deep=None):
+        '''
+        打印生成的树
+        is_print: 是否打印 dot 文件
+        save_path: 保存路径
+        plot_deep: 打印树的最大深度
+        '''
+        self.__index = 1
+        self.cont = ''
+        self.deep = plot_deep
+        self.__plotTree(deepcopy(self.tree), self.__index, 0, method=self.method)
+        self.dot = 'digraph tree {{\n{0}{1} }}'.format(self.style, self.cont)
+        if save_path:
+            try:
+                with open(save_path, 'w') as f:
+                    f.write(self.dot)
+            except:
+                print 'save_path is wrong!'
+        if is_print:
+            print self.dot
 
 
 def getTrainData():
@@ -196,15 +386,67 @@ def getTestData():
 if __name__ == '__main__':
     train_data, feature_name = getTrainData()
     train_data = pd.DataFrame(train_data, columns=feature_name+['y'])
-    # 训练模型
+
+    # 1、id3 训练模型
     decisionTree = DecisionTree()
     train_data_code, all_categories = decisionTree.codeVar(train_data.copy())
-    tree_a = decisionTree.train(train_data_code.iloc[:,range(4)], train_data_code.loc[:,['y']], feature_name)
+    tree_id3 = decisionTree.train(train_data_code.iloc[:,range(4)], train_data_code.loc[:,['y']], feature_name, is_cut=True)
     # 预测
     test_data, feature_name = getTestData()
     result, result_code = decisionTree.pred(test_data, feature_name)
-    # 打印编码
-    decisionTree.printCode()
-    decisionTree.printCode(['y'])
+    print result
+    # 画图
+    save_path = r'D:\Lgb\Self\Learn\decisiontree_id3.dot'
+    decisionTree.plotTree(save_path=save_path, is_print=False)
+    os.system('D:/Lgb/Softwares/graphviz/bin/dot -Tpng D:/Lgb/Self/Learn/decisiontree_id3.dot -o D:/Lgb/Self/Learn/decisiontree_id3.png')
+
+    # 2、c4.5 训练模型
+    tree_c45 = decisionTree.train(train_data_code.iloc[:,range(4)], train_data_code.loc[:,['y']], feature_name, method='c4.5', is_cut=True)
+    # 预测
+    test_data, feature_name = getTestData()
+    result, result_code = decisionTree.pred(test_data, feature_name)
+    print result
+    # 画图
+    save_path = r'D:\Lgb\Self\Learn\decisiontree_c45.dot'
+    decisionTree.plotTree(save_path=save_path, is_print=False)
+    os.system('D:/Lgb/Softwares/graphviz/bin/dot -Tpng D:/Lgb/Self/Learn/decisiontree_c45.dot -o D:/Lgb/Self/Learn/decisiontree_c45.png')
+
+    # 3、CART 算法
+
+    # # 打印编码
+    # decisionTree.printCode()
+    # decisionTree.printCode(['y'])
+
+
+data_x = [125, 100, 70, 120, 95, 60, 220, 85, 75, 90]
+data_y = [0, 0, 0, 0, 1, 0, 0, 1, 0, 1]
+
+
+def cartSplit(data_x, data_y):
+    def calGini(x):
+        num_x = len(data)
+        data_ge = data[data['x'] > x]
+        data_le = data[data['x'] <= x]
+        gini_ge_min = 0
+        gini_le_min = 0
+        for each in data_y_unique:
+            data_ge_y = data_ge[data_ge['y'] == each]
+            data_le_y = data_le[data_le['y'] == each]
+            gini_ge_min += (len(data_ge_y)/len(data_ge))**2 if len(data_ge) > 0 else 0
+            gini_le_min += (len(data_le_y)/len(data_le))**2 if len(data_le) > 0 else 0
+        gini_ge = 1 - gini_ge_min
+        gini_le = 1 - gini_le_min
+        gini = len(data_ge)/num_x*gini_ge + len(data_le)/num_x*gini_le
+        return gini
+    data = pd.concat([pd.DataFrame(data_x),pd.DataFrame(data_y)], axis=1)
+    data.columns = ['x', 'y']
+    data_y_unique = np.unique(data_y).tolist()
+    data_x_unique = np.unique(data_x).tolist()
+    data_x_split = [data_x_unique[0] - (data_x_unique[1] - data_x_unique[0]) / 2] + \
+                   [data_x_unique[i] + (data_x_unique[i + 1] - data_x_unique[i]) / 2 for i in range(len(data_x_unique) - 1)] + \
+                   [data_x_unique[-1] + (data_x_unique[-1] - data_x_unique[-2]) / 2]
+    ginis = map(calGini, data_x_split)
+    best_split = data_x_split[np.argmin(ginis)]
+    return ginis, best_split
 
 
