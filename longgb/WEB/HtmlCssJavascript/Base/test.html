@@ -1,0 +1,51 @@
+﻿<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+        <title>无标题文档</title>
+    </head>
+    
+    <body>
+        <form>
+          请选择你爱好:<br>
+          <input type="checkbox" name="hobby" id="hobby1">  1.音乐<br>
+          <input type="checkbox" name="hobby" id="hobby2">  2.登山<br>
+          <input type="checkbox" name="hobby" id="hobby3">  3.游泳<br>
+          <input type="checkbox" name="hobby" id="hobby4">  4.阅读<br>
+          <input type="checkbox" name="hobby" id="hobby5">  5.打球<br>
+          <input type="checkbox" name="hobby" id="hobby6">  6.跑步<br>
+          <input type="button" value = "全选" onclick = "checkall();">
+          <input type="button" value = "全不选" onclick = "clearall();">
+          <p>请输入您要选择爱好的序号，序号为1-6:</p>
+          <input id="wb" name="wb" type="text" >
+          <input name="ok" type="button" value="确定" onclick = "checkone();">
+        </form>
+        <script type="text/javascript">
+        function checkall(){
+            var hobby = document.getElementsByTagName("input");
+            for(i=0;i<hobby.length;i++){
+                if(hobby[i].name=="hobby"){
+                    hobby[i].checked=true;
+                }
+            }
+          // 任务1 
+        }
+        function clearall(){
+            var hobby = document.getElementsByName("hobby");
+            for(i=0;i<hobby.length;i++){
+                hobby[i].checked=false;
+            }
+         // 任务2  
+        }
+        function checkone(){
+            var j=document.getElementById("wb").value;
+            for(i=1;i<=6;i++){
+                document.getElementById("hobby"+i).checked=false;
+            }
+            if(1<=j&&j<=6){document.getElementById("hobby"+j).checked=true}else{alert("请输入正确数值")}
+         // 任务3
+        }
+        
+        </script>
+    </body>
+</html>
