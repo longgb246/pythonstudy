@@ -178,14 +178,15 @@ for(x in totalDates){
     subData     <- testData[dt==x, ];
     subData[, simuInv:=simuInv+AQ];
     subData[,simuSales:=sales];
-    subData[sales>simuInv, simuSales:=simuInv];  #In case no inventory sales
-    ###Interate in the testData
+    subData[sales>simuInv, simuSales:=simuInv];
     testData[dt==x, simuSales:=sales];
     testData[sales>simuInv, simuSales:=simuInv];
     testData[dt==x, simuInv:=simuInv+AQ];
     RQData  <- subData[simuInv+simuOpenpo < LOP95,];
     RQData[, DQ:=LOP95 + bp95 -( simuOpenpo + simuInv)];
     for(y in RQData$rdcSkuid){
+        print(y);
+        DQ  <- RQData[rdcSkuid==y,]$DQ;
         realVlt <-  as.integer(RQData[rdcSkuid==y,]$sampleVlt);
         testData[rdcSkuid==y & dt %in% (1:realVlt+x), simuOpenpo:=simuOpenpo+DQ];
         testData[rdcSkuid==y & dt %in% (realVlt+1+x), c("AQ","simuInv"):=list(AQ+DQ,simuInv+DQ)];
@@ -204,6 +205,8 @@ for(x in totalDates){
 
 write.table(testData,"testData.txt",sep="\t",row.names=F);
 dat <-  fread("testData.txt",sep="\t");
+
+dat <- testData;
 dat[,inv:=0];
 dat[simuInv>0,inv:=1];
 dat[,act_inv:=0];
