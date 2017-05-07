@@ -18,3 +18,19 @@ im.rotate(45).show()
 im_resize = im.resize()
 im_resize.save(path_cn + os.sep + '')
 
+
+def readVal(valType, requestMsg, errorMsg):
+    numTries = 0
+    while numTries < 4:
+        val = raw_input(requestMsg)
+        try:
+            val = valType(val)
+            # print numTries
+            return val
+        except:
+            print errorMsg
+            numTries += 1
+            # print numTries
+    raise TypeError('Num is ..')
+print readVal(int, 'enter int:', 'not an int.')
+

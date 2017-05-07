@@ -4,15 +4,16 @@
 	font:12px normal "microsoft yahei";
 }
 
-#tabs {
-	width:290px;
+/* 1、第一个样式 */
+
+#tabs_click_01 {
+	width:300px;
 	height:150px;
 	padding:5px;
-	margin:20px;
+	margin:20px auto;
 }
 
-
-#tabs ul{
+#tabs_click_01 ul{
 	list-style:none;
 	display: block;
 	height:30px;
@@ -20,8 +21,7 @@
 	border-bottom:2px saddlebrown solid;
 }
 
-
-#tabs ul li{
+#tabs_click_01 ul li{
 	list-style:none;
 	cursor:pointer;
 	float:left;
@@ -35,12 +35,12 @@
 	border-bottom:none;
 }
 
-#tabs ul li.on{
+#tabs_click_01 ul li.on{
 	border-top:2px solid saddlebrown;
 	border-bottom: 2px solid #fff;
 }
 
-#tabs div{
+#tabs_click_01 div{
 	height:120px;
 	line-height: 25px;
 	border:1px solid #336699;
@@ -50,5 +50,115 @@
 
 .hide{
 	display: none;
+}
+
+/* 2、第二个样式 */
+
+#tabs_hover {
+	width:300px;
+	height:110px;
+	margin:20px auto;
+	border: 2px solid #efedef;
+}
+
+#tabs_hover ul{
+	list-style: none;
+	margin:0px;
+	border:0px;
+	padding:0px;
+	width: 300px;
+	height: 30px;
+	background-color: #f8f6f8;
+	border-bottom: 2px solid #efedef;
+}
+
+#tabs_hover ul li{
+	display: block;
+	cursor: pointer;
+	width: 60px;
+	height: 30px;
+	float: left;
+	text-indent: 12px;
+	line-height: 30px;
+}
+
+#tabs_hover div p{
+	display: block;
+	width: 300px;
+	text-align: center;
+	line-height: 35px;
+} 
+
+#tabs_hover ul li.on{
+	width: 56px;
+	text-indent: 10px;
+	border-left: 2px solid #efedef;
+	border-right: 2px solid #efedef;
+	border-bottom: 2px solid #fff;
+	background-color: #fff;
+}
+
+#tabs_hover ul #tabs_hover_left.on{
+	width: 58px;
+	text-indent: 12px;
+	border-left: 0px;
+	border-right: 2px solid #efedef;
+	border-bottom: 2px solid #fff;
+	background-color: #fff;
+}
+
+#tabs_hover ul #tabs_hover_right.on{
+	width: 58px;
+	text-indent: 10px;
+	border-left: 2px solid #efedef;
+	border-right: 0px;
+	border-bottom: 2px solid #fff;
+	background-color: #fff;
+}
+
+/* 3、图片轮播 */
+
+#imgCarousel{
+	width: 490px;
+	margin: 0px auto;
+	position: relative;
+}
+
+/*#imgCarousel img{
+	opacity: 0;
+	-webkit-transition: all .5s;
+}
+
+#imgCarousel img.hide{
+	opacity: 0;
+	-webkit-transition: all .5s;
+}
+
+#imgCarousel img.on{
+	opacity: 1;
+}
+*/
+#imgCarousel ul{
+	position: absolute;
+	list-style: none;
+	right: 10px;
+	bottom: 10px;
+}
+
+#imgCarousel ul li{
+	float: left;
+	cursor: pointer;
+	height: 15px;
+	width: 15px;
+	margin: 2px;
+	border: 1px solid #8B8989;
+	background-color: #CDC8B1;
+	line-height: 15px;
+	text-align: center;
+	font-size: 13px;
+}
+
+#imgCarousel ul li.on{
+	background-color: #efedef;
 }
 

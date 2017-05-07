@@ -1,0 +1,35 @@
+* {
+	padding:0px;
+	margin: 0px;
+	font:12px normal "microsoft yahei";
+}
+
+#main_div {
+	width: 1190px;
+	margin:0px auto;
+}
+
+#fix_right {
+	position: fixed;
+	display: none;
+	right: 20px;
+	bottom: 20px;
+	width: 40px;
+	height: 40px;
+}
+
+#backtop{
+	position: fixed;
+	display: none;
+	right: 20px;
+	bottom: 20px;
+	display: block;
+	width: 40px;
+	height: 40px;
+	background-image: url("../images/top_bg.png");
+}
+
+#backtop:hover{
+	background-image: url("../images/top_bg.png");
+	background-position: 0 -40px;
+}

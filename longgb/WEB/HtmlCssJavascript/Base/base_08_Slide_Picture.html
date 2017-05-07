@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Back_to_Top</title>
+	<link rel="stylesheet" type="text/css" href="source/css/base_08.css">	
+</head>
+<body>
+	<div class="slider">
+		<div class="main" id="template_main">
+			<div class="main-i" id="main_{{index}}">
+				<div class="caption">	
+					<h2>{{h2}}</h2>
+					<h3>{{h3}}</h3>
+				</div>
+				<img src="source/images/{{pic_index}}.jpg" />
+			</div>
+		</div>
+		<div class="ctrl" id="template_ctrl">
+			<a class="ctrl-i" id="ctrl_{{index}}" href="javascript:switchSlider({{index}});">
+				<img src="source/images/{{pic_index}}.jpg" onclick="switchSlider({{index}});" class="pictures" />
+			</a>
+		</div>
+	</div>
+	<script type='text/javascript' src='source/js/script_08.js'></script>
+</body>
+</html>
