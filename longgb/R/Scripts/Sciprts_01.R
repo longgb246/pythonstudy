@@ -197,6 +197,12 @@ write.table(bpDataFinal, file="bp.csv", sep=",", row.names=F)
 
 
 
+help("colMeans")
+library(data.table)
+help("data.table")
 
+help(mean)
+mean()
 
+help(sort)
 

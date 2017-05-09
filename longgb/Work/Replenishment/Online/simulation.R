@@ -307,10 +307,4 @@ kpi <-  dat[, list(
 write.table(kpi,"kpi_online.txt",sep="\t",row.names=F);
 
 
-kpi[(simuCr>Cr) & (simuIto<Ito), ]  # 35
-kpi[(simuCr>Cr) , ]                 # 653
-kpi[(simuIto<Ito), ]                # 1820
-kpi[(simuCr<Cr) & (simuIto>Ito), ]  # 973
-
-
 
