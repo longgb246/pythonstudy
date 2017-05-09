@@ -24,11 +24,7 @@ vltDD   <- unique(vltDD, by=c("rdcSkuid", "intVlt"))
 
 
 ####  The bp data preprocess
-# bpData[, rdcSkuid:=paste(int_org_num, sku_id, sep='-')]
 bpData[, dt:=as.Date(dt)]
-# Check if oneday get multiple record
-# bpData$index    <- 1:nrow(bpData)
-# duplicatedCheck <- bpData[,list(recordCount=length(index)), by=c("rdcSkuid", "dt")]
 bpData  <- bpData[, .(rdcSkuid, dt,vlt_ref, nrt, bp)]
 
 
@@ -96,6 +92,55 @@ bpData[safeVLT<14, safeVLT:=14]
 setkeyv(bpData, c("rdcSkuid", "dt"))
 setkeyv(simulationData, c("rdcSkuid", "curDate"))
 
+
+# this check
+#testData    <- copy(simulationData)
+#
+#simulationData[,recordNum:=length(curDate), by='rdcSkuid']
+#simulationData[, minDate:=min(curDate), by='rdcSkuid']
+#simulationData[, maxDate:=max(curDate), by='rdcSkuid']
+#simulationData[, dateGap:=maxDate-minDate+1]
+#
+#simulationData[,missRatio:=as.numeric(recordNum)/as.numeric(dateGap)]
+#simulationData[order(missRatio),]
+#simulationData    <- simulationData[missRatio>0.7,]
+#
+#rdcSkuidList    <- unique(testData[missRatio<1,]$rdcSkuid)
+#
+#
+#imputeList      <- lapply(rdcSkuidList, function(x){
+#    print(x)
+#    subData     <- testData[rdcSkuid==x,]
+#    fullDateSeq <- seq(unique(subData$minDate), unique(subData$maxDate),1)
+#    missDate    <- fullDateSeq[!fullDateSeq %in% subData$curDate]
+#    notSelect   <- c('rdc', 'skuid', 'cid2', 'cid3', 'curDate', 'rdcSkuid', 'minDate', 'maxDate', 'dateGap')
+#    subimputeList  <- lapply(missDate, function(y){
+#        imputeDate  <- c(y-1, y-2,y+1,y+2);
+#        imputeData  <- subData[curDate %in% imputeDate,];
+#        imputeDataF <- data.table(rdc=imputeData$rdc[1]);
+#        for (m in  names(imputeData)[2:length(names(imputeData))]){
+#            if (!m %in% notSelect){
+#                imputeDataF[, c(m):=colMeans(subset(imputeData, select=m), na.rm = TRUE)]
+#            }else if(m == 'curDate'){
+#                imputeDataF[, c(m):=y]
+#            }else{
+#                imputeDataF[, c(m):=subset(imputeData, select=m)[1]]
+#            }};
+#        imputeDataF;
+#        })
+#    subimputeResult    <- rbindlist(subimputeList)
+##    subData <- rbind(subimputeResult, subData)
+##    subData <- subData[order(curDate),]
+##    subData
+#    subimputeResult
+#})
+#
+## testData2    <- rbindlist(imputeList)
+#imputeResult    <- rbindlist(imputeList)
+#
+#testData3     <- rbind(imputeResult, testData)
+
+
 simulationData  <- bpData[simulationData]
 simulationData  <- simulationData[!is.na(bp),]
 
@@ -123,10 +168,10 @@ LOPList     <- lapply(safeVLTList, function(x){
         ###The expectation
         expectationNames    <- paste('predMean', 1:safeVltKey ,sep='')
         subMeanResult   <- rowSums(subset(subData,select=expectationNames))
-        subMeanResult   <- subMeanResult*x/safeVltKey
+        subMeanResult   <- subMeanResult * x/safeVltKey
         ###The variance
         sdNames         <- paste('predSd', 1:safeVltKey, sep='')
-        subSdResult     <- sd(rowSums(subset(subData,select=sdNames)^2,na.rm=T))
+        subSdResult     <- sqrt(rowSums(subset(subData,select=sdNames)^2))
         # Only one record, so sd is NA
         subSdResult     <- subSdResult * x / safeVltKey
         subData$LOPMean <- subMeanResult
@@ -151,10 +196,30 @@ bpCalculationList   <- lapply(bpList, function(x){
 })
 
 bpCalculationData   <- rbindlist(bpCalculationList)
-finalData   <- subset(bpCalculationData, select=c(1:13,73:78))
+finalData   <- subset(bpCalculationData, select=c(1:13, 73:78))
 
 finalData[, LOP95:=round(qnorm(0.95, LOPMean, LOPSd))]
 finalData[, bp95:=round(qnorm(0.95, bpMean, bpSd))]
+
+
+## check
+#bpCalculationData[rdcSkuid=='10-1093041',dt]
+#finalData[rdcSkuid=='10-1093041',dt]
+#
+#forecastResult[, recordNum:=length(curDate), by='rdcSkuid']
+#forecastResult[, minDate:=min(curDate), by='rdcSkuid']
+#forecastResult[, maxDate:=max(curDate), by='rdcSkuid']
+#forecastResult[, dateGap:=maxDate-minDate+1]
+#forecastResult[dateGap>recordNum, length(unique(rdcSkuid))]    # 5150
+#forecastResult[, length(unique(rdcSkuid))]                     # 6361
+#
+#finalData[, recordNum:=length(dt), by='rdcSkuid']
+#finalData[, minDate:=min(dt), by='rdcSkuid']
+#finalData[, maxDate:=max(dt), by='rdcSkuid']
+#finalData[, dateGap:=maxDate-minDate+1]
+#finalData[dateGap>recordNum, length(unique(rdcSkuid))]    # 5150
+#finalData[, length(unique(rdcSkuid))]                     # 6361
+
 
 
 ##########################################################
@@ -173,14 +238,32 @@ testData[,vltIndex:=1];
 totalDates  <- sort(unique(finalData$dt))
 # Final Simulation ####
 
+#
+#testData    <- copy(finalData)
+#x <- totalDates[1]
+#skus <- unique(testData[,rdcSkuid])
+#selectSkus <- list('10-1093041')
+#selectSkus <- skus[1:3]
+#testData1 <- testData[rdcSkuid == selectSkus[1], ]
+#testData2 <- testData[rdcSkuid == selectSkus[2], ]
+#testData3 <- testData[rdcSkuid == selectSkus[3], ]
+#testData <- rbindlist(list(testData1, testData2, testData3))
+#
+#
+#y <- RQData$rdcSkuid[1]
+#
+#i <- 1;
+
 for(x in totalDates){
+#    i <- i+1;
+#    x <- totalDates[i];
     print(x);
     subData     <- testData[dt==x, ];
     subData[, simuInv:=simuInv+AQ];
     subData[,simuSales:=sales];
     subData[sales>simuInv, simuSales:=simuInv];
     testData[dt==x, simuSales:=sales];
-    testData[sales>simuInv, simuSales:=simuInv];
+    testData[(dt==x) & (sales>simuInv), simuSales:=simuInv];
     testData[dt==x, simuInv:=simuInv+AQ];
     RQData  <- subData[simuInv+simuOpenpo < LOP95,];
     RQData[, DQ:=LOP95 + bp95 -( simuOpenpo + simuInv)];
@@ -189,7 +272,8 @@ for(x in totalDates){
         DQ  <- RQData[rdcSkuid==y,]$DQ;
         realVlt <-  as.integer(RQData[rdcSkuid==y,]$sampleVlt);
         testData[rdcSkuid==y & dt %in% (1:realVlt+x), simuOpenpo:=simuOpenpo+DQ];
-        testData[rdcSkuid==y & dt %in% (realVlt+1+x), c("AQ","simuInv"):=list(AQ+DQ,simuInv+DQ)];
+#       testData[rdcSkuid==y & dt %in% (realVlt+1+x), c("AQ","simuInv"):=list(AQ+DQ,simuInv+DQ)];
+        testData[rdcSkuid==y & dt %in% (realVlt+1+x), AQ:=AQ+DQ];
     	testData[rdcSkuid==y & dt== x ,pur_qtty:= DQ];
     	testData[rdcSkuid==y & dt== x ,vlt:= realVlt];
   	};
@@ -203,7 +287,7 @@ for(x in totalDates){
     testData[,simuInvNext:=NULL];
 }
 
-write.table(testData,"testData.txt",sep="\t",row.names=F);
+write.table(testData,"testData_online.txt",sep="\t",row.names=F);
 dat <-  fread("testData.txt",sep="\t");
 
 dat <- testData;
@@ -219,4 +303,14 @@ kpi <-  dat[, list(
                   Ito=sum(inventory,na.rm=T)/sum(sales,na.rm=T)
               ),
               by=rdcSkuid]
+
+write.table(kpi,"kpi_online.txt",sep="\t",row.names=F);
+
+
+kpi[(simuCr>Cr) & (simuIto<Ito), ]  # 35
+kpi[(simuCr>Cr) , ]                 # 653
+kpi[(simuIto<Ito), ]                # 1820
+kpi[(simuCr<Cr) & (simuIto>Ito), ]  # 973
+
+
 
