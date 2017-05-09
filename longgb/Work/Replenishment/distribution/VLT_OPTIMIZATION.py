@@ -19,7 +19,8 @@ hiveContext = HiveContext(sc)
 class VLT_Distribution:
     def __init__(self):
         #init data
-        self.dt = dat.strftime(dat.today().date() + timedelta(days=-1),format="%Y-%m-%d")
+        # self.dt = dat.strftime(dat.today().date() + timedelta(days=-1),format="%Y-%m-%d")
+        self.dt = dat.strftime(dat(2017, 5, 1).date() + timedelta(days=-1),format="%Y-%m-%d")
         self.dtStr = "'"+self.dt+"'"
         self.beginYearDate = "'"+dat.today().replace(year=(dat.today().year-1)).strftime("%Y-%m-%d")+"'"
         self.orderCount = 10
@@ -45,16 +46,17 @@ class VLT_Distribution:
         self.save()
         pass
     def extractPurChasedOrder(self):
-        self.log(self.dt,"INFO","step 1:starting extractPurChasedOrder",)
+        # self.log(self.dt,"INFO","step 1:starting extractPurChasedOrder",)
         try:
             self.sourceOrder =   hiveContext.table("gdm.gdm_m04_pur_det_basic_sum").where("dt="+self.dtStr + " and valid_flag='1' AND cgdetail_yn=1 AND create_tm BETWEEN "+self.beginYearDate+" AND "+self.dtStr+" AND complete_dt <>'' AND pur_bill_src_cd IN (2, 3, 4, 10)").select("item_third_cate_cd","pur_bill_id" ,"sku_id" ,"supp_brevity_cd" ,"int_org_num" ,"create_tm" ,"complete_dt").coalesce(10)
             self.autoPoOrder =   hiveContext.table("gdm.gdm_m04_pur_det_basic_sum").where("dt="+self.dtStr + " and valid_flag='1' AND cgdetail_yn=1 AND create_tm BETWEEN "+self.beginYearDate+" AND "+self.dtStr+" AND complete_dt <>'' AND pur_bill_src_cd =15").select("item_third_cate_cd","pur_bill_id" ,"sku_id" ,"supp_brevity_cd" ,"int_org_num" ,"create_tm" ,"complete_dt").coalesce(10)
             self.orders = self.sourceOrder.unionAll(self.autoPoOrder) #42,633,086
         except BaseException as e:
-            self.log(self.dt,"ERROR","Error happended at step 1.Error Message: {0}".format(e.message))
+            # self.log(self.dt,"ERROR","Error happended at step 1.Error Message: {0}".format(e.message))
+            pass
         pass
     def removeNeipei(self):
-        self.log(self.dt,"INFO","step 2:starting removeNeipei",)
+        # self.log(self.dt,"INFO","step 2:starting removeNeipei",)
         try:
             unqiueOrder = self.orders.select("pur_bill_id").distinct()
             fdm_scm_cgfenpei_chain = unqiueOrder.join(hiveContext.table("fdm.fdm_scm_cgfenpei_chain").select(col("rfid").alias("pur_bill_id"),"idcompany"),["pur_bill_id"]).coalesce(10)
@@ -69,17 +71,19 @@ class VLT_Distribution:
             self.autoPoOrder = self.autoPoOrder.join(neipeiOrder,neipeiOrder.pur_bill_id==self.autoPoOrder.pur_bill_id,how="left_Outer").where(neipeiOrder.pur_bill_id.isNull()).select(col("item_third_cate_cd"),self.autoPoOrder.pur_bill_id,col("sku_id"),col("supp_brevity_cd"),col("int_org_num"),col("create_tm"),col("complete_dt")).coalesce(10)
             self.orders = self.orders.join(neipeiOrder,neipeiOrder.pur_bill_id==self.orders.pur_bill_id,how="left_Outer").where(neipeiOrder.pur_bill_id.isNull()).select(col("item_third_cate_cd"),self.orders.pur_bill_id,col("sku_id"),col("supp_brevity_cd"),col("int_org_num"),col("create_tm"),col("complete_dt")).coalesce(10)
         except BaseException as e:
-            self.log(self.dt,"ERROR","Error happended at step 2.Error Message: {0}".format(e.message))
+            # self.log(self.dt,"ERROR","Error happended at step 2.Error Message: {0}".format(e.message))
+            pass
         pass
     def extract_into_wareHouse(self):
-        self.log(self.dt,"INFO","step 3:starting extract_into_wareHouse",)
+        # self.log(self.dt,"INFO","step 3:starting extract_into_wareHouse",)
         try:
             into_wareHouse = hiveContext.table("gdm.gdm_m04_pur_recv_det_basic_sum").where("dt="+self.dtStr + " AND cgdetail_yn=1 AND into_wh_qtty>0 ").groupBy("pur_bill_id", "sku_id").agg(func.min("into_wh_tm").alias("into_wh_tm")).coalesce(10)
             self.into_wareHouse = self.orders.join(into_wareHouse,["pur_bill_id","sku_id"]).coalesce(10)
         except BaseException as e:
-            self.log(self.dt,"ERROR","Error happended at step 3.Error Message: {0}".format(e.message))
+            # self.log(self.dt,"ERROR","Error happended at step 3.Error Message: {0}".format(e.message))
+            pass
     def extract_t_6(self):
-        self.log(self.dt,"INFO","step 4:starting extract_t_6",)
+        # self.log(self.dt,"INFO","step 4:starting extract_t_6",)
         try:
             t_6_Old = hiveContext.table("fdm.fdm_procurement_po_process").where("po_yn=1 AND po_state=6 AND process_desc LIKE '%采购单提交成功，启动审核工作流%' ").groupBy("po_id").agg(func.max("create_time").alias("t_6")).coalesce(10)
             t_6_New = hiveContext.table("fdm.fdm_procurement_lifecycle_chain").where("dt='4712-12-31' and actiontype=104 and yn=1 ").groupBy("poid").agg(func.max("createtime").alias("t_6")).coalesce(10)
@@ -88,9 +92,10 @@ class VLT_Distribution:
             t_6_autoPo = self.autoPoOrder.groupBy("pur_bill_id").agg(func.max("create_tm").alias("t_6")).coalesce(10)
             self.t6 = t_6_source.unionAll(t_6_autoPo).coalesce(10).groupBy("pur_bill_id").agg(func.max("t_6").alias("t_6")).coalesce(10)
         except BaseException as e:
-            self.log(self.dt,"ERROR","Error happended at step 4.Error Message: {0}".format(e.message))
+            # self.log(self.dt,"ERROR","Error happended at step 4.Error Message: {0}".format(e.message))
+            pass
     def extract_combine_Data(self):
-        self.log(self.dt,"INFO","step 5:starting extract_combine_Data",)
+        # self.log(self.dt,"INFO","step 5:starting extract_combine_Data",)
         try:
             combinedData=self.into_wareHouse.join(self.t6,["pur_bill_id"]).coalesce(10)
             temp_vlt_jobCombinedData= "vlt_jobCombinedData"
@@ -99,9 +104,10 @@ class VLT_Distribution:
             combinedData.write.saveAsTable("dev."+temp_vlt_jobCombinedData)
             self.combinedData = hiveContext.table("dev."+temp_vlt_jobCombinedData).select("pur_bill_id","sku_id","item_third_cate_cd","supp_brevity_cd","int_org_num","into_wh_tm","t_6",round((unix_timestamp("into_wh_tm")-unix_timestamp("t_6"))/86400.0,2).alias("vlt")).where(col("vlt").between(0.5,60)).select("pur_bill_id","sku_id","item_third_cate_cd","supp_brevity_cd","int_org_num","into_wh_tm","t_6",round("vlt").alias("vlt")).coalesce(10)
         except BaseException as e:
-            self.log(self.dt,"ERROR","Error happended at step 5.Error Message: {0}".format(e.message))
+            # self.log(self.dt,"ERROR","Error happended at step 5.Error Message: {0}".format(e.message))
+            pass
     def transform_data(self):
-        self.log(self.dt,"INFO","step 6:starting transform_data",)
+        # self.log(self.dt,"INFO","step 6:starting transform_data",)
         try:
             sku_slice_vlt_count = self.combinedData.groupBy("sku_id","supp_brevity_cd","int_org_num","vlt") .agg(func.countDistinct("pur_bill_id","sku_id").alias("sku_vlt_OrderCount")).coalesce(10)
             sku_slice_count     = self.combinedData.groupBy("sku_id","supp_brevity_cd","int_org_num")       .agg(func.max("item_third_cate_cd").alias("item_third_cate_cd"),func.countDistinct("pur_bill_id","sku_id").alias("sku_Ordercount"),round(func.mean("vlt"),2).alias("sku_vlt_mean"),round(func.stddev("vlt"),2).alias("sku_vlt_stdev")).coalesce(10)
@@ -138,16 +144,18 @@ class VLT_Distribution:
             ).coalesce(10)
             self.result=self.result.withColumn("dt",lit(self.dt))
         except BaseException as e:
-            self.log(self.dt,"ERROR","Error happended at step 6.Error Message: {0}".format(e.message))
+            # self.log(self.dt,"ERROR","Error happended at step 6.Error Message: {0}".format(e.message))
+            pass
     def save(self):
-        self.log(self.dt,"INFO","step 7:starting save",)
+        # self.log(self.dt,"INFO","step 7:starting save",)
         try:
             hiveContext.sql("set hive.exec.dynamic.partition.mode=nonstrict;set hive.exec.dynamic.partition=true;")
             hiveContext.sql("alter table app.app_vlt_distribution drop if exists partition(dt='"+self.dt+"')")
             self.result.write.mode("append").insertInto("app.app_vlt_distribution")
-            self.log(self.dt,"INFO","The job VLT_OPTIMIZATION is done successfully!")
+            # self.log(self.dt,"INFO","The job VLT_OPTIMIZATION is done successfully!")
         except BaseException as e:
-            self.log(self.dt,"ERROR","Error happended at step 7.Error Message: {0}".format(e.message),)
+            # self.log(self.dt,"ERROR","Error happended at step 7.Error Message: {0}".format(e.message),)
+            pass
 
 if __name__ == "__main__":
     dist = VLT_Distribution()
