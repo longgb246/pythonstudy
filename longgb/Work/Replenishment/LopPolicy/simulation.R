@@ -281,11 +281,11 @@ for(x in totalDates){
 		    i <-  testData[rdcSkuid==y & dt== x ,vltIndex];
 		    DQ  <- RQData[rdcSkuid==y,]$DQ;
     		if(DQ>0) testData[rdcSkuid==y & dt> x ,vltIndex:= vltIndex+1]; 
-        realVltList <- as.integer(unlist(strsplit(RQData[rdcSkuid==y,]$sampleVLT,",")));
+         realVltList <- as.integer(unlist(strsplit(RQData[rdcSkuid==y,]$sampleVLT,",")));
 		    len <-  length(realVltList);
 		    realVlt	<- 	ifelse(i%%len==0,len,realVltList[i%%len]);
-        testData[rdcSkuid==y & dt %in% (1:realVlt+x), simuOpenpo:=simuOpenpo+DQ];  # 更新在途
-        testData[rdcSkuid==y & dt %in% (realVlt+1+x), c("AQ","simuInv"):=list(AQ+DQ,simuInv+DQ)]; # 更新到达
+            testData[rdcSkuid==y & dt %in% (1:realVlt+x), simuOpenpo:=simuOpenpo+DQ];  # 更新在途
+            testData[rdcSkuid==y & dt %in% (realVlt+1+x), c("AQ","simuInv"):=list(AQ+DQ,simuInv+DQ)]; # 更新到达
     		testData[rdcSkuid==y & dt== x ,pur_qtty:= DQ];
     		testData[rdcSkuid==y & dt== x ,vlt:= realVlt];
   	};
