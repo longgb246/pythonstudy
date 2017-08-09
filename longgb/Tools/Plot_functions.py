@@ -5,7 +5,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 # 1.2 主函数
-def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_path='', cum_True=True, size=(12,8), is_int=True, is_save=False, is_drop_zero=False):
+def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_path='', cum_True=True, size=(12,8), is_int=True, is_drop_zero=False, is_show=True):
     '''
     画hist的百分比图，指定bins
     :param data: pd.DataFrame 单列数据
@@ -64,9 +64,10 @@ def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_p
         ax2.yaxis.grid(False)
         ax2.set_ylim(-0.05, 1.05)
         ax2.set_xlim(-0.5, len(bins_name) - 0.5)
-    plt.show()
-    if is_save:
+    if save_path != '':
         plt.savefig(save_path)
+    if is_show:
+        plt.show()
     return [fig1, ax1, ax2]
 # 1.3 demo运行函数
 def plotHistPerDemo():

@@ -16,9 +16,9 @@ def printRunTime(t1, name=""):
     if name != "":
         name = " ( " + name + " )"
     if hor_d >0:
-        print 'Run Time{3} is : {2} hours {0} min {1:.4f} s'.format(min_d, sec_d, hor_d, name)
+        print '[ Run Time{3} ] is : {2} hours {0} min {1:.4f} s'.format(min_d, sec_d, hor_d, name)
     else:
-        print 'Run Time{2} is : {0} min {1:.4f} s'.format(min_d, sec_d, name)
+        print '[ Run Time{2} ] is : {0} min {1:.4f} s'.format(min_d, sec_d, name)
 # 1.3 demo运行函数
 def printRunTimeDemo():
     t1 = time.time()
