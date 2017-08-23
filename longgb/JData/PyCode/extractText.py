@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from collections import Counter
 import jieba
+import warnings
+warnings.filterwarnings('ignore')
 
 
 read_path = r'D:\Data\other\JData\2-JData_train'
@@ -13,18 +15,29 @@ file_name = 'train_sku_basic_info.csv'
 
 if __name__ == '__main__':
     basic = pd.read_table(read_path + os.sep + file_name, encoding='gbk')
-    used_cols = ['item_sku_id_hashed', 'main_sku_id_hashed', 'sku_name', 'colour']
-    basic_used = basic.loc[:, used_cols]
+    cate3 = list(basic['item_third_cate_cd'].drop_duplicates().values)
+    for cate in cate3:
+        # cate = cate3[0]
+        print cate
+        basic_tmp = basic[basic['item_third_cate_cd']==cate]
+        basic_tmp['sku_name'] = map(lambda x: x.replace(' ',''),basic_tmp['sku_name'].values)
+        all_words = reduce(lambda x, y: x+y, map(lambda x: jieba.lcut(x), basic_tmp['sku_name'].values))
+        all_words_count = pd.DataFrame.from_dict(Counter(all_words), orient='index').reset_index().rename(columns={0:'count', 'index':'words'}).sort_values(['count'], ascending=False)
+        all_words_count.index = range(len(all_words_count))
+        # all_words_count.to_csv(save_path + os.sep + 'all_words_count_{0}.csv'.format(cate), index=False, encoding='gbk')
+        all_words_count.to_csv(save_path + os.sep + 'all_words_count_jin_{0}.csv'.format(cate), index=False, encoding='gbk')
+        # 进行词贴紧
 
-    all_words = reduce(lambda x, y: x+y, map(lambda x: jieba.lcut(x), basic['sku_name'].values))
-    all_words_count = pd.DataFrame.from_dict(Counter(all_words), orient='index').reset_index().rename(columns={0:'count', 'index':'words'}).sort_values(['count'], ascending=False)
+
+
+
+    basic_tmp = basic[basic['item_third_cate_cd']==cate]
+    words_space = reduce(lambda x, y: x+y, map(lambda x: x.split(' '), basic_tmp['sku_name'].values))
+    all_words_count = pd.DataFrame.from_dict(Counter(words_space), orient='index').reset_index().rename(columns={0:'count', 'index':'words'}).sort_values(['count'], ascending=False)
     all_words_count.index = range(len(all_words_count))
-    all_words_count_drop = all_words_count.drop([0,2,3,4,5,9,11,29,30,33])
-    all_words_count_drop.index = range(len(all_words_count_drop))
-    all_words_count_drop.to_csv(save_path + os.sep + 'all_words_count.csv', index=False, encoding='gbk')
+    all_words_count.to_csv(save_path + os.sep + 'all_words_count_space_{0}.csv'.format(cate), index=False, encoding='gbk')
 
 
-    list(basic['sku_name'].values)
 
     # 检验：
     # 1、'item_desc' 是个没什么用的字段
