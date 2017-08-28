@@ -68,13 +68,14 @@ select
     total_sales,                            -- 销量
     dt
 from
-    app.app_sfs_sales_region
+    app.app_sfs_sales_dc
 where
     dt >= '${start_date}'
     and dt <= '${end_date}'
     and dc_id = '${fdc_id}'
 
 
+-- TDC : app_sfs_sales_dc_tdc
 
 
 
