@@ -4,14 +4,48 @@ import numpy as np
 import pandas as pd
 from collections import Counter
 import jieba
+import time
 import warnings
 warnings.filterwarnings('ignore')
 import re
 
 
+# ==========================================================
+# =                     功能函数
+# ==========================================================
+def printRunTime(t1, name=""):
+    '''
+    性能测试，运行时间
+    '''
+    d = time.time() - t1
+    min_d = np.floor(d / 60)
+    sec_d = d % 60
+    hor_d = np.floor(min_d / 60)
+    if name != "":
+        name = " ( " + name + " )"
+    if hor_d >0:
+        print '[ Run Time{3} ] is : {2} hours {0} min {1:.4f} s'.format(min_d, sec_d, hor_d, name)
+    else:
+        print '[ Run Time{2} ] is : {0} min {1:.4f} s'.format(min_d, sec_d, name)
+
+
+# ==========================================================
+# =                     应用函数
+# ==========================================================
+def splitTestItems(x):
+    '''
+    剔除测试数据
+    '''
+    test_list = [u'AAAA', u'XXXX', u'****', u'测试专用', u'测试商品', u'xxxx', u'作废', u'验证']
+    for each in test_list:
+        if each in x:
+            return False
+    return True
+
+
 def splitPhone(x):
     '''
-    种类的提取
+    手机：种类的提取
     '''
     phone_key = [u'全网通', u'移动', u'联通', u'电信']
     key_str = u''
@@ -25,7 +59,7 @@ def splitPhone(x):
 
 def splitColor(x):
     '''
-    颜色的提取
+    手机、电脑、电缆：颜色的提取
     '''
     jieba.add_word(u'X色')
     jieba.add_word(u'卡其色')
@@ -53,16 +87,16 @@ def splitColor(x):
         color_str = color_str_list[0]
     else:
         color_str = u''
-    # if color_str == u'':
-    #     return True
-    # else:
-    #     return False
+    if color_str in [u'咖啡色', u'卡其色']:
+        color_str = u'棕'
+    if color_str == u'锖':
+        color_str = u'青'
     return color_str
 
 
 def splitGB(x):
     '''
-    几G手机、内存、存储
+    手机：几G手机、内存、存储
     '''
     # 1、找手机通讯模式
     tmp3 = re.findall(u'{0}手机'.format(r'(\d+G)'), x)
@@ -114,7 +148,7 @@ def splitGB(x):
 
 def splitLength(x):
     '''
-    拆分电缆长度
+    电缆：拆分电缆长度
     '''
     units = [u'米', u'm']
     re_com = r'\d+'
@@ -145,7 +179,7 @@ def splitLength(x):
 
 def splitSize(x):
     '''
-    电脑尺寸
+    电脑：电脑尺寸
     '''
     chicun = [u'英寸']
     chicun_str = u'|'.join(map(lambda x: u'({0}){1}'.format(r'\d+\.?\d?', x), chicun))
@@ -161,7 +195,7 @@ def splitSize(x):
 
 def splitIDai(x):
     '''
-    拆分是I几代的CPU
+    电脑：拆分是I几代的CPU
     '''
     # 规则：剔除 i1、i2、i4。当出现多个的时候，取最大的那个
     iDai = r'(i\d)|(I\d)'
@@ -185,7 +219,7 @@ def splitIDai(x):
 
 def splitMonitor(x):
     '''
-    是否独显
+    电脑：是否独显
     '''
     monitor = u'独显'
     if monitor in x:
@@ -197,7 +231,7 @@ def splitMonitor(x):
 
 def splitGBCom(x):
     '''
-    电脑内存的提取
+    电脑：电脑内存的提取
     '''
     # 内存 剔除：5G 7G 9G 3G 10G
     # 硬盘 保留：1000GB 160GB 500GB 256GB 128GB 512GB 120GB 320GB 250GB 64GB 192GB
@@ -244,28 +278,112 @@ def splitGBCom(x):
     return [memory, hard]
 
 
-read_path = r'D:\Data\other\JData\2-JData_train'
-save_path = r'D:\Data\other\JData\Analysis'
-file_name = 'train_sku_basic_info.csv'
+def splitBrand(x_list):
+    '''
+    手机壳：品牌提取
+    { 比例 } 手机壳:
+        苹果  :  4315
+        华为  :  1282
+          :  921
+        小米  :  747
+        三星  :  648
+        魅族  :  475
+        OPPO  :  286
+        vivo  :  196
+        多品牌  :  84
+        锤子  :  28
+    '''
+    x = x_list[0]
+    y = x_list[1]
+    brand_list = [u'iPhone', u'苹果', u'OPPO', u'华为', u'vivo', u'小米', u'三星', u'魅族', u'锤子']
+    str_list = []
+    for each in brand_list:
+        if (each in x) or (each in y) and (each not in str_list):
+            if each == u'iPhone':
+                str_list.append(u'苹果')
+            else:
+                str_list.append(each)
+    str_list = list(set(str_list))
+    if len(str_list) >= 2:
+        brand_str = u'多品牌'
+    elif len(str_list) == 1:
+        brand_str = str_list[0]
+    else:
+        brand_str = u''
+    return brand_str
+
+
+def splitShell(x):
+    '''
+    手机壳：是硬壳-软壳
+    { 比例 }
+              :  4597
+        软壳  :  3012
+        硬壳  :  1373
+    '''
+    shell_list = [u'硬壳', u'软壳']
+    str_list = []
+    for each in shell_list:
+        if each in x and each not in str_list:
+            str_list.append(each)
+    shell_str = u' '.join(str_list)
+    return shell_str
+
+
+def splitProThrow(x):
+    '''
+    手机壳：是否防摔
+    { 比例 }
+          :  4787
+        防摔  :  4195
+    '''
+    throw = u'防摔'
+    str_list = []
+    throw_str = u'防摔' if throw in x else u''
+    return throw_str
+
+
+def splitSingle(x, arr_str):
+    '''
+    手机膜：属性单一的变量提取
+    '''
+    arr_str = arr_str if arr_str in x else u''
+    return arr_str
+
+
+# read_path = r'D:\Data\other\JData\2-JData_train'
+# save_path = r'D:\Data\other\JData\Analysis'
+# file_name = 'train_sku_basic_info.csv'
+read_path = r'D:\Data\other\JData\Run'
+save_path = r'D:\Data\other\JData\Run\Results'
+file_name = 'cleaned_first_sales_df.csv'
+
+
+# item_sku_id_hashed,main_sku_id_hashed,sku_name,item_first_cate_cd,item_second_cate_cd,item_third_cate_cd,brand_code,barndname_cn,shelves_dt,colour,first_sale_date,first_field_keshou_date,first_real_keshou_date,total_7days_sales,sales_beyond0_days,field_keshou_days,real_keshou_days,avg_keshou_sales
 
 
 if __name__ == '__main__':
-    basic = pd.read_table(read_path + os.sep + file_name, encoding='gbk')
+    basic = pd.read_table(read_path + os.sep + file_name, encoding='gbk', sep=',')
+    # basic = pd.read_table(read_path + os.sep + file_name, encoding='gbk')
     cate3 = list(basic['item_third_cate_cd'].drop_duplicates().values)
 
-    # 【这里按照空格进行分割】
+    # 剔除 测试商品
+    # 字段：AAAAAA、XXXXX、***********、测试专用、测试商品、xxxxx、作废、验证
+    # sku：一共 23004 个，剔除 5 个
+    test = basic.loc[map(lambda x: splitTestItems(x), basic['sku_name'].values), :]
+
     # =============================================================
     # =                     655 手机
     # =============================================================
-    cate = cate3[0]
+    # 2713 个 sku
+    t1 = time.time()
+    cate = 655
     basic_tmp = basic[basic['item_third_cate_cd']==cate]
-    text_analysis = basic_tmp.loc[:,['sku_name']]
+    text_analysis = basic_tmp.copy()
     text_analysis.index = range(len(text_analysis))
-
     # 1、双卡双待
     kadai = u'双卡双待'
-    count_kadai = map(lambda x: 1 if kadai in x else 0, text_analysis['sku_name'].values)
-    text_analysis['kadai'] = count_kadai
+    text_analysis['kadai'] = map(lambda x: 1 if kadai in x else 0, text_analysis['sku_name'].values)
     # 2、移动、联通、电信、全网通
     text_analysis['phone_type'] = map(lambda x: splitPhone(x), text_analysis['sku_name'].values)
     # 3、颜色属性
@@ -275,78 +393,41 @@ if __name__ == '__main__':
     text_analysis['communication_G'] = map(lambda x: x[0], hard_memory)
     text_analysis['memory_GB'] = map(lambda x: x[1], hard_memory)
     text_analysis['hard_GB'] = map(lambda x: x[2], hard_memory)
-    # 5、最终提取结果
-    text_analysis.to_csv(save_path + os.sep + 'test.csv', index=False, encoding='gbk')
 
-    # # 统计结果的比例
-    # mm = Counter(text_analysis['kadai'])
-    # mm = Counter(text_analysis['phone_type'])
-    # mm = Counter(text_analysis['color'])
-    # mm = Counter(text_analysis['communication_G'])
-    # mm = Counter(text_analysis['memory_GB'])
-    # mm = Counter(text_analysis['hard_GB'])
-    # for key, v in sorted(mm.iteritems(), key=lambda x: x[1], reverse=True):
-    #     print key, ' : ', v
-
-
-    # 测试商品：AAAAAA、XXXXX、***********、测试、xxxxx、作废、验证
+    # 提取结果
+    text_analysis.to_csv(save_path + os.sep + 'sku_basic_info_655.csv', index=False, encoding='gbk')
+    printRunTime(t1, ' 655 手机 ')
 
 
     # =============================================================
     # =                     1049 电缆
     # =============================================================
-    cate = cate3[1]
+    # 5698 个 sku
+    t1 = time.time()
+    cate = 1049
     basic_tmp = basic[basic['item_third_cate_cd']==cate]
-    text_analysis = basic_tmp.loc[:,['sku_name']]
+    text_analysis = basic_tmp.copy()
     text_analysis.index = range(len(text_analysis))
-
     # 1、颜色提取
     text_analysis['color'] = map(lambda x: splitColor(x), text_analysis['sku_name'].values)
     text_analysis.to_csv(save_path + os.sep + 'test.csv', index=False, encoding='gbk')
     # 2、长度提取
     text_analysis['length'] = map(lambda x: splitLength(x), text_analysis['sku_name'].values)
 
-    # # 3、接口【8717个没有，不取】。USB【也是8000多个没有，不取】：结论 - 没有特征了
-    # def splitInter(x):
-    #     interface = [u'HDMI', u'VGA', u'HUB', u'DVI', u'AUX']
-    #     interface_str = u''
-    #     for each in interface:
-    #         interface_str = interface_str + u' ' + each if each in x else interface_str
-    #     return interface_str
-
-    # aa = Counter(map(lambda x: splitInter(x), text_analysis['sku_name'].values))
-    # aa_sort = sorted(aa.iteritems(), key=lambda x: x[1], reverse=True)
-    # for key, v in aa_sort:
-    #     print key, ' : ', v
+    # 提取结果
+    text_analysis.to_csv(save_path + os.sep + 'sku_basic_info_1049.csv', index=False, encoding='gbk')
+    printRunTime(t1, ' 1049 电缆 ')
 
 
     # =============================================================
     # =                     672 电脑
     # =============================================================
-    cate = cate3[2]
+    # 2068 个 sku
+    t1 = time.time()
+    cate = 672
     basic_tmp = basic[basic['item_third_cate_cd']==cate]
-    text_analysis = basic_tmp.loc[:,['sku_name']]
+    text_analysis = basic_tmp.copy()
     text_analysis.index = range(len(text_analysis))
-
-    text_analysis.to_csv(save_path + os.sep + 'test.csv', index=False, encoding='gbk')
-
-    # 统计词频，找特征。
-    # aa = Counter(reduce(lambda x,y: x+y,map(lambda x: jieba.lcut(x), text_analysis['sku_name'].values)))
-    # # aa = Counter(reduce(lambda x,y: x+y,map(lambda x: x.split(' '), text_analysis['sku_name'].values)))
-    # aa_sort = sorted(aa.iteritems(), key=lambda x: x[1], reverse=True)
-    # aa_pd = pd.DataFrame.from_dict(aa_sort)
-    # # aa_pd.to_csv(save_path + os.sep + 'test.csv', index=False, encoding='gbk')
-    # aa_pd.to_csv(save_path + os.sep + 'test_jieba.csv', index=False, encoding='gbk')
-    # for key, v in aa_sort:
-    #     print key, ' : ', v
-
-    # 统计
-    # aa_sorted = sorted(Counter(map(lambda x: splitColor(x), text_analysis['sku_name'].values)).iteritems(), key=lambda x:x[1], reverse=True)
-    # aa_sorted = sorted(Counter(map(lambda x: splitSize(x), text_analysis['sku_name'].values)).iteritems(), key=lambda x:x[1], reverse=True)
-    # aa_sorted = sorted(Counter(map(lambda x: splitIDai(x), text_analysis['sku_name'].values)).iteritems(), key=lambda x:x[1], reverse=True)
-    # for key, v in aa_sorted:
-    #     print key, ' : ', v
-
     # 1、颜色
     text_analysis['color'] = map(lambda x: splitColor(x), text_analysis['sku_name'].values)
     # 2、尺寸
@@ -360,15 +441,97 @@ if __name__ == '__main__':
     text_analysis['memory_GB'] = map(lambda x: x[0], hard_memory)
     text_analysis['hard_GB'] = map(lambda x: x[1], hard_memory)
 
+    # 提取结果
+    text_analysis.to_csv(save_path + os.sep + 'sku_basic_info_672.csv', index=False, encoding='gbk')
+    printRunTime(t1, ' 672 电脑 ')
+
+    # =============================================================
+    # =                     866 手机壳
+    # =============================================================
+    # 8982 个 sku
+    t1 = time.time()
+    cate = 866
+    basic_tmp = basic[basic['item_third_cate_cd']==cate]
+    text_analysis = basic_tmp.copy()
+    text_analysis.index = range(len(text_analysis))
+    # 1、牌子  iPhone  苹果  OPPO  华为  vivo  小米  三星  魅族
+    # 【逻辑】：先是sku_name、或者brand里面包含上面品牌
+    text_analysis['brand'] = map(lambda x: splitBrand(x), text_analysis.loc[:,['sku_name', 'barndname_cn']].values)
+    # 2、颜色
+    text_analysis['color'] = map(lambda x: splitColor(x), text_analysis['sku_name'].values)
+    # 3、硬壳 - 软壳
+    text_analysis['shell'] = map(lambda x: splitShell(x), text_analysis['sku_name'].values)
+    # 4、防摔
+    text_analysis['proThrow'] = map(lambda x: splitProThrow(x), text_analysis['sku_name'].values)
+
+    # 提取结果
+    text_analysis.to_csv(save_path + os.sep + 'sku_basic_info_866.csv', index=False, encoding='gbk')
+    printRunTime(t1, ' 866 手机壳 ')
 
 
+    # =============================================================
+    # =                     867 手机膜
+    # =============================================================
+    # 3543 个 sku
+    t1 = time.time()
+    cate = 867
+    basic_tmp = basic[basic['item_third_cate_cd']==cate]
+    text_analysis = basic_tmp.copy()
+    text_analysis.index = range(len(text_analysis))
+    # 1、钢化
+    arr_str = u'钢化'
+    text_analysis['steel'] = map(lambda x: splitSingle(x, arr_str), text_analysis['sku_name'].values)
+    # 2、玻璃
+    arr_str = u'玻璃'
+    text_analysis['glass'] = map(lambda x: splitSingle(x, arr_str), text_analysis['sku_name'].values)
+    # 3、防爆
+    arr_str = u'防爆'
+    text_analysis['crack'] = map(lambda x: splitSingle(x, arr_str), text_analysis['sku_name'].values)
+    # 4、高清
+    arr_str = u'高清'
+    text_analysis['highDefine'] = map(lambda x: splitSingle(x, arr_str), text_analysis['sku_name'].values)
+    # 5、蓝光
+    arr_str = u'蓝光'
+    text_analysis['blue'] = map(lambda x: splitSingle(x, arr_str), text_analysis['sku_name'].values)
+    # 6、3D
+    arr_str = u'3D'
+    text_analysis['3D'] = map(lambda x: splitSingle(x, arr_str), text_analysis['sku_name'].values)
+    # 7、颜色
+    text_analysis['color'] = map(lambda x: splitColor(x), text_analysis['sku_name'].values)
+    # 8、品牌
+    text_analysis['brand'] = map(lambda x: splitBrand(x), text_analysis.loc[:,['sku_name', 'barndname_cn']].values)
+
+    # 提取结果
+    text_analysis.to_csv(save_path + os.sep + 'sku_basic_info_867.csv', index=False, encoding='gbk')
+    printRunTime(t1, ' 867 手机膜 ')
 
 
+    print 'Task have been Finished !! '
 
 
+    # # 1、输出 分词统计 观测
+    # aa = Counter(reduce(lambda x,y: x+y,map(lambda x: jieba.lcut(x), text_analysis['sku_name'].values)))
+    # aa = Counter(reduce(lambda x,y: x+y,map(lambda x: x.split(' '), text_analysis['sku_name'].values)))
+    # aa_sort = sorted(aa.iteritems(), key=lambda x: x[1], reverse=True)
+    # aa_pd = pd.DataFrame.from_dict(aa_sort)
+    # aa_pd.to_csv(save_path + os.sep + 'test.csv', index=False, encoding='gbk')
+    # aa_pd.to_csv(save_path + os.sep + 'test_jieba.csv', index=False, encoding='gbk')
+
+    # # 2、统计
+    # aa_sorted = sorted(Counter(map(lambda x: splitColor(x), text_analysis['sku_name'].values)).iteritems(), key=lambda x:x[1], reverse=True)
+    # for key, v in aa_sorted:
+    #     print key, ' : ', v
+
+    # 金 白 黑 银 灰 蓝 粉 红 绿 紫 橙 黄 青(锖) 棕(卡其色 咖啡色)
 
 
+    # # 3、剔除异常
+    # yichang = text_analysis.loc[map(lambda x: splitShell(x), text_analysis['sku_name'].values),:]
 
+
+    # ==================================================================
+    # =                         其他结论
+    # ==================================================================
     # 检验：
     # 1、'item_desc' 是个没什么用的字段
     # basic_used_count = Counter(basic['item_desc'])
