@@ -552,13 +552,14 @@ if __name__ == '__main__':
 
     # app.fdc_predict_forecast_result
     pass
-    def transforVar(df, column_name):
-        values_name = df[column_name].drop_duplicates()
-        int_str = map(lambda x: str(x),range(20))
-        categories = {}
-        for i, each in enumerate(values_name):
-            categories[int_str[i]] = each
-        df[column_name] = df[column_name].applymap(categories.get)
-        return df
+    def transforVar(df_list, column_name):
+        for df in df_list:
+            values_name = df.loc[:, [column_name]].drop_duplicates()
+            int_str = map(lambda x: str(x),range(20))
+            categories = {}
+            for i, each in enumerate(values_name):
+                categories[each] = int_str[i]
+            df[column_name] = df[column_name].applymap(categories.get)
+        return df_list
 
 
