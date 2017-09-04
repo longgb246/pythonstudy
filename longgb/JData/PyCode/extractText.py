@@ -1,4 +1,17 @@
 #-*- coding:utf-8 -*-
+#===============================================================================
+#
+#         FILE: extractText.py
+#
+#  DESCRIPTION: 用于提取文本信息
+#      OPTIONS: ---
+# REQUIREMENTS: ---
+#        NOTES: ---
+#       AUTHOR: lgb453476610@163.com
+#      COMPANY: self
+#      VERSION: 1.0
+#      CREATED: 2017-09-04
+#===============================================================================
 import os
 import numpy as np
 import pandas as pd
