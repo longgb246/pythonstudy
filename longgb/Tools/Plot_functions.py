@@ -4,8 +4,9 @@
 # 1.1 需要引入的包
 import numpy as np
 import matplotlib.pyplot as plt
+from string import Template
 # 1.2 主函数
-def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_path='', cum_True=True, size=(12,8), is_int=True, is_drop_zero=False, is_show=True):
+def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_path='', cum_True=True, size=(12, 8), detail=0, is_drop_zero=False, is_show=True):
     '''
     画hist的百分比图，指定bins
     :param data: pd.DataFrame 单列数据
@@ -25,12 +26,11 @@ def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_p
     if binsn == []:
         ret = plt.hist(plot_data, label='Z', color='#0070C0', histtype='bar', rwidth=0.6)
     else:
-        ret = plt.hist(plot_data, bins=binsn, label='Z', color='#0070C0',histtype='bar', rwidth=0.6)
+        ret = plt.hist(plot_data, bins=binsn, label='Z', color='#0070C0', histtype='bar', rwidth=0.6)
     plt.close()
     counts, bins, patches = ret[0], ret[1], ret[2]
-    if is_int:
-        bins = map(lambda x: int(x) if (x != -np.inf) and (x != np.inf) and (x != np.nan) else x,bins)
-    bins_name = ["["+str(bins[i])+","+str(bins[i+1])+")" for i in range(len(bins)-1)]
+    detail_method = Template("[{0:.${detail}f},{1:.${detail}f})")
+    bins_name = [detail_method.substitute(detail=detail).format(bins[i], bins[i + 1]) for i in range(len(bins) - 1)]
     if is_drop_zero:
         tmp_counts = []
         tmp_bins_name = []
@@ -46,15 +46,15 @@ def plotHistPer(plot_data, binsn=[], xlabeln='x', ylabeln='y', titlen='', save_p
     ax1.set_ylabel(ylabeln)
     width = 0.5
     width2 = 0
-    ax1.bar(ind + width2, counts, width, color="#0070C0", tick_label=bins_name, align='center', alpha=0.6)
-    counts_per = counts/np.sum(counts)
+    ax1.bar(ind + width2, counts, width, color="#0070C0", tick_label=bins_name, align='center', alpha=0.8)
+    counts_per = counts / np.sum(counts)
     counts_per_cum = np.cumsum(counts_per)
     i = 0
     ymin, ymax = plt.ylim()
     ax1.set_ylim(ymin - ymax * 0.05, ymax * 1.05)
     # ax1.set_xlim(-1, len(bins_name)+1)
     for x, y in zip(ind, counts):
-        ax1.text(x + width2, y + 0.05, '{0:.2f}%'.format(counts_per[i]*100), ha='center', va='bottom')
+        ax1.text(x + width2, y + 0.05, '{0:.2f}%'.format(counts_per[i] * 100), ha='center', va='bottom')
         i += 1
     plt.title(titlen)
     if cum_True:
