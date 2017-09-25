@@ -5,6 +5,7 @@ import jieba
 import re
 import numpy as np
 import json
+from collections import Counter
 
 
 # -----------------------------------------------------
@@ -56,7 +57,7 @@ def tagWords(x):
 
 
 # -----------------------------------------------------
-# --    计算初始矩阵
+# --    计算初始状态矩阵 InitStatus
 # -----------------------------------------------------
 def countSB(y):
     '''
@@ -111,9 +112,80 @@ def calInitStatus():
         json.dump(InitStatus, f)
 
 
-if __name__ == '__main__':
+# -----------------------------------------------------
+# --    计算状态转移矩阵 TransProbMatrix
+# -----------------------------------------------------
+def splitBySlash(y):
+    '''
+    按照斜线分割
+    '''
+    y_list = y.split('/')
+    if len(y_list) <= 1:
+        return ''
+    else:
+        return y_list[1]
 
+
+def splitByTab(x):
+    '''
+    按照tab分割
+    '''
+    x_list = x.split('\t')
+    statusSeries = reduce(lambda n,m: n+m, map(lambda y: splitBySlash(y), x_list))
+    return statusSeries
+
+
+if __name__ == '__main__':
+    TransProbMatrix = {}
+    # 'S B M E'
+    # S -> S B M E
+    #      a a 0 0
+    # B -> S B M E
+    #      0 0 a a
+    # M -> S B M E
+    #      0 0 a a
+    # E -> S B M E
+    #      a a 0 0
+    # cal S
+    read_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
+    save_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
+    with open(read_path + os.sep + 'corpus_luowei_novel.txt', 'r') as f:
+        content = f.readlines()
+        statusSeries = reduce(lambda n,m: n+m, map(lambda x: splitByTab(x), content))   # 耗时
+        statusSeries_com = [statusSeries[i]+statusSeries[i+1] for i in range(len(statusSeries)-1)]
+        statusSeries_comCount = Counter(statusSeries_com)
+        # S -> S B M E
+        TransProbMatrix_S = {}
+        TransProbMatrix_S['S'] = statusSeries_comCount['SS']
+        TransProbMatrix_S['B'] = statusSeries_comCount['SB']
+        TransProbMatrix_S['M'] = -3.14e+100
+        TransProbMatrix_S['E'] = -3.14e+100
+        TransProbMatrix['S'] = TransProbMatrix_S
+        # B -> S B M E
+        TransProbMatrix_B = {}
+        TransProbMatrix_B['S'] = -3.14e+100
+        TransProbMatrix_B['B'] = -3.14e+100
+        TransProbMatrix_B['M'] = statusSeries_comCount['BM']
+        TransProbMatrix_B['E'] = statusSeries_comCount['BE']
+        TransProbMatrix['B'] = TransProbMatrix_B
+        # M -> S B M E
+        TransProbMatrix_M = {}
+        TransProbMatrix_M['S'] = -3.14e+100
+        TransProbMatrix_M['B'] = -3.14e+100
+        TransProbMatrix_M['M'] = statusSeries_comCount['MM']
+        TransProbMatrix_M['E'] = statusSeries_comCount['ME']
+        TransProbMatrix['M'] = TransProbMatrix_M
+        # E -> S B M E
+        TransProbMatrix_E = {}
+        TransProbMatrix_E['S'] = statusSeries_comCount['ES']
+        TransProbMatrix_E['B'] = statusSeries_comCount['EB']
+        TransProbMatrix_E['M'] = -3.14e+100
+        TransProbMatrix_E['E'] = -3.14e+100
+        TransProbMatrix['E'] = TransProbMatrix_E
+    with open(save_path + os.sep + 'TransProbMatrix.json', 'w') as f:
+        json.dump(TransProbMatrix, f)
 
     # with open(read_path + os.sep + 'InitStatus.json', 'r') as f:
     #     InitStatus2 = json.load(f)
     pass
+
