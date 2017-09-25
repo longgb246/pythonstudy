@@ -113,7 +113,7 @@ def calInitStatus():
 
 
 # -----------------------------------------------------
-# --    计算状态转移矩阵 TransProbMatrix
+# --    计算转移概率矩阵 TransProbMatrix
 # -----------------------------------------------------
 def splitBySlash(y):
     '''
@@ -135,7 +135,10 @@ def splitByTab(x):
     return statusSeries
 
 
-if __name__ == '__main__':
+def calTransProbMatrix():
+    '''
+    计算状态转移矩阵
+    '''
     TransProbMatrix = {}
     # 'S B M E'
     # S -> S B M E
@@ -156,8 +159,8 @@ if __name__ == '__main__':
         statusSeries_comCount = Counter(statusSeries_com)
         # S -> S B M E
         TransProbMatrix_S = {}
-        TransProbMatrix_S['S'] = statusSeries_comCount['SS']
-        TransProbMatrix_S['B'] = statusSeries_comCount['SB']
+        TransProbMatrix_S['S'] = np.log(statusSeries_comCount['SS']/(statusSeries_comCount['SS']+statusSeries_comCount['SB']))
+        TransProbMatrix_S['B'] = np.log(statusSeries_comCount['SB']/(statusSeries_comCount['SS']+statusSeries_comCount['SB']))
         TransProbMatrix_S['M'] = -3.14e+100
         TransProbMatrix_S['E'] = -3.14e+100
         TransProbMatrix['S'] = TransProbMatrix_S
@@ -165,25 +168,35 @@ if __name__ == '__main__':
         TransProbMatrix_B = {}
         TransProbMatrix_B['S'] = -3.14e+100
         TransProbMatrix_B['B'] = -3.14e+100
-        TransProbMatrix_B['M'] = statusSeries_comCount['BM']
-        TransProbMatrix_B['E'] = statusSeries_comCount['BE']
+        TransProbMatrix_B['M'] = np.log(statusSeries_comCount['BM']/(statusSeries_comCount['BM']+statusSeries_comCount['BE']))
+        TransProbMatrix_B['E'] = np.log(statusSeries_comCount['BE']/(statusSeries_comCount['BM']+statusSeries_comCount['BE']))
         TransProbMatrix['B'] = TransProbMatrix_B
         # M -> S B M E
         TransProbMatrix_M = {}
         TransProbMatrix_M['S'] = -3.14e+100
         TransProbMatrix_M['B'] = -3.14e+100
-        TransProbMatrix_M['M'] = statusSeries_comCount['MM']
-        TransProbMatrix_M['E'] = statusSeries_comCount['ME']
+        TransProbMatrix_M['M'] = np.log(statusSeries_comCount['MM']/(statusSeries_comCount['MM']+statusSeries_comCount['ME']))
+        TransProbMatrix_M['E'] = np.log(statusSeries_comCount['ME']/(statusSeries_comCount['MM']+statusSeries_comCount['ME']))
         TransProbMatrix['M'] = TransProbMatrix_M
         # E -> S B M E
         TransProbMatrix_E = {}
-        TransProbMatrix_E['S'] = statusSeries_comCount['ES']
-        TransProbMatrix_E['B'] = statusSeries_comCount['EB']
+        TransProbMatrix_E['S'] = np.log(statusSeries_comCount['ES']/(statusSeries_comCount['ES']+statusSeries_comCount['EB']))
+        TransProbMatrix_E['B'] = np.log(statusSeries_comCount['EB']/(statusSeries_comCount['ES']+statusSeries_comCount['EB']))
         TransProbMatrix_E['M'] = -3.14e+100
         TransProbMatrix_E['E'] = -3.14e+100
         TransProbMatrix['E'] = TransProbMatrix_E
     with open(save_path + os.sep + 'TransProbMatrix.json', 'w') as f:
         json.dump(TransProbMatrix, f)
+
+
+# -----------------------------------------------------
+# --    计算发射概率矩阵 EmitProbMatrix
+# -----------------------------------------------------
+
+
+
+if __name__ == '__main__':
+
 
     # with open(read_path + os.sep + 'InitStatus.json', 'r') as f:
     #     InitStatus2 = json.load(f)
