@@ -6,6 +6,7 @@ import re
 import numpy as np
 import json
 from collections import Counter
+from collections import defaultdict
 
 
 # -----------------------------------------------------
@@ -115,7 +116,7 @@ def calInitStatus():
 # -----------------------------------------------------
 # --    计算转移概率矩阵 TransProbMatrix
 # -----------------------------------------------------
-def splitBySlash(y):
+def splitBySlashTrans(y):
     '''
     按照斜线分割
     '''
@@ -126,12 +127,12 @@ def splitBySlash(y):
         return y_list[1]
 
 
-def splitByTab(x):
+def splitByTabTrans(x):
     '''
     按照tab分割
     '''
     x_list = x.split('\t')
-    statusSeries = reduce(lambda n,m: n+m, map(lambda y: splitBySlash(y), x_list))
+    statusSeries = reduce(lambda n,m: n+m, map(lambda y: splitBySlashTrans(y), x_list))
     return statusSeries
 
 
@@ -154,7 +155,8 @@ def calTransProbMatrix():
     save_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
     with open(read_path + os.sep + 'corpus_luowei_novel.txt', 'r') as f:
         content = f.readlines()
-        statusSeries = reduce(lambda n,m: n+m, map(lambda x: splitByTab(x), content))   # 耗时
+        print 'Start cal TransProbMatrix ...'
+        statusSeries = reduce(lambda n,m: n+m, map(lambda x: splitByTabTrans(x), content))   # 耗时
         statusSeries_com = [statusSeries[i]+statusSeries[i+1] for i in range(len(statusSeries)-1)]
         statusSeries_comCount = Counter(statusSeries_com)
         # S -> S B M E
@@ -192,11 +194,53 @@ def calTransProbMatrix():
 # -----------------------------------------------------
 # --    计算发射概率矩阵 EmitProbMatrix
 # -----------------------------------------------------
+def splitBySlashEmit(y):
+    '''
+    按照斜线分割
+    '''
+    y_list = y.split('/')
+    if len(y_list) <= 1:
+        return ['','']
+    else:
+        return y_list
 
+
+def splitByTabEmit(x):
+    '''
+    按照tab分割
+    '''
+    x_list = x.split('\t')
+    wordsSeries, statusSeries = reduce(lambda n,m: [n[0]+m[0], n[1]+m[1]], map(lambda y: splitBySlashEmit(y), x_list))
+    return wordsSeries, statusSeries
+
+
+def calEmitProbMatrix():
+    read_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
+    save_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
+    EmitProbMatrix = defaultdict(lambda :defaultdict(int))
+    with open(read_path + os.sep + 'corpus_luowei_novel.txt') as f:
+        content = f.readlines()
+        wordsSeries, statusSeries = reduce(lambda n,m: [n[0]+m[0], n[1]+m[1]], map(lambda x: splitByTabEmit(x.decode('utf-8')), content))
+        for status in list('SBME'):
+            print 'status : ', status
+            thisWordsSeries = []
+            for i, thisStatus in enumerate(statusSeries):
+                if thisStatus == status:
+                    thisWordsSeries.append(wordsSeries[i])
+            wordsSeriesCount = Counter(thisWordsSeries)
+            wordsSeriesCountAll = np.sum(wordsSeriesCount.values())
+            wordsSeriesCountLog = dict(map(lambda x: (x[0], np.log(x[1]/wordsSeriesCountAll)),wordsSeriesCount.iteritems()))
+            EmitProbMatrix[status] = wordsSeriesCountLog
+    with open(save_path + os.sep + 'EmitProbMatrix.json', 'w') as f:
+        json.dump(EmitProbMatrix, f)
+    # with open(read_path + os.sep + 'EmitProbMatrix.json', 'r') as f:
+    #     EmitProbMatrix2 = json.load(f)
+
+
+epsilon = -3.14e+100
 
 
 if __name__ == '__main__':
-
 
     # with open(read_path + os.sep + 'InitStatus.json', 'r') as f:
     #     InitStatus2 = json.load(f)
