@@ -240,6 +240,13 @@ def calEmitProbMatrix():
 epsilon = -3.14e+100
 
 
+class HMMLgb():
+    def __init__(self):
+        self.read_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
+        self.save_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
+        pass
+
+
 if __name__ == '__main__':
 
     # with open(read_path + os.sep + 'InitStatus.json', 'r') as f:
