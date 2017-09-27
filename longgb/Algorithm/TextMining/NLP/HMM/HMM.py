@@ -242,12 +242,121 @@ epsilon = -3.14e+100
 
 class HMMLgb():
     def __init__(self):
+        '''
+        初始化得到 InitStatus，TransProbMatrix，EmitProbMatrix 矩阵
+        '''
         self.read_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
         self.save_path = r'D:\Work\Codes\pythonstudy\longgb\Algorithm\TextMining\Data\corpus'
-        pass
+        self.InitStatus = self.__loadData('InitStatus.json')
+        self.TransProbMatrix = self.__loadData('TransProbMatrix.json')
+        self.EmitProbMatrix = self.__loadData('EmitProbMatrix.json')
+        self.statusOrder = list('SBME')
+        self.epsilon = -3.14e+100
+
+    def __loadData(self, file):
+        '''
+        读取json文件，读取相应的矩阵信息
+        '''
+        with open(self.read_path + os.sep + file, 'r') as f:
+            data = json.load(f)
+        return data
+
+    def __viterbi(self):
+        '''
+        viterbi算法
+        '''
+        # S B M E
+        self.wordWeight = [[self.epsilon]*self.lenWords for x in range(4)]
+        self.wordPath = [[0]*self.lenWords for x in range(4)]
+        # 初始化 weight 矩阵
+        for i, each in enumerate(self.statusOrder):
+            self.wordWeight[i][0] = self.InitStatus[each]
+        # 1.遍历单词
+        for i in range(1, self.lenWords):
+            # 2.遍历当前状态
+            for j in range(4):
+                # 3.遍历前一个状态
+                for k in range(4):
+                    try:
+                        calEmitProbMatrix = self.EmitProbMatrix[self.statusOrder[j]][self.words[i]]
+                    except:
+                        calEmitProbMatrix = 0
+                    calTransProbMatrix = self.TransProbMatrix[self.statusOrder[k]][self.statusOrder[j]]
+                    tmp = self.wordWeight[k][i-1] + calTransProbMatrix + calEmitProbMatrix
+                    if tmp > self.wordWeight[j][i]:
+                        self.wordWeight[j][i] = tmp
+                        self.wordPath[j][i] = k
+        # 找到开始序列
+        startValue = 0
+        maxValue = self.wordWeight[0][self.lenWords-1]
+        for i in range(4):
+            if self.wordWeight[i][self.lenWords-1] > maxValue:
+                maxValue = self.wordWeight[i][self.lenWords-1]
+                startValue = i
+        statusSeries = [self.statusOrder[startValue]]
+        # 得到状态序列
+        nextValue = startValue
+        for i in range(1, self.lenWords-1)[::-1]:
+            statusSeries.append(self.statusOrder[nextValue])
+            nextValue = self.wordPath[nextValue][i]
+        statusSeries.append(self.statusOrder[nextValue])
+        statusSeries = statusSeries[::-1]
+        self.statusSeries = ''.join(statusSeries)
+        self.__splitWords()
+
+    def __splitWords(self):
+        '''
+        拆分字串
+        '''
+        # 拆分
+        headIndex = 0
+        splitWordsCut = []
+        for i in range(len(self.statusSeries)):
+            if self.statusSeries[headIndex] == 'B' and self.statusSeries[i] == 'E':
+                thisSplitWordsCut = self.words[headIndex:(i+1)]
+                splitWordsCut.append(thisSplitWordsCut)
+                if i < (self.lenWords-1):
+                    headIndex = i+1
+            elif self.statusSeries[headIndex] == 'S' and self.statusSeries[i] == 'S':
+                thisSplitWordsCut = self.words[headIndex:(i+1)]
+                splitWordsCut.append(thisSplitWordsCut)
+                if i < (self.lenWords-1):
+                    headIndex = i+1
+            elif self.statusSeries[headIndex] == 'E' and self.statusSeries[i] == 'E':
+                thisSplitWordsCut = self.words[headIndex:(i+1)]
+                splitWordsCut.append(thisSplitWordsCut)
+                if i < (self.lenWords-1):
+                    headIndex = i+1
+            elif self.statusSeries[headIndex] == 'M' and self.statusSeries[i] == 'E':
+                thisSplitWordsCut = self.words[headIndex:(i+1)]
+                splitWordsCut.append(thisSplitWordsCut)
+                if i < (self.lenWords-1):
+                    headIndex = i+1
+        self.splitWordsCut = splitWordsCut
+
+    def lcut(self, words):
+        '''
+        分词
+        '''
+        self.words = words
+        self.lenWords = len(self.words)
+        if self.lenWords <= 1:
+            self.splitWordsCut = self.words
+            return self.words
+        else:
+            self.__viterbi()
+            # print self.words
+            # print self.statusSeries
+            return self.splitWordsCut
 
 
 if __name__ == '__main__':
+    HMMLgbIns = HMMLgb()
+    words = u'我这是一个测试事件。'
+    aa = HMMLgbIns.lcut(words)
+
+    for each in aa:
+        print each
 
     # with open(read_path + os.sep + 'InitStatus.json', 'r') as f:
     #     InitStatus2 = json.load(f)
