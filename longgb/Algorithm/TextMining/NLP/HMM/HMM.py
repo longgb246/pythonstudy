@@ -280,7 +280,7 @@ class HMMLgb():
                     try:
                         calEmitProbMatrix = self.EmitProbMatrix[self.statusOrder[j]][self.words[i]]
                     except:
-                        calEmitProbMatrix = 0
+                        calEmitProbMatrix = -1.6
                     calTransProbMatrix = self.TransProbMatrix[self.statusOrder[k]][self.statusOrder[j]]
                     tmp = self.wordWeight[k][i-1] + calTransProbMatrix + calEmitProbMatrix
                     if tmp > self.wordWeight[j][i]:
@@ -312,26 +312,42 @@ class HMMLgb():
         headIndex = 0
         splitWordsCut = []
         for i in range(len(self.statusSeries)):
-            if self.statusSeries[headIndex] == 'B' and self.statusSeries[i] == 'E':
+            thisSplitWordsCut = []
+            # 当前结束情况
+            situation1 = self.statusSeries[headIndex] == 'S' and self.statusSeries[i] == 'S'
+            situation7 = self.statusSeries[headIndex] == 'B' and self.statusSeries[i] == 'E'
+            # 下一个结束情况
+            situation2 = self.statusSeries[headIndex] == 'S' and self.statusSeries[i] == 'B'
+            situation3 = self.statusSeries[headIndex] == 'S' and self.statusSeries[i] == 'E'
+            situation4 = self.statusSeries[headIndex] == 'S' and self.statusSeries[i] == 'M'
+
+            situation5 = self.statusSeries[headIndex] == 'B' and self.statusSeries[i] == 'S'
+            situation6 = self.statusSeries[headIndex] == 'B' and self.statusSeries[i] == 'B' and headIndex!=i
+
+            situation8 = self.statusSeries[headIndex] == 'E' and self.statusSeries[i] == 'S'
+            situation9 = self.statusSeries[headIndex] == 'E' and self.statusSeries[i] == 'B'
+            situation10 = self.statusSeries[headIndex] == 'E' and self.statusSeries[i] == 'E' and headIndex!=i
+            situation11 = self.statusSeries[headIndex] == 'E' and self.statusSeries[i] == 'M'
+
+            situation12 = self.statusSeries[headIndex] == 'M' and self.statusSeries[i] == 'S'
+            situation13 = self.statusSeries[headIndex] == 'M' and self.statusSeries[i] == 'B'
+
+            if situation1 or situation7:
                 thisSplitWordsCut = self.words[headIndex:(i+1)]
                 splitWordsCut.append(thisSplitWordsCut)
                 if i < (self.lenWords-1):
                     headIndex = i+1
-            elif self.statusSeries[headIndex] == 'S' and self.statusSeries[i] == 'S':
-                thisSplitWordsCut = self.words[headIndex:(i+1)]
+            elif situation2 or situation4 or situation5 or situation6 or situation3 \
+                    or situation8 or situation9 or situation10 or situation11 or situation12 or situation13:
+                thisSplitWordsCut = self.words[headIndex:i]
                 splitWordsCut.append(thisSplitWordsCut)
-                if i < (self.lenWords-1):
-                    headIndex = i+1
-            elif self.statusSeries[headIndex] == 'E' and self.statusSeries[i] == 'E':
-                thisSplitWordsCut = self.words[headIndex:(i+1)]
-                splitWordsCut.append(thisSplitWordsCut)
-                if i < (self.lenWords-1):
-                    headIndex = i+1
-            elif self.statusSeries[headIndex] == 'M' and self.statusSeries[i] == 'E':
-                thisSplitWordsCut = self.words[headIndex:(i+1)]
-                splitWordsCut.append(thisSplitWordsCut)
-                if i < (self.lenWords-1):
-                    headIndex = i+1
+                headIndex = i
+                if headIndex == (len(self.statusSeries)-1):
+                    thisSplitWordsCut = self.words[headIndex:]
+                    splitWordsCut.append(thisSplitWordsCut)
+            if i == (len(self.statusSeries)-1) and thisSplitWordsCut==[]:
+                    thisSplitWordsCut = self.words[headIndex:]
+                    splitWordsCut.append(thisSplitWordsCut)
         self.splitWordsCut = splitWordsCut
 
     def lcut(self, words):
@@ -353,12 +369,11 @@ class HMMLgb():
 if __name__ == '__main__':
     HMMLgbIns = HMMLgb()
     words = u'我这是一个测试事件。'
-    aa = HMMLgbIns.lcut(words)
+    words = u'许多物品是从RDC出库的。'
+    words = u'我这是一个测试事件。'
 
+    aa = HMMLgbIns.lcut(words)
     for each in aa:
         print each
-
-    # with open(read_path + os.sep + 'InitStatus.json', 'r') as f:
-    #     InitStatus2 = json.load(f)
-    pass
+    # HMMLgbIns.statusSeries
 
