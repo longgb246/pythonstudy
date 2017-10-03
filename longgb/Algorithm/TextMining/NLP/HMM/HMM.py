@@ -240,6 +240,9 @@ def calEmitProbMatrix():
 epsilon = -3.14e+100
 
 
+# -----------------------------------------------------
+# --    中文分词的类
+# -----------------------------------------------------
 class HMMLgb():
     def __init__(self):
         '''
@@ -368,8 +371,6 @@ class HMMLgb():
 
 if __name__ == '__main__':
     HMMLgbIns = HMMLgb()
-    words = u'我这是一个测试事件。'
-    words = u'许多物品是从RDC出库的。'
     words = u'我这是一个测试事件。'
 
     aa = HMMLgbIns.lcut(words)
