@@ -2,6 +2,23 @@
 import numpy as np
 import csv
 import Levenshtein
+import time
+import numpy as np
+
+def printRunTime(t1, name=""):
+  d = time.time() - t1
+  min_d = np.floor(d / 60)
+  sec_d = d % 60
+  hor_d = np.floor(min_d / 60)
+  if name != "":
+    name = " ( " + name + " )"
+  if hor_d >0:
+    print '[ Run Time{3} ] is : {2} hours {0} min {1:.4f} s'.format(min_d, sec_d, hor_d, name)
+  else:
+    print '[ Run Time{2} ] is : {0} min {1:.4f} s'.format(min_d, sec_d, name)
+
+t1 = time.time()
+
 def is_chinese(uchar):         
   if u'\u4e00' <= uchar<=u'\u9fff':
     return True
@@ -37,8 +54,10 @@ def sameColor(testColor,color):
     return False
 
 
-data=np.genfromtxt("best_selling_predicting_model/input/traindata",delimiter='\t',dtype=np.str)
-dataTest=np.genfromtxt("best_selling_predicting_model/input/predictdata",delimiter='\t',dtype=np.str)
+# data=np.genfromtxt("best_selling_predicting_model/input/traindata",delimiter='\t',dtype=np.str)
+data=np.genfromtxt("input/traindata",delimiter='\t',dtype=np.str)
+# dataTest=np.genfromtxt("best_selling_predicting_model/input/predictdata",delimiter='\t',dtype=np.str)
+dataTest=np.genfromtxt("input/predictdata",delimiter='\t',dtype=np.str)
 
 contents=[]
 for i in range(len(dataTest)):
@@ -76,8 +95,10 @@ for i in range(len(dataTest)):
     contents.append([dataTest[i,0],dataTest[i,1],itemtypeTest,np.median(sales)])
 
 
-pred=np.genfromtxt("common_predicting_model/machine_learning_model/output/final.csv",delimiter=',',dtype=np.str)
-csvfile = file('best_selling_predicting_model/output/final1.csv', 'wb')
+# pred=np.genfromtxt("output/final.csv",delimiter=',',dtype=np.str)
+pred=np.genfromtxt("../common_predicting_model/machine_learning_model/output/final.csv",delimiter=',',dtype=np.str)
+# csvfile = file('best_selling_predicting_model/output/final1.csv', 'wb')
+csvfile = file('output/final1.csv', 'wb')
 writer = csv.writer(csvfile)
 writer.writerow(['SKU_ID', 'forecast_daily_avg_sale'])
 #更新预测值
@@ -95,4 +116,4 @@ for i in range(len(contents)):
 
 writer.writerows(pred)
 csvfile.close()
-
+printRunTime(t1)

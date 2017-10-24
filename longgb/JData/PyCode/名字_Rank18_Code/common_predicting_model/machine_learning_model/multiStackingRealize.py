@@ -8,6 +8,24 @@ from sklearn.model_selection import KFold
 import xgboost as xgb
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
+import time
+import numpy as np
+
+def printRunTime(t1, name=""):
+    d = time.time() - t1
+    min_d = np.floor(d / 60)
+    sec_d = d % 60
+    hor_d = np.floor(min_d / 60)
+    if name != "":
+        name = " ( " + name + " )"
+    if hor_d >0:
+        print '[ Run Time{3} ] is : {2} hours {0} min {1:.4f} s'.format(min_d, sec_d, hor_d, name)
+    else:
+        print '[ Run Time{2} ] is : {0} min {1:.4f} s'.format(min_d, sec_d, name)
+
+t1 = time.time()
+
+
 clfs=[
     GradientBoostingRegressor(
       loss='huber'
@@ -29,11 +47,13 @@ clfs=[
     RandomForestRegressor(),
     ExtraTreesRegressor(),
 ]
-data=np.genfromtxt("common_predicting_model/words_embedding_features/output/f1_trainset.data",delimiter='\t',dtype=np.float32)
+# data=np.genfromtxt("common_predicting_model/words_embedding_features/output/f1_trainset.data",delimiter='\t',dtype=np.float32)
+data=np.genfromtxt("../words_embedding_features/output/f1_trainset.data",delimiter='\t',dtype=np.float32)
 train_feat=data[:,11:1292]
 train_id=np.log(data[:,2] + 1)
 
-dataTest=np.genfromtxt("common_predicting_model/words_embedding_features/output/f1_predictset.data",delimiter='\t',dtype=np.float32)
+# dataTest=np.genfromtxt("common_predicting_model/words_embedding_features/output/f1_predictset.data",delimiter='\t',dtype=np.float32)
+dataTest=np.genfromtxt("../words_embedding_features/output/f1_predictset.data",delimiter='\t',dtype=np.float32)
 test_feat=dataTest[:,10:1291]
 
 blend_train = np.zeros((train_feat.shape[0], len(clfs)))
@@ -58,14 +78,17 @@ pred = model_xgb.predict(blend_test)
 result=np.exp(pred)-1
 pred=result
 
-sku_ids=np.genfromtxt("common_predicting_model/words_embedding_features/output/f1_predictset.data",delimiter='\t',dtype=np.str)
+# sku_ids=np.genfromtxt("common_predicting_model/words_embedding_features/output/f1_predictset.data",delimiter='\t',dtype=np.str)
+sku_ids=np.genfromtxt("../words_embedding_features/output/f1_predictset.data",delimiter='\t',dtype=np.str)
 contents=[]
 for i in range(pred.shape[0]):
     print sku_ids[i,0],pred[i]
     contents.append([sku_ids[i,0],pred[i]])
 
-csvfile = file('common_predicting_model/machine_learning_model/output/final.csv', 'wb')
-writer = csv.writer(csvfile) 
+# csvfile = file('common_predicting_model/machine_learning_model/output/final.csv', 'wb')
+csvfile = file('../machine_learning_model/output/final.csv', 'wb')
+writer = csv.writer(csvfile)
 writer.writerows(contents)
 csvfile.close()
 
+printRunTime(t1)
