@@ -375,106 +375,85 @@ ValueError: RDD is empty
 >>> x.flatMapValues(f).collect()
 [('a', 'x'), ('a', 'y'), ('a', 'z'), ('b', 'p'), ('b', 'r')]
 ```
->> fold(zeroValue, op)
-Aggregate the elements of each partition, and then the results for all the partitions, using a given associative function and a neutral “zero value.”The function op(t1, t2) is allowed to modify t1 and return it as its result value to avoid object allocation; however, it should not modify t2.This behaves somewhat differently from fold operations implemented for non-distributed collections in functional languages like Scala. This fold operation may be applied to partitions individually, and then fold those results into the final result, rather than apply the fold to each element sequentially in some defined ordering. For functions that are not commutative, the result may differ from that of a fold applied to a non-distributed collection.
+>> fold(zeroValue, op)								Aggregate the elements of each partition, and then the results for all the partitions, using a given associative function and a neutral “zero value.”The function op(t1, t2) is allowed to modify t1 and return it as its result value to avoid object allocation; however, it should not modify t2.This behaves somewhat differently from fold operations implemented for non-distributed collections in functional languages like Scala. This fold operation may be applied to partitions individually, and then fold those results into the final result, rather than apply the fold to each element sequentially in some defined ordering. For functions that are not commutative, the result may differ from that of a fold applied to a non-distributed collection.
 ```
 >>> from operator import add
 >>> sc.parallelize([1, 2, 3, 4, 5]).fold(0, add)
 15
 ```
-foldByKey(zeroValue, func, numPartitions=None, partitionFunc=<function portable_hash at 0x7fc35dbc8e60>)
-Merge the values for each key using an associative function “func” and a neutral “zeroValue” which may be added to the result an arbitrary number of times, and must not change the result (e.g., 0 for addition, or 1 for multiplication.).
-
+>> foldByKey(zeroValue, func, numPartitions=None, partitionFunc=<function portable_hash at 0x7fc35dbc8e60>)	Merge the values for each key using an associative function “func” and a neutral “zeroValue” which may be added to the result an arbitrary number of times, and must not change the result (e.g., 0 for addition, or 1 for multiplication.).
+```
 >>> rdd = sc.parallelize([("a", 1), ("b", 1), ("a", 1)])
 >>> from operator import add
 >>> sorted(rdd.foldByKey(0, add).collect())
 [('a', 2), ('b', 1)]
-foreach(f)
-Applies a function to all elements of this RDD.
-
+```
+>> foreach(f)										Applies a function to all elements of this RDD.
+```
 >>> def f(x): print(x)
 >>> sc.parallelize([1, 2, 3, 4, 5]).foreach(f)
-foreachPartition(f)
-Applies a function to each partition of this RDD.
-
+```
+>> foreachPartition(f)								Applies a function to each partition of this RDD.
+```
 >>> def f(iterator):
 ...     for x in iterator:
 ...          print(x)
 >>> sc.parallelize([1, 2, 3, 4, 5]).foreachPartition(f)
-fullOuterJoin(other, numPartitions=None)
-Perform a right outer join of self and other.
-
-For each element (k, v) in self, the resulting RDD will either contain all pairs (k, (v, w)) for w in other, or the pair (k, (v, None)) if no elements in other have key k.
-
-Similarly, for each element (k, w) in other, the resulting RDD will either contain all pairs (k, (v, w)) for v in self, or the pair (k, (None, w)) if no elements in self have key k.
-
-Hash-partitions the resulting RDD into the given number of partitions.
-
+```
+>> fullOuterJoin(other, numPartitions=None)			Perform a right outer join of self and other.
+```
 >>> x = sc.parallelize([("a", 1), ("b", 4)])
 >>> y = sc.parallelize([("a", 2), ("c", 8)])
 >>> sorted(x.fullOuterJoin(y).collect())
 [('a', (1, 2)), ('b', (4, None)), ('c', (None, 8))]
-getCheckpointFile()
-Gets the name of the file to which this RDD was checkpointed
-
-Not defined if RDD is checkpointed locally.
-
-getNumPartitions()
-Returns the number of partitions in RDD
-
+```
+getCheckpointFile()									Gets the name of the file to which this RDD was checkpointed Not defined if RDD is checkpointed locally.
+>> getNumPartitions()								Returns the number of partitions in RDD
+```
 >>> rdd = sc.parallelize([1, 2, 3, 4], 2)
 >>> rdd.getNumPartitions()
 2
-getStorageLevel()
-Get the RDD’s current storage level.
-
+```
+getStorageLevel()									Get the RDD’s current storage level.
+```
 >>> rdd1 = sc.parallelize([1,2])
 >>> rdd1.getStorageLevel()
 StorageLevel(False, False, False, False, 1)
 >>> print(rdd1.getStorageLevel())
 Serialized 1x Replicated
-glom()
-Return an RDD created by coalescing all elements within each partition into a list.
-
+```
+>> glom()											Return an RDD created by coalescing all elements within each partition into a list.
+```
 >>> rdd = sc.parallelize([1, 2, 3, 4], 2)
 >>> sorted(rdd.glom().collect())
 [[1, 2], [3, 4]]
-groupBy(f, numPartitions=None, partitionFunc=<function portable_hash at 0x7fc35dbc8e60>)
-Return an RDD of grouped items.
-
+```
+>> groupBy(f, numPartitions=None, partitionFunc=<function portable_hash at 0x7fc35dbc8e60>)			Return an RDD of grouped items.
+```
 >>> rdd = sc.parallelize([1, 1, 2, 3, 5, 8])
 >>> result = rdd.groupBy(lambda x: x % 2).collect()
 >>> sorted([(x, sorted(y)) for (x, y) in result])
 [(0, [2, 8]), (1, [1, 1, 3, 5])]
-groupByKey(numPartitions=None, partitionFunc=<function portable_hash at 0x7fc35dbc8e60>)
-Group the values for each key in the RDD into a single sequence. Hash-partitions the resulting RDD with numPartitions partitions.
-
-Note If you are grouping in order to perform an aggregation (such as a sum or average) over each key, using reduceByKey or aggregateByKey will provide much better performance.
+```
+>> groupByKey(numPartitions=None, partitionFunc=<function portable_hash at 0x7fc35dbc8e60>)
+```
 >>> rdd = sc.parallelize([("a", 1), ("b", 1), ("a", 1)])
 >>> sorted(rdd.groupByKey().mapValues(len).collect())
 [('a', 2), ('b', 1)]
 >>> sorted(rdd.groupByKey().mapValues(list).collect())
 [('a', [1, 1]), ('b', [1])]
-groupWith(other, *others)
-Alias for cogroup but with support for multiple RDDs.
-
+```
+groupWith(other, *others)							Alias for cogroup but with support for multiple RDDs.
+```
 >>> w = sc.parallelize([("a", 5), ("b", 6)])
 >>> x = sc.parallelize([("a", 1), ("b", 4)])
 >>> y = sc.parallelize([("a", 2)])
 >>> z = sc.parallelize([("b", 42)])
 >>> [(x, tuple(map(list, y))) for x, y in sorted(list(w.groupWith(x, y, z).collect()))]
 [('a', ([5], [1], [2], [])), ('b', ([6], [4], [], [42]))]
+```
 histogram(buckets)
-Compute a histogram using the provided buckets. The buckets are all open to the right except for the last which is closed. e.g. [1,10,20,50] means the buckets are [1,10) [10,20) [20,50], which means 1<=x<10, 10<=x<20, 20<=x<=50. And on the input of 1 and 50 we would have a histogram of 1,0,1.
-
-If your histogram is evenly spaced (e.g. [0, 10, 20, 30]), this can be switched from an O(log n) inseration to O(1) per element (where n is the number of buckets).
-
-Buckets must be sorted, not contain any duplicates, and have at least two elements.
-
-If buckets is a number, it will generate buckets which are evenly spaced between the minimum and maximum of the RDD. For example, if the min value is 0 and the max is 100, given buckets as 2, the resulting buckets will be [0,50) [50,100]. buckets must be at least 1. An exception is raised if the RDD contains infinity. If the elements in the RDD do not vary (max == min), a single bucket will be used.
-
-The return value is a tuple of buckets and histogram.
-
+```
 >>> rdd = sc.parallelize(range(51))
 >>> rdd.histogram(2)
 ([0, 25, 50], [25, 26])
@@ -485,11 +464,9 @@ The return value is a tuple of buckets and histogram.
 >>> rdd = sc.parallelize(["ab", "ac", "b", "bd", "ef"])
 >>> rdd.histogram(("a", "b", "c"))
 (('a', 'b', 'c'), [2, 2])
-id()
-A unique ID for this RDD (within its SparkContext).
-
-intersection(other)
-Return the intersection of this RDD and another one. The output will not contain any duplicate elements, even if the input RDDs did.
+```
+id()												A unique ID for this RDD (within its SparkContext).
+intersection(other)									Return the intersection of this RDD and another one. The output will not contain any duplicate elements, even if the input RDDs did.
 
 Note This method performs a shuffle internally.
 >>> rdd1 = sc.parallelize([1, 10, 2, 3, 4, 5])
@@ -1192,7 +1169,7 @@ Return the collected profiling stats (pstats.Stats)
 class pyspark.BasicProfiler(ctx)
 BasicProfiler is the default profiler, which is implemented based on cProfile and Accumulator
 
-profile(func)¶
+profile(func)
 Runs and profiles the method to_profile passed in. A profile object is returned.
 
 stats()
