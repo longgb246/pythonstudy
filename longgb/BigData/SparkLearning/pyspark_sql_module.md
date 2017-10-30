@@ -22,170 +22,123 @@ spark = SparkSession.builder \
         .config("spark.some.config.option", "some-value") \
         .getOrCreate()
 ```
-### appName(name)
-    设置一个 app 的 name，将被展现在 Spark web UI。如果没有设置名字，将随机生成。
+>> appName(name)                        设置一个 app 的 name，将被展现在 Spark web UI。如果没有设置名字，将随机生成。
+>> config(key=None, value=None, conf=None)                          设置一个配置，用于 SparkConf 和 SparkSession 的配置
+        参数设置:
+                key – 一个 key name 对于 configuration property
+                value – 一个 value 对于 configuration property
+                conf – 一个 SparkConf 的实例
+```
+    from pyspark.conf import SparkConf
+    SparkSession.builder.config(conf=SparkConf())
+    SparkSession.builder.config("spark.some.config.option", "some-value")
+```
+>> enableHiveSupport()                  Enables Hive support, including connectivity to a persistent Hive metastore, support for Hive serdes, and Hive user-defined functions.
+>> getOrCreate()                        获得一个存在的 SparkSession，或者如果没有存在的 SparkSession，将创建一个依据 builder。 该方法是检查是否存在一个默认的 SparkSession，如果有将返回那个。如果没有，该方法创建一个 SparkSession ，并且分配一个全局的默认。
+```
+    >>> s1 = SparkSession.builder.config("k1", "v1").getOrCreate()
+    >>> s1.conf.get("k1") == s1.sparkContext.getConf().get("k1") == "v1"
+    True
+    >>> s2 = SparkSession.builder.config("k2", "v2").getOrCreate()
+    >>> s1.conf.get("k1") == s2.conf.get("k1")
+    True
+    >>> s1.conf.get("k2") == s2.conf.get("k2")
+    True
+```
+>> master(master)                       设置 Spark master URL 的链接，例如：“local”本地运行，“local[4]”本地运行4核，“spark://master:7077”运行spark集群。
+        参数设置:
+                master – a url for spark master
+>> SparkSession.conf                    Runtime configuration interface for Spark.
+>> SparkSession.createDataFrame(data, schema=None, samplingRatio=None, verifySchema=True)                   创建一个 RDD 的 DataFrame，一个 list 或者 pandas。1、When schema is a list of column names, the type of each column will be inferred from data.2、When schema is None, it will try to infer the schema (column names and types) from data, which should be an RDD of Row, or namedtuple, or dict.3、When schema is pyspark.sql.types.DataType or a datatype string, it must match the real data, or an exception will be thrown at runtime. If the given schema is not pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType as its only field, and the field name will be “value”, each record will also be wrapped into a tuple, which can be converted to row later.4、If schema inference is needed, samplingRatio is used to determined the ratio of rows used for schema inference. The first row will be used if samplingRatio is None.
+        参数设置:
+                data – 一个 RDD 来自 list 或者 pandas.
+                schema – a pyspark.sql.types.DataType or a datatype string or a list of column names, default is None. The data type string format equals to pyspark.sql.types.DataType.simpleString, except that top level struct type can omit the struct<> and atomic types use typeName() as their format, e.g. use byte instead of tinyint for pyspark.sql.types.ByteType. We can also use int as a short name for IntegerType.
+                samplingRatio – the sample ratio of rows used for inferring
+                verifySchema – verify data types of every row against schema.
+        返回值:
+                DataFrame
+```
+    >>> l = [('Alice', 1)]
+    >>> spark.createDataFrame(l).collect()
+    [Row(_1=u'Alice', _2=1)]
+    >>> spark.createDataFrame(l, ['name', 'age']).collect()
+    [Row(name=u'Alice', age=1)]
+    >>> d = [{'name': 'Alice', 'age': 1}]
+    >>> spark.createDataFrame(d).collect()
+    [Row(age=1, name=u'Alice')]
+    >>> rdd = sc.parallelize(l)
+    >>> spark.createDataFrame(rdd).collect()
+    [Row(_1=u'Alice', _2=1)]
+    >>> df = spark.createDataFrame(rdd, ['name', 'age'])
+    >>> df.collect()
+    [Row(name=u'Alice', age=1)]
+    >>> from pyspark.sql import Row
+    >>> Person = Row('name', 'age')
+    >>> person = rdd.map(lambda r: Person(*r))
+    >>> df2 = spark.createDataFrame(person)
+    >>> df2.collect()
+    [Row(name=u'Alice', age=1)]
+    >>> from pyspark.sql.types import *
+    >>> schema = StructType([StructField("name", StringType(), True), StructField("age", IntegerType(), True)])
+    >>> df3 = spark.createDataFrame(rdd, schema)
+    >>> df3.collect()
+    [Row(name=u'Alice', age=1)]
+    >>> spark.createDataFrame(df.toPandas()).collect()
+    [Row(name=u'Alice', age=1)]
+    >>> spark.createDataFrame(pandas.DataFrame([[1, 2]])).collect()
+    [Row(0=1, 1=2)]
+    >>> spark.createDataFrame(rdd, "a: string, b: int").collect()
+    [Row(a=u'Alice', b=1)]
+    >>> rdd = rdd.map(lambda row: row[1])
+    >>> spark.createDataFrame(rdd, "int").collect()
+    [Row(value=1)]
+```
+SparkSession.newSession()                        返回一个新的 session ，has separate SQLConf, registered temporary views and UDFs, but shared SparkContext and table cache.
+SparkSession.range(start, end=None, step=1, numPartitions=None)                  创建 DataFrame ，使用 pyspark.sql.types.LongType，从 start 到 end。
+        参数设置：
+                start – the start value
+                end – the end value (exclusive)
+                step – 步长 (default: 1)
+                numPartitions – DataFrame 的分区数
+        返回值:
+                DataFrame
+```
+    >>> spark.range(1, 7, 2).collect()
+    [Row(id=1), Row(id=3), Row(id=5)]
+    >>> spark.range(3).collect()
+    [Row(id=0), Row(id=1), Row(id=2)]
+```
+SparkSession.read                               返回一个能用于读数据为 DataFrame 的 DataFrameReader。
+        返回值:
+                DataFrameReader
+SparkSession.readStream                         返回一个能用于读数据为 streaming DataFrame 的 DataStreamReader
+        返回值:
+                DataStreamReader
+SparkSession.sparkContext                       返回一个潜在的 SparkContext.
+>> SparkSession.sql(sqlQuery)                   返回一个 DataFrame 来代表给定的查询结果。
+        返回值:
+                DataFrame
+```
+    >>> df.createOrReplaceTempView("table1")
+    >>> df2 = spark.sql("SELECT field1 AS f1, field2 as f2 from table1")
+    >>> df2.collect()
+    [Row(f1=1, f2=u'row1'), Row(f1=2, f2=u'row2'), Row(f1=3, f2=u'row3')]
+```
+SparkSession.stop()                             Stop the underlying SparkContext.
+SparkSession.streams                            Returns a StreamingQueryManager that allows managing all the StreamingQuery StreamingQueries active on this context.
+        Returns:	StreamingQueryManager
+SparkSession.table(tableName)                   Returns the specified table as a DataFrame.
+        Returns:	DataFrame
+```
+    >>> df.createOrReplaceTempView("table1")
+    >>> df2 = spark.table("table1")
+    >>> sorted(df.collect()) == sorted(df2.collect())
+    True
+```
+>> SparkSession.udf                            Returns a UDFRegistration for UDF registration.
+        Returns:	UDFRegistration
+SparkSession.version                           The version of Spark on which this application is running.
 
-### config(key=None, value=None, conf=None)
-    设置一个配置，用于 SparkConf 和 SparkSession 的配置
-    ```
-        from pyspark.conf import SparkConf
-        SparkSession.builder.config(conf=SparkConf())
-        SparkSession.builder.config("spark.some.config.option", "some-value")
-    ```
-    参数设置:
-        key – 一个 key name 对于 configuration property
-        value – 一个 value 对于 configuration property
-        conf – 一个 SparkConf 的实例
-
-### enableHiveSupport()
-    Enables Hive support, including connectivity to a persistent Hive metastore, support for Hive serdes, and Hive user-defined functions.
-
-### getOrCreate()【没懂，我靠！】
-    获得一个存在的 SparkSession，或者如果没有存在的 SparkSession，将创建一个依据 builder。
-    该方法是检查是否存在一个默认的 SparkSession，如果有将返回那个。如果没有，该方法创建一个 SparkSession ，并且分配一个全局的默认。
-    ```
-        >>> s1 = SparkSession.builder.config("k1", "v1").getOrCreate()
-        >>> s1.conf.get("k1") == s1.sparkContext.getConf().get("k1") == "v1"
-        True
-        >>> s2 = SparkSession.builder.config("k2", "v2").getOrCreate()
-        >>> s1.conf.get("k1") == s2.conf.get("k1")
-        True
-        >>> s1.conf.get("k2") == s2.conf.get("k2")
-        True
-    ```
-
-### master(master)
-    设置 Spark master URL 的链接，例如：“local”本地运行，“local[4]”本地运行4核，“spark://master:7077”运行spark集群。
-    参数设置:
-        master – a url for spark master
-
-### SparkSession.conf
-    Runtime configuration interface for Spark.
-
-### SparkSession.createDataFrame(data, schema=None, samplingRatio=None, verifySchema=True)
-    创建一个 RDD 的 DataFrame，一个 list 或者 pandas。
-    1、When schema is a list of column names, the type of each column will be inferred from data.
-    2、When schema is None, it will try to infer the schema (column names and types) from data, which should be an RDD of Row, or namedtuple, or dict.
-    3、When schema is pyspark.sql.types.DataType or a datatype string, it must match the real data, or an exception will be thrown at runtime. If the given schema is not pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType as its only field, and the field name will be “value”, each record will also be wrapped into a tuple, which can be converted to row later.
-    4、If schema inference is needed, samplingRatio is used to determined the ratio of rows used for schema inference. The first row will be used if samplingRatio is None.
-    参数设置:
-        data – 一个 RDD 来自 list 或者 pandas.
-        schema – a pyspark.sql.types.DataType or a datatype string or a list of column names, default is None. The data type string format equals to pyspark.sql.types.DataType.simpleString, except that top level struct type can omit the struct<> and atomic types use typeName() as their format, e.g. use byte instead of tinyint for pyspark.sql.types.ByteType. We can also use int as a short name for IntegerType.
-        samplingRatio – the sample ratio of rows used for inferring
-        verifySchema – verify data types of every row against schema.
-    返回值:
-        DataFrame
-    ```
-        >>> l = [('Alice', 1)]
-        >>> spark.createDataFrame(l).collect()
-        [Row(_1=u'Alice', _2=1)]
-
-        >>> spark.createDataFrame(l, ['name', 'age']).collect()
-        [Row(name=u'Alice', age=1)]
-
-        >>> d = [{'name': 'Alice', 'age': 1}]
-        >>> spark.createDataFrame(d).collect()
-        [Row(age=1, name=u'Alice')]
-
-        >>> rdd = sc.parallelize(l)
-        >>> spark.createDataFrame(rdd).collect()
-        [Row(_1=u'Alice', _2=1)]
-        >>> df = spark.createDataFrame(rdd, ['name', 'age'])
-        >>> df.collect()
-        [Row(name=u'Alice', age=1)]
-
-        >>> from pyspark.sql import Row
-        >>> Person = Row('name', 'age')
-        >>> person = rdd.map(lambda r: Person(*r))
-        >>> df2 = spark.createDataFrame(person)
-        >>> df2.collect()
-        [Row(name=u'Alice', age=1)]
-
-        >>> from pyspark.sql.types import *
-        >>> schema = StructType([StructField("name", StringType(), True), StructField("age", IntegerType(), True)])
-        >>> df3 = spark.createDataFrame(rdd, schema)
-        >>> df3.collect()
-        [Row(name=u'Alice', age=1)]
-
-        >>> spark.createDataFrame(df.toPandas()).collect()
-        [Row(name=u'Alice', age=1)]
-
-        >>> spark.createDataFrame(pandas.DataFrame([[1, 2]])).collect()
-        [Row(0=1, 1=2)]
-        >>> spark.createDataFrame(rdd, "a: string, b: int").collect()
-        [Row(a=u'Alice', b=1)]
-        >>> rdd = rdd.map(lambda row: row[1])
-        >>> spark.createDataFrame(rdd, "int").collect()
-        [Row(value=1)]
-    ```
-
-### SparkSession.newSession()
-    返回一个新的 session ，has separate SQLConf, registered temporary views and UDFs, but shared SparkContext and table cache.
-
-### SparkSession.range(start, end=None, step=1, numPartitions=None)
-    创建 DataFrame ，使用 pyspark.sql.types.LongType，从 start 到 end。
-    参数设置：
-        start – the start value
-        end – the end value (exclusive)
-        step – 步长 (default: 1)
-        numPartitions – DataFrame 的分区数
-    返回值:
-        DataFrame
-    ```
-        >>> spark.range(1, 7, 2).collect()
-        [Row(id=1), Row(id=3), Row(id=5)]
-
-        >>> spark.range(3).collect()
-        [Row(id=0), Row(id=1), Row(id=2)]
-    ```
-
-### SparkSession.read
-    返回一个能用于读数据为 DataFrame 的 DataFrameReader。
-    返回值:
-        DataFrameReader
-
-### SparkSession.readStream
-    返回一个能用于读数据为 streaming DataFrame 的 DataStreamReader
-    返回值:
-        DataStreamReader
-
-### SparkSession.sparkContext
-    返回一个潜在的 SparkContext.
-
-### SparkSession.sql(sqlQuery)
-    返回一个 DataFrame 来代表给定的查询结果。
-    返回值:
-        DataFrame
-    ```
-        >>> df.createOrReplaceTempView("table1")
-        >>> df2 = spark.sql("SELECT field1 AS f1, field2 as f2 from table1")
-        >>> df2.collect()
-        [Row(f1=1, f2=u'row1'), Row(f1=2, f2=u'row2'), Row(f1=3, f2=u'row3')]
-    ```
-
-### SparkSession.stop()
-    Stop the underlying SparkContext.
-
-### SparkSession.streams
-    Returns a StreamingQueryManager that allows managing all the StreamingQuery StreamingQueries active on this context.
-    Returns:	StreamingQueryManager
-
-### SparkSession.table(tableName)
-    Returns the specified table as a DataFrame.
-    Returns:	DataFrame
-    ```
-        >>> df.createOrReplaceTempView("table1")
-        >>> df2 = spark.table("table1")
-        >>> sorted(df.collect()) == sorted(df2.collect())
-        True
-    ```
-
-### SparkSession.udf
-    Returns a UDFRegistration for UDF registration.
-    Returns:	UDFRegistration
-
-### SparkSession.version
-    The version of Spark on which this application is running.
 
 ## 二、SQLContext类
 class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
@@ -198,15 +151,9 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
     sparkSession – The SparkSession around which this SQLContext wraps.
     jsqlContext – An optional JVM Scala SQLContext. If set, we do not instantiate a new SQLContext in the JVM, instead we make all calls to this object.
 
-### cacheTable(tableName)
-    Caches the specified table in-memory.
-    New in version 1.0.
-
-### clearCache()
-    Removes all cached tables from the in-memory cache.
-    New in version 1.3.
-
-### createDataFrame(data, schema=None, samplingRatio=None, verifySchema=True)
+cacheTable(tableName)                           Caches the specified table in-memory.    New in version 1.0.
+clearCache()                                    Removes all cached tables from the in-memory cache.    New in version 1.3.
+createDataFrame(data, schema=None, samplingRatio=None, verifySchema=True)
     Creates a DataFrame from an RDD, a list or a pandas.DataFrame.
     When schema is a list of column names, the type of each column will be inferred from data.
     When schema is None, it will try to infer the schema (column names and types) from data, which should be an RDD of Row, or namedtuple, or dict.
@@ -221,67 +168,64 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         DataFrame
     Changed in version 2.0: The schema parameter can be a pyspark.sql.types.DataType or a datatype string after 2.0. If it’s not a pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType and each record will also be wrapped into a tuple.
     Changed in version 2.1: Added verifySchema.
-    ```
-        >>> l = [('Alice', 1)]
-        >>> sqlContext.createDataFrame(l).collect()
-        [Row(_1=u'Alice', _2=1)]
-        >>> sqlContext.createDataFrame(l, ['name', 'age']).collect()
-        [Row(name=u'Alice', age=1)]
-        >>> d = [{'name': 'Alice', 'age': 1}]
-        >>> sqlContext.createDataFrame(d).collect()
-        [Row(age=1, name=u'Alice')]
-        >>> rdd = sc.parallelize(l)
-        >>> sqlContext.createDataFrame(rdd).collect()
-        [Row(_1=u'Alice', _2=1)]
-        >>> df = sqlContext.createDataFrame(rdd, ['name', 'age'])
-        >>> df.collect()
-        [Row(name=u'Alice', age=1)]
-        >>> from pyspark.sql import Row
-        >>> Person = Row('name', 'age')
-        >>> person = rdd.map(lambda r: Person(*r))
-        >>> df2 = sqlContext.createDataFrame(person)
-        >>> df2.collect()
-        [Row(name=u'Alice', age=1)]
-        >>> from pyspark.sql.types import *
-        >>> schema = StructType([
-        ...    StructField("name", StringType(), True),
-        ...    StructField("age", IntegerType(), True)])
-        >>> df3 = sqlContext.createDataFrame(rdd, schema)
-        >>> df3.collect()
-        [Row(name=u'Alice', age=1)]
-        >>> sqlContext.createDataFrame(df.toPandas()).collect()
-        [Row(name=u'Alice', age=1)]
-        >>> sqlContext.createDataFrame(pandas.DataFrame([[1, 2]])).collect()
-        [Row(0=1, 1=2)]
-        >>> sqlContext.createDataFrame(rdd, "a: string, b: int").collect()
-        [Row(a=u'Alice', b=1)]
-        >>> rdd = rdd.map(lambda row: row[1])
-        >>> sqlContext.createDataFrame(rdd, "int").collect()
-        [Row(value=1)]
-        >>> sqlContext.createDataFrame(rdd, "boolean").collect()
-        Traceback (most recent call last):
-            ...
-        Py4JJavaError: ...
-    ```
+```
+    >>> l = [('Alice', 1)]
+    >>> sqlContext.createDataFrame(l).collect()
+    [Row(_1=u'Alice', _2=1)]
+    >>> sqlContext.createDataFrame(l, ['name', 'age']).collect()
+    [Row(name=u'Alice', age=1)]
+    >>> d = [{'name': 'Alice', 'age': 1}]
+    >>> sqlContext.createDataFrame(d).collect()
+    [Row(age=1, name=u'Alice')]
+    >>> rdd = sc.parallelize(l)
+    >>> sqlContext.createDataFrame(rdd).collect()
+    [Row(_1=u'Alice', _2=1)]
+    >>> df = sqlContext.createDataFrame(rdd, ['name', 'age'])
+    >>> df.collect()
+    [Row(name=u'Alice', age=1)]
+    >>> from pyspark.sql import Row
+    >>> Person = Row('name', 'age')
+    >>> person = rdd.map(lambda r: Person(*r))
+    >>> df2 = sqlContext.createDataFrame(person)
+    >>> df2.collect()
+    [Row(name=u'Alice', age=1)]
+    >>> from pyspark.sql.types import *
+    >>> schema = StructType([
+    ...    StructField("name", StringType(), True),
+    ...    StructField("age", IntegerType(), True)])
+    >>> df3 = sqlContext.createDataFrame(rdd, schema)
+    >>> df3.collect()
+    [Row(name=u'Alice', age=1)]
+    >>> sqlContext.createDataFrame(df.toPandas()).collect()
+    [Row(name=u'Alice', age=1)]
+    >>> sqlContext.createDataFrame(pandas.DataFrame([[1, 2]])).collect()
+    [Row(0=1, 1=2)]
+    >>> sqlContext.createDataFrame(rdd, "a: string, b: int").collect()
+    [Row(a=u'Alice', b=1)]
+    >>> rdd = rdd.map(lambda row: row[1])
+    >>> sqlContext.createDataFrame(rdd, "int").collect()
+    [Row(value=1)]
+    >>> sqlContext.createDataFrame(rdd, "boolean").collect()
+    Traceback (most recent call last):
+        ...
+    Py4JJavaError: ...
+```
         New in version 1.3.
-
-### createExternalTable(tableName, path=None, source=None, schema=None, **options)
+createExternalTable(tableName, path=None, source=None, schema=None, **options)
     Creates an external table based on the dataset in a data source.
     It returns the DataFrame associated with the external table.
     The data source is specified by the source and a set of options. If source is not specified, the default data source configured by spark.sql.sources.default will be used.
     Optionally, a schema can be provided as the schema of the returned DataFrame and created external table.
     Returns:	DataFrame
     New in version 1.3.
-
-### dropTempTable(tableName)
+dropTempTable(tableName)
     Remove the temp table from catalog.
     ```
         >>> sqlContext.registerDataFrameAsTable(df, "table1")
         >>> sqlContext.dropTempTable("table1")
     ```
     New in version 1.6.
-
-### getConf(key, defaultValue=None)
+getConf(key, defaultValue=None)
     Returns the value of Spark SQL configuration property for the given key.
     If the key is not set and defaultValue is not None, return defaultValue. If the key is not set and defaultValue is None, return the system default value.
     ```
@@ -294,17 +238,14 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         u'50'
     ```
     New in version 1.3.
-
-### classmethod getOrCreate(sc)
+classmethod getOrCreate(sc)
     Get the existing SQLContext or create a new one with given SparkContext.
     Parameters:	sc – SparkContext
     New in version 1.6.
-
-### newSession()
+newSession()
     Returns a new SQLContext as new session, that has separate SQLConf, registered temporary views and UDFs, but shared SparkContext and table cache.
     New in version 1.6.
-
-### range(start, end=None, step=1, numPartitions=None)
+range(start, end=None, step=1, numPartitions=None)
     Create a DataFrame with single pyspark.sql.types.LongType column named id, containing elements in a range from start to end (exclusive) with step value step.
     Parameters:
         start – the start value
@@ -320,13 +261,11 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         [Row(id=0), Row(id=1), Row(id=2)]
     ```
     New in version 1.4.
-
-### read
+read
     Returns a DataFrameReader that can be used to read data in as a DataFrame.
     Returns:	DataFrameReader
     New in version 1.4.
-
-### readStream
+readStream
     Returns a DataStreamReader that can be used to read data streams as a streaming DataFrame.
     Returns:	DataStreamReader
     ```
@@ -335,16 +274,14 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         True
     ```
     New in version 2.0.
-
-### registerDataFrameAsTable(df, tableName)
+registerDataFrameAsTable(df, tableName)
     Registers the given DataFrame as a temporary table in the catalog.
     Temporary tables exist only during the lifetime of this instance of SQLContext.
     ```
         >>> sqlContext.registerDataFrameAsTable(df, "table1")
     ```
     New in version 1.3.
-
-### registerFunction(name, f, returnType=StringType)
+registerFunction(name, f, returnType=StringType)
     Registers a python function (including lambda function) as a UDF so it can be used in SQL statements.
     In addition to a name and the function itself, the return type can be optionally specified. When the return type is not given it default to a string and conversion will automatically be done. For any other return type, the produced object must match the specified type.
     Parameters:
@@ -367,8 +304,7 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         [Row(stringLengthInt(test)=4)]
     ```
     New in version 1.2.
-
-### registerJavaFunction(name, javaClassName, returnType=None)
+registerJavaFunction(name, javaClassName, returnType=None)
     Register a java UDF so it can be used in SQL statements.
     In addition to a name and the function itself, the return type can be optionally specified. When the return type is not specified we would infer it via reflection. :param name: name of the UDF :param javaClassName: fully qualified name of java class :param returnType: a pyspark.sql.types.DataType object
     ```
@@ -380,12 +316,10 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         [Row(UDF(test)=4)]
     ```
     New in version 2.1.
-
-### setConf(key, value)
+setConf(key, value)
     Sets the given Spark SQL configuration property.
     New in version 1.3.
-
-### sql(sqlQuery)
+>> sql(sqlQuery)
     Returns a DataFrame representing the result of the given query.
     Returns:	DataFrame
     ```
@@ -395,12 +329,10 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         [Row(f1=1, f2=u'row1'), Row(f1=2, f2=u'row2'), Row(f1=3, f2=u'row3')]
     ```
     New in version 1.0.
-
-### streams
+streams
     Returns a StreamingQueryManager that allows managing all the StreamingQuery StreamingQueries active on this context.
     New in version 2.0.
-
-### table(tableName)
+>> table(tableName)
     Returns the specified table or view as a DataFrame.
     Returns:	DataFrame
     ```
@@ -410,8 +342,7 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         True
     ```
     New in version 1.0.
-
-### tableNames(dbName=None)
+tableNames(dbName=None)
     Returns a list of names of tables in the database dbName.
     Parameters:	dbName – string, name of the database to use. Default to the current database.
     Returns:	list of table names, in string
@@ -423,8 +354,7 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         True
     ```
     New in version 1.3.
-
-### tables(dbName=None)
+>> tables(dbName=None)
     Returns a DataFrame containing names of tables in the given database.
     If dbName is not specified, the current database will be used.
     The returned DataFrame has two columns: tableName and isTemporary (a column with BooleanType indicating if a table is a temporary one or not).
@@ -437,15 +367,14 @@ class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
         Row(database=u'', tableName=u'table1', isTemporary=True)
     ```
     New in version 1.3.
-
-### udf
+udf
     Returns a UDFRegistration for UDF registration.
     Returns:	UDFRegistration
     New in version 1.3.1.
-
-### uncacheTable(tableName)
+uncacheTable(tableName)
     Removes the specified table from the in-memory cache.
     New in version 1.0.
+
 
 ## 三、HiveContext类
 class pyspark.sql.HiveContext(sparkContext, jhiveContext=None)
@@ -459,72 +388,67 @@ Parameters:
     refreshTable(tableName)
     Invalidate and refresh all the cached the metadata of the given table. For performance reasons, Spark SQL or the external data source library it uses might cache certain metadata about a table, such as the location of blocks. When those change outside of Spark SQL, users should call this function to invalidate the cache.
 
+
 ## 四、UDFRegistration类
 class pyspark.sql.UDFRegistration(sqlContext)
 Wrapper for user-defined function registration.
 
-### register(name, f, returnType=StringType)
-    Registers a python function (including lambda function) as a UDF so it can be used in SQL statements.
-    In addition to a name and the function itself, the return type can be optionally specified. When the return type is not given it default to a string and conversion will automatically be done. For any other return type, the produced object must match the specified type.
-    Parameters:
-        name – name of the UDF
-        f – python function
-    returnType – a pyspark.sql.types.DataType object
-    ```
-        >>> sqlContext.registerFunction("stringLengthString", lambda x: len(x))
-        >>> sqlContext.sql("SELECT stringLengthString('test')").collect()
-        [Row(stringLengthString(test)=u'4')]
-
-        >>> from pyspark.sql.types import IntegerType
-        >>> sqlContext.registerFunction("stringLengthInt", lambda x: len(x), IntegerType())
-        >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
-        [Row(stringLengthInt(test)=4)]
-
-        >>> from pyspark.sql.types import IntegerType
-        >>> sqlContext.udf.register("stringLengthInt", lambda x: len(x), IntegerType())
-        >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
-        [Row(stringLengthInt(test)=4)]
-    ```
+>> register(name, f, returnType=StringType)                    Registers a python function (including lambda function) as a UDF so it can be used in SQL statements. In addition to a name and the function itself, the return type can be optionally specified. When the return type is not given it default to a string and conversion will automatically be done. For any other return type, the produced object must match the specified type.
+        Parameters:
+                name – name of the UDF
+                f – python function
+        returnType – a pyspark.sql.types.DataType object
+```
+    >>> sqlContext.registerFunction("stringLengthString", lambda x: len(x))
+    >>> sqlContext.sql("SELECT stringLengthString('test')").collect()
+    [Row(stringLengthString(test)=u'4')]
+    >>> from pyspark.sql.types import IntegerType
+    >>> sqlContext.registerFunction("stringLengthInt", lambda x: len(x), IntegerType())
+    >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
+    [Row(stringLengthInt(test)=4)]
+    >>> from pyspark.sql.types import IntegerType
+    >>> sqlContext.udf.register("stringLengthInt", lambda x: len(x), IntegerType())
+    >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
+    [Row(stringLengthInt(test)=4)]
+```
     New in version 1.2.
+
 
 ## 五、DataFrame类
 class pyspark.sql.DataFrame(jdf, sql_ctx)
     A distributed collection of data grouped into named columns.
     A DataFrame is equivalent to a relational table in Spark SQL, and can be created using various functions in SQLContext:
+people = sqlContext.read.parquet("...")
+Once created, it can be manipulated using the various domain-specific-language (DSL) functions defined in: DataFrame, Column.
+```
+    ageCol = people.age
     people = sqlContext.read.parquet("...")
-    Once created, it can be manipulated using the various domain-specific-language (DSL) functions defined in: DataFrame, Column.
-    ```
-        ageCol = people.age
-        people = sqlContext.read.parquet("...")
-        department = sqlContext.read.parquet("...")
-        people.filter(people.age > 30).join(department, people.deptId == department.id).groupBy(department.name, "gender").agg({"salary": "avg", "age": "max"})
-    ```
-    New in version 1.3.
+    department = sqlContext.read.parquet("...")
+    people.filter(people.age > 30).join(department, people.deptId == department.id).groupBy(department.name, "gender").agg({"salary": "avg", "age": "max"})
+```
+New in version 1.3.
 
-### agg(*exprs)
-    Aggregate on the entire DataFrame without groups (shorthand for df.groupBy.agg()).
-    ```
-        >>> df.agg({"age": "max"}).collect()
-        [Row(max(age)=5)]
-        >>> from pyspark.sql import functions as F
-        >>> df.agg(F.min(df.age)).collect()
-        [Row(min(age)=2)]
-    ```
-    New in version 1.3.
 
-### alias(alias)
-    Returns a new DataFrame with an alias set.
-    ```
-        >>> from pyspark.sql.functions import *
-        >>> df_as1 = df.alias("df_as1")
-        >>> df_as2 = df.alias("df_as2")
-        >>> joined_df = df_as1.join(df_as2, col("df_as1.name") == col("df_as2.name"), 'inner')
-        >>> joined_df.select("df_as1.name", "df_as2.name", "df_as2.age").collect()
-        [Row(name=u'Bob', name=u'Bob', age=5), Row(name=u'Alice', name=u'Alice', age=2)]
-    ```
+>> agg(*exprs)                              Aggregate on the entire DataFrame without groups (shorthand for df.groupBy.agg()).
+```
+    >>> df.agg({"age": "max"}).collect()
+    [Row(max(age)=5)]
+    >>> from pyspark.sql import functions as F
+    >>> df.agg(F.min(df.age)).collect()
+    [Row(min(age)=2)]
+```
     New in version 1.3.
-
-### approxQuantile(col, probabilities, relativeError)
+>> alias(alias)                             Returns a new DataFrame with an alias set.
+```
+    >>> from pyspark.sql.functions import *
+    >>> df_as1 = df.alias("df_as1")
+    >>> df_as2 = df.alias("df_as2")
+    >>> joined_df = df_as1.join(df_as2, col("df_as1.name") == col("df_as2.name"), 'inner')
+    >>> joined_df.select("df_as1.name", "df_as2.name", "df_as2.age").collect()
+    [Row(name=u'Bob', name=u'Bob', age=5), Row(name=u'Alice', name=u'Alice', age=2)]
+```
+    New in version 1.3.
+approxQuantile(col, probabilities, relativeError)
     Calculates the approximate quantiles of numerical columns of a DataFrame.
     这个算法的结果有下面的确定性跳跃：如果该 DataFrame 有 N 个元素，我们需要probability p up to error err, 算法将返回 a sample x from the DataFrame 以至于 exact rank of x is close to (p * N). 更精确地,
     floor((p - err) * N) <= rank(x) <= ceil((p + err) * N).
@@ -539,45 +463,39 @@ class pyspark.sql.DataFrame(jdf, sql_ctx)
         the approximate quantiles at the given probabilities. If the input col is a string, the output is a list of floats. If the input col is a list or tuple of strings, the output is also a list, but each element in it is a list of floats, i.e., the output is a list of list of floats.
     Changed in version 2.2: Added support for multiple columns.
     New in version 2.0.
-
-### cache()
+>> cache()
     Persists the DataFrame with the default storage level (MEMORY_AND_DISK).
     Note The default storage level has changed to MEMORY_AND_DISK to match Scala in 2.0.
     New in version 1.3.
-
-### checkpoint(eager=True)
+checkpoint(eager=True)
     Returns a checkpointed version of this Dataset. Checkpointing can be used to truncate the logical plan of this DataFrame, which is especially useful in iterative algorithms where the plan may grow exponentially. It will be saved to files inside the checkpoint directory set with SparkContext.setCheckpointDir().
     Parameters:	eager – Whether to checkpoint this DataFrame immediately
     Note Experimental
     New in version 2.1.
-
-### coalesce(numPartitions)
+>> coalesce(numPartitions)
     返回一个有精确分区的 DataFrame。
     和RDD类似,这个运行结果是一个narrow dependency。例如，if you go from 1000 partitions to 100 partitions, there will not be a shuffle, instead each of the 100 new partitions will claim 10 of the current partitions. If a larger number of partitions is requested, it will stay at the current number of partitions.
     然而,如果你做一个大的汇集,如设置 numPartitions = 1, 也许导致你的计算taking place on fewer nodes than you like (e.g. one node in the case of numPartitions = 1). To avoid this, you can call repartition(). This will add a shuffle step, but means the current upstream partitions will be executed in parallel (per whatever the current partitioning is).
-    ```
-        >>> df.coalesce(1).rdd.getNumPartitions()
-        1
-    ```
+```
+    >>> df.coalesce(1).rdd.getNumPartitions()
+    1
+```
     New in version 1.4.
-
-### collect()
+>> collect()
     返回一个包括所有行的list。
-    ```
-        >>> df.collect()
-        [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
-    ```
+```
+    >>> df.collect()
+    [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+```
     New in version 1.3.
-
-### columns
+>> columns
     返回一个包含列名的list。
-    ```
-        >>> df.columns
-        ['age', 'name']
-    ```
+```
+    >>> df.columns
+    ['age', 'name']
+```
     New in version 1.3.
-
-### corr(col1, col2, method=None)
+corr(col1, col2, method=None)
     计算2列数据的相关系数，目前仅仅支持计算Pearson相关系数。
     Currently only supports the Pearson Correlation Coefficient. DataFrame.corr() and DataFrameStatFunctions.corr() are aliases of each other.
     参数设置:
@@ -585,23 +503,20 @@ class pyspark.sql.DataFrame(jdf, sql_ctx)
         col2 – The name of the second column
         method – The correlation method. Currently only supports “pearson”
     New in version 1.4.
-
-### count()
+>> count()
     返回这个 DataFrame 有多少行
-    ```
-        >>> df.count()
-        2
-    ```
+```
+    >>> df.count()
+    2
+```
     New in version 1.3.
-
-### cov(col1, col2)
+cov(col1, col2)
     计算指定列的样本方差，
     参数设置:
         col1 – The name of the first column
         col2 – The name of the second column
     New in version 1.4.
-
-### createGlobalTempView(name)
+createGlobalTempView(name)
     Creates a global temporary view with this DataFrame.
     The lifetime of this temporary view is tied to this Spark application. throws TempTableAlreadyExistsException, if the view name already exists in the catalog.
     ```
@@ -616,8 +531,7 @@ class pyspark.sql.DataFrame(jdf, sql_ctx)
         >>> spark.catalog.dropGlobalTempView("people")
     ```
     New in version 2.1.
-
-### createOrReplaceGlobalTempView(name)
+createOrReplaceGlobalTempView(name)
     Creates or replaces a global temporary view using the given name.
     The lifetime of this temporary view is tied to this Spark application.
     ```
@@ -630,8 +544,7 @@ class pyspark.sql.DataFrame(jdf, sql_ctx)
         >>> spark.catalog.dropGlobalTempView("people")
     ```
     New in version 2.2.
-
-### createOrReplaceTempView(name)
+createOrReplaceTempView(name)
     Creates or replaces a local temporary view with this DataFrame.
     The lifetime of this temporary table is tied to the SparkSession that was used to create this DataFrame.
     ```
@@ -644,8 +557,7 @@ class pyspark.sql.DataFrame(jdf, sql_ctx)
         >>> spark.catalog.dropTempView("people")
     ```
     New in version 2.0.
-
-### createTempView(name)
+createTempView(name)
     Creates a local temporary view with this DataFrame.
     The lifetime of this temporary table is tied to the SparkSession that was used to create this DataFrame. throws TempTableAlreadyExistsException, if the view name already exists in the catalog.
     ```
@@ -660,8 +572,7 @@ class pyspark.sql.DataFrame(jdf, sql_ctx)
         >>> spark.catalog.dropTempView("people")
     ```
     New in version 2.0.
-
-### crossJoin(other)
+>> crossJoin(other)
     笛卡尔积
     参数设置:
         other – Right side of the cartesian product.
@@ -675,1081 +586,920 @@ class pyspark.sql.DataFrame(jdf, sql_ctx)
          Row(age=5, name=u'Bob', height=80), Row(age=5, name=u'Bob', height=85)]
     ```
     New in version 2.1.
-
-### crosstab(col1, col2)
-    Computes a pair-wise frequency table of the given columns. Also known as a contingency table. The number of distinct values for each column should be less than 1e4. At most 1e6 non-zero pair frequencies will be returned. The first column of each row will be the distinct values of col1 and the column names will be the distinct values of col2. The name of the first column will be $col1_$col2. Pairs that have no occurrences will have zero as their counts. DataFrame.crosstab() and DataFrameStatFunctions.crosstab() are aliases.
-
-Parameters:
-col1 – The name of the first column. Distinct items will make the first item of each row.
-col2 – The name of the second column. Distinct items will make the column names of the DataFrame.
-New in version 1.4.
-
-cube(*cols)
-Create a multi-dimensional cube for the current DataFrame using the specified columns, so we can run aggregation on them.
-
->>> df.cube("name", df.age).count().orderBy("name", "age").show()
-+-----+----+-----+
-| name| age|count|
-+-----+----+-----+
-| null|null|    2|
-| null|   2|    1|
-| null|   5|    1|
-|Alice|null|    1|
-|Alice|   2|    1|
-|  Bob|null|    1|
-|  Bob|   5|    1|
-+-----+----+-----+
-New in version 1.4.
-
-describe(*cols)
-Computes statistics for numeric and string columns.
-
-This include count, mean, stddev, min, and max. If no columns are given, this function computes statistics for all numerical or string columns.
-
-Note This function is meant for exploratory data analysis, as we make no guarantee about the backward compatibility of the schema of the resulting DataFrame.
->>> df.describe(['age']).show()
-+-------+------------------+
-|summary|               age|
-+-------+------------------+
-|  count|                 2|
-|   mean|               3.5|
-| stddev|2.1213203435596424|
-|    min|                 2|
-|    max|                 5|
-+-------+------------------+
->>> df.describe().show()
-+-------+------------------+-----+
-|summary|               age| name|
-+-------+------------------+-----+
-|  count|                 2|    2|
-|   mean|               3.5| null|
-| stddev|2.1213203435596424| null|
-|    min|                 2|Alice|
-|    max|                 5|  Bob|
-+-------+------------------+-----+
-New in version 1.3.1.
-
-distinct()
-Returns a new DataFrame containing the distinct rows in this DataFrame.
-
->>> df.distinct().count()
-2
-New in version 1.3.
-
-drop(*cols)
-Returns a new DataFrame that drops the specified column. This is a no-op if schema doesn’t contain the given column name(s).
-
-Parameters:	cols – a string name of the column to drop, or a Column to drop, or a list of string name of the columns to drop.
->>> df.drop('age').collect()
-[Row(name=u'Alice'), Row(name=u'Bob')]
->>> df.drop(df.age).collect()
-[Row(name=u'Alice'), Row(name=u'Bob')]
->>> df.join(df2, df.name == df2.name, 'inner').drop(df.name).collect()
-[Row(age=5, height=85, name=u'Bob')]
->>> df.join(df2, df.name == df2.name, 'inner').drop(df2.name).collect()
-[Row(age=5, name=u'Bob', height=85)]
->>> df.join(df2, 'name', 'inner').drop('age', 'height').collect()
-[Row(name=u'Bob')]
-New in version 1.4.
-
-dropDuplicates(subset=None)
-Return a new DataFrame with duplicate rows removed, optionally only considering certain columns.
-
-For a static batch DataFrame, it just drops duplicate rows. For a streaming DataFrame, it will keep all data across triggers as intermediate state to drop duplicates rows. You can use withWatermark() to limit how late the duplicate data can be and system will accordingly limit the state. In addition, too late data older than watermark will be dropped to avoid any possibility of duplicates.
-
-drop_duplicates() is an alias for dropDuplicates().
-
->>> from pyspark.sql import Row
->>> df = sc.parallelize([ \
-...     Row(name='Alice', age=5, height=80), \
-...     Row(name='Alice', age=5, height=80), \
-...     Row(name='Alice', age=10, height=80)]).toDF()
->>> df.dropDuplicates().show()
-+---+------+-----+
-|age|height| name|
-+---+------+-----+
-|  5|    80|Alice|
-| 10|    80|Alice|
-+---+------+-----+
->>> df.dropDuplicates(['name', 'height']).show()
-+---+------+-----+
-|age|height| name|
-+---+------+-----+
-|  5|    80|Alice|
-+---+------+-----+
-New in version 1.4.
-
-drop_duplicates(subset=None)
-drop_duplicates() is an alias for dropDuplicates().
-
-New in version 1.4.
-
-dropna(how='any', thresh=None, subset=None)
-Returns a new DataFrame omitting rows with null values. DataFrame.dropna() and DataFrameNaFunctions.drop() are aliases of each other.
-
-Parameters:
-how – ‘any’ or ‘all’. If ‘any’, drop a row if it contains any nulls. If ‘all’, drop a row only if all its values are null.
-thresh – int, default None If specified, drop rows that have less than thresh non-null values. This overwrites the how parameter.
-subset – optional list of column names to consider.
->>> df4.na.drop().show()
-+---+------+-----+
-|age|height| name|
-+---+------+-----+
-| 10|    80|Alice|
-+---+------+-----+
-New in version 1.3.1.
-
-dtypes
-Returns all column names and their data types as a list.
-
->>> df.dtypes
-[('age', 'int'), ('name', 'string')]
-New in version 1.3.
-
-explain(extended=False)
-Prints the (logical and physical) plans to the console for debugging purpose.
-
-Parameters:	extended – boolean, default False. If False, prints only the physical plan.
->>> df.explain()
-== Physical Plan ==
-Scan ExistingRDD[age#0,name#1]
->>> df.explain(True)
-== Parsed Logical Plan ==
-...
-== Analyzed Logical Plan ==
-...
-== Optimized Logical Plan ==
-...
-== Physical Plan ==
-...
-New in version 1.3.
-
-fillna(value, subset=None)
-Replace null values, alias for na.fill(). DataFrame.fillna() and DataFrameNaFunctions.fill() are aliases of each other.
-
-Parameters:
-value – int, long, float, string, or dict. Value to replace null values with. If the value is a dict, then subset is ignored and value must be a mapping from column name (string) to replacement value. The replacement value must be an int, long, float, boolean, or string.
-subset – optional list of column names to consider. Columns specified in subset that do not have matching data type are ignored. For example, if value is a string, and subset contains a non-string column, then the non-string column is simply ignored.
->>> df4.na.fill(50).show()
-+---+------+-----+
-|age|height| name|
-+---+------+-----+
-| 10|    80|Alice|
-|  5|    50|  Bob|
-| 50|    50|  Tom|
-| 50|    50| null|
-+---+------+-----+
->>> df4.na.fill({'age': 50, 'name': 'unknown'}).show()
-+---+------+-------+
-|age|height|   name|
-+---+------+-------+
-| 10|    80|  Alice|
-|  5|  null|    Bob|
-| 50|  null|    Tom|
-| 50|  null|unknown|
-+---+------+-------+
-New in version 1.3.1.
-
-filter(condition)
-Filters rows using the given condition.
-
-where() is an alias for filter().
-
-Parameters:	condition – a Column of types.BooleanType or a string of SQL expression.
->>> df.filter(df.age > 3).collect()
-[Row(age=5, name=u'Bob')]
->>> df.where(df.age == 2).collect()
-[Row(age=2, name=u'Alice')]
->>> df.filter("age > 3").collect()
-[Row(age=5, name=u'Bob')]
->>> df.where("age = 2").collect()
-[Row(age=2, name=u'Alice')]
-New in version 1.3.
-
-first()
-Returns the first row as a Row.
-
->>> df.first()
-Row(age=2, name=u'Alice')
-New in version 1.3.
-
-foreach(f)
-Applies the f function to all Row of this DataFrame.
-
-This is a shorthand for df.rdd.foreach().
-
->>> def f(person):
-...     print(person.name)
->>> df.foreach(f)
-New in version 1.3.
-
-foreachPartition(f)
-Applies the f function to each partition of this DataFrame.
-
-This a shorthand for df.rdd.foreachPartition().
-
->>> def f(people):
-...     for person in people:
-...         print(person.name)
->>> df.foreachPartition(f)
-New in version 1.3.
-
-freqItems(cols, support=None)
-Finding frequent items for columns, possibly with false positives. Using the frequent element count algorithm described in “http://dx.doi.org/10.1145/762471.762473, proposed by Karp, Schenker, and Papadimitriou”. DataFrame.freqItems() and DataFrameStatFunctions.freqItems() are aliases.
-
-Note This function is meant for exploratory data analysis, as we make no guarantee about the backward compatibility of the schema of the resulting DataFrame.
-Parameters:
-cols – Names of the columns to calculate frequent items for as a list or tuple of strings.
-support – The frequency with which to consider an item ‘frequent’. Default is 1%. The support must be greater than 1e-4.
-New in version 1.4.
-
-groupBy(*cols)
-Groups the DataFrame using the specified columns, so we can run aggregation on them. See GroupedData for all the available aggregate functions.
-
-groupby() is an alias for groupBy().
-
-Parameters:	cols – list of columns to group by. Each element should be a column name (string) or an expression (Column).
->>> df.groupBy().avg().collect()
-[Row(avg(age)=3.5)]
->>> sorted(df.groupBy('name').agg({'age': 'mean'}).collect())
-[Row(name=u'Alice', avg(age)=2.0), Row(name=u'Bob', avg(age)=5.0)]
->>> sorted(df.groupBy(df.name).avg().collect())
-[Row(name=u'Alice', avg(age)=2.0), Row(name=u'Bob', avg(age)=5.0)]
->>> sorted(df.groupBy(['name', df.age]).count().collect())
-[Row(name=u'Alice', age=2, count=1), Row(name=u'Bob', age=5, count=1)]
-New in version 1.3.
-
+crosstab(col1, col2)
+        Computes a pair-wise frequency table of the given columns. Also known as a contingency table. The number of distinct values for each column should be less than 1e4. At most 1e6 non-zero pair frequencies will be returned. The first column of each row will be the distinct values of col1 and the column names will be the distinct values of col2. The name of the first column will be $col1_$col2. Pairs that have no occurrences will have zero as their counts. DataFrame.crosstab() and DataFrameStatFunctions.crosstab() are aliases.
+        Parameters:
+        col1 – The name of the first column. Distinct items will make the first item of each row.
+        col2 – The name of the second column. Distinct items will make the column names of the DataFrame.
+        New in version 1.4.
+>> cube(*cols)
+        Create a multi-dimensional cube for the current DataFrame using the specified columns, so we can run aggregation on them.
+        ```
+        >>> df.cube("name", df.age).count().orderBy("name", "age").show()
+        +-----+----+-----+
+        | name| age|count|
+        +-----+----+-----+
+        | null|null|    2|
+        | null|   2|    1|
+        | null|   5|    1|
+        |Alice|null|    1|
+        |Alice|   2|    1|
+        |  Bob|null|    1|
+        |  Bob|   5|    1|
+        +-----+----+-----+
+        ```
+        New in version 1.4.
+>> describe(*cols)                              Computes statistics for numeric and string columns.    This include count, mean, stddev, min, and max. If no columns are given, this function computes statistics for all numerical or string columns.    Note This function is meant for exploratory data analysis, as we make no guarantee about the backward compatibility of the schema of the resulting DataFrame.
+        ```
+        >>> df.describe(['age']).show()
+        +-------+------------------+
+        |summary|               age|
+        +-------+------------------+
+        |  count|                 2|
+        |   mean|               3.5|
+        | stddev|2.1213203435596424|
+        |    min|                 2|
+        |    max|                 5|
+        +-------+------------------+
+        >>> df.describe().show()
+        +-------+------------------+-----+
+        |summary|               age| name|
+        +-------+------------------+-----+
+        |  count|                 2|    2|
+        |   mean|               3.5| null|
+        | stddev|2.1213203435596424| null|
+        |    min|                 2|Alice|
+        |    max|                 5|  Bob|
+        +-------+------------------+-----+
+        ```
+        New in version 1.3.1.
+>> distinct()                                   Returns a new DataFrame containing the distinct rows in this DataFrame.
+        ```
+        >>> df.distinct().count()
+        2
+        ```
+        New in version 1.3.
+>> drop(*cols)                                  Returns a new DataFrame that drops the specified column. This is a no-op if schema doesn’t contain the given column name(s).
+        Parameters:	cols – 传入一个 [ string ] 或者 [ string 的 list ] 或者 [ Column ].
+        ```
+        >>> df.drop('age').collect()
+        [Row(name=u'Alice'), Row(name=u'Bob')]
+        >>> df.drop(df.age).collect()
+        [Row(name=u'Alice'), Row(name=u'Bob')]
+        >>> df.join(df2, df.name == df2.name, 'inner').drop(df.name).collect()
+        [Row(age=5, height=85, name=u'Bob')]
+        >>> df.join(df2, df.name == df2.name, 'inner').drop(df2.name).collect()
+        [Row(age=5, name=u'Bob', height=85)]
+        >>> df.join(df2, 'name', 'inner').drop('age', 'height').collect()
+        [Row(name=u'Bob')]
+        ```
+        New in version 1.4.
+>> dropDuplicates(subset=None)
+        Return a new DataFrame with duplicate rows removed, optionally only considering certain columns.
+        For a static batch DataFrame, it just drops duplicate rows. For a streaming DataFrame, it will keep all data across triggers as intermediate state to drop duplicates rows. You can use withWatermark() to limit how late the duplicate data can be and system will accordingly limit the state. In addition, too late data older than watermark will be dropped to avoid any possibility of duplicates.
+        drop_duplicates() is an alias for dropDuplicates().
+        ```
+        >>> from pyspark.sql import Row
+        >>> df = sc.parallelize([ \
+        ...     Row(name='Alice', age=5, height=80), \
+        ...     Row(name='Alice', age=5, height=80), \
+        ...     Row(name='Alice', age=10, height=80)]).toDF()
+        >>> df.dropDuplicates().show()
+        +---+------+-----+
+        |age|height| name|
+        +---+------+-----+
+        |  5|    80|Alice|
+        | 10|    80|Alice|
+        +---+------+-----+
+        >>> df.dropDuplicates(['name', 'height']).show()
+        +---+------+-----+
+        |age|height| name|
+        +---+------+-----+
+        |  5|    80|Alice|
+        +---+------+-----+
+        ```
+        New in version 1.4.
+>> drop_duplicates(subset=None)                 drop_duplicates() is an alias for dropDuplicates().
+        New in version 1.4.
+>> dropna(how='any', thresh=None, subset=None)                          Returns a new DataFrame omitting rows with null values. DataFrame.dropna() and DataFrameNaFunctions.drop() are aliases of each other.
+        Parameters:
+        how – ‘any’ or ‘all’. If ‘any’, drop a row if it contains any nulls. If ‘all’, drop a row only if all its values are null.
+        thresh – int, default None If specified, drop rows that have less than thresh non-null values. This overwrites the how parameter.
+        subset – optional list of column names to consider.
+        ```
+        >>> df4.na.drop().show()
+        +---+------+-----+
+        |age|height| name|
+        +---+------+-----+
+        | 10|    80|Alice|
+        +---+------+-----+
+        ```
+        New in version 1.3.1.
+>> dtypes                                       Returns all column names and their data types as a list.
+        ```
+        >>> df.dtypes
+        [('age', 'int'), ('name', 'string')]
+        ```
+        New in version 1.3.
+explain(extended=False)                         Prints the (logical and physical) plans to the console for debugging purpose.
+        Parameters:	extended – boolean, default False. If False, prints only the physical plan.
+        ```        
+        >>> df.explain()
+        == Physical Plan ==
+        Scan ExistingRDD[age#0,name#1]
+        >>> df.explain(True)
+        == Parsed Logical Plan ==
+        ...
+        == Analyzed Logical Plan ==
+        ...
+        == Optimized Logical Plan ==
+        ...
+        == Physical Plan ==
+        ...
+        ```
+        New in version 1.3.
+>> fillna(value, subset=None)                   Replace null values, alias for na.fill(). DataFrame.fillna() and DataFrameNaFunctions.fill() are aliases of each other.
+        Parameters:
+        value – int, long, float, string, or dict. Value to replace null values with. If the value is a dict, then subset is ignored and value must be a mapping from column name (string) to replacement value. The replacement value must be an int, long, float, boolean, or string.
+        subset – optional list of column names to consider. Columns specified in subset that do not have matching data type are ignored. For example, if value is a string, and subset contains a non-string column, then the non-string column is simply ignored.
+        ```
+        >>> df4.na.fill(50).show()
+        +---+------+-----+
+        |age|height| name|
+        +---+------+-----+
+        | 10|    80|Alice|
+        |  5|    50|  Bob|
+        | 50|    50|  Tom|
+        | 50|    50| null|
+        +---+------+-----+
+        >>> df4.na.fill({'age': 50, 'name': 'unknown'}).show()
+        +---+------+-------+
+        |age|height|   name|
+        +---+------+-------+
+        | 10|    80|  Alice|
+        |  5|  null|    Bob|
+        | 50|  null|    Tom|
+        | 50|  null|unknown|
+        +---+------+-------+
+        ```
+        New in version 1.3.1.
+>> filter(condition)                            Filters rows using the given condition.
+        where() is an alias for filter().
+        Parameters:	condition – a Column of types.BooleanType or a string of SQL expression.
+        ```        
+        >>> df.filter(df.age > 3).collect()
+        [Row(age=5, name=u'Bob')]
+        >>> df.where(df.age == 2).collect()
+        [Row(age=2, name=u'Alice')]
+        >>> df.filter("age > 3").collect()
+        [Row(age=5, name=u'Bob')]
+        >>> df.where("age = 2").collect()
+        [Row(age=2, name=u'Alice')]
+        ```
+        New in version 1.3.
+>> first()                                       Returns the first row as a Row.
+        ```
+        >>> df.first()
+        Row(age=2, name=u'Alice')
+        ```
+        New in version 1.3.
+>> foreach(f)                                   Applies the f function to all Row of this DataFrame.
+        This is a shorthand for df.rdd.foreach().
+        ```
+        >>> def f(person):
+        ...     print(person.name)
+        >>> df.foreach(f)
+        ```
+        New in version 1.3.
+>> foreachPartition(f)                          Applies the f function to each partition of this DataFrame.
+        This a shorthand for df.rdd.foreachPartition().
+        ```
+        >>> def f(people):
+        ...     for person in people:
+        ...         print(person.name)
+        >>> df.foreachPartition(f)
+        ```
+        New in version 1.3.
+freqItems(cols, support=None)                   Finding frequent items for columns, possibly with false positives. Using the frequent element count algorithm described in “http://dx.doi.org/10.1145/762471.762473, proposed by Karp, Schenker, and Papadimitriou”. DataFrame.freqItems() and DataFrameStatFunctions.freqItems() are aliases.
+        Note This function is meant for exploratory data analysis, as we make no guarantee about the backward compatibility of the schema of the resulting DataFrame.
+        Parameters:
+        cols – Names of the columns to calculate frequent items for as a list or tuple of strings.
+        support – The frequency with which to consider an item ‘frequent’. Default is 1%. The support must be greater than 1e-4.
+        New in version 1.4.
+>> groupBy(*cols)                               Groups the DataFrame using the specified columns, so we can run aggregation on them. See GroupedData for all the available aggregate functions.
+        groupby() is an alias for groupBy().
+        Parameters:	cols – list of columns to group by. Each element should be a column name (string) or an expression (Column).
+        ```        
+        >>> df.groupBy().avg().collect()
+        [Row(avg(age)=3.5)]
+        >>> sorted(df.groupBy('name').agg({'age': 'mean'}).collect())
+        [Row(name=u'Alice', avg(age)=2.0), Row(name=u'Bob', avg(age)=5.0)]
+        >>> sorted(df.groupBy(df.name).avg().collect())
+        [Row(name=u'Alice', avg(age)=2.0), Row(name=u'Bob', avg(age)=5.0)]
+        >>> sorted(df.groupBy(['name', df.age]).count().collect())
+        [Row(name=u'Alice', age=2, count=1), Row(name=u'Bob', age=5, count=1)]
+        ```
+        New in version 1.3.
 groupby(*cols)
-groupby() is an alias for groupBy().
-
-New in version 1.4.
-
-head(n=None)
-Returns the first n rows.
-
-Note This method should only be used if the resulting array is expected to be small, as all the data is loaded into the driver’s memory.
-Parameters:	n – int, default 1. Number of rows to return.
-Returns:	If n is greater than 1, return a list of Row. If n is 1, return a single Row.
->>> df.head()
-Row(age=2, name=u'Alice')
->>> df.head(1)
-[Row(age=2, name=u'Alice')]
-New in version 1.3.
-
-hint(name, *parameters)
-Specifies some hint on the current DataFrame.
-
-Parameters:
-name – A name of the hint.
-parameters – Optional parameters.
-Returns:
-DataFrame
->>> df.join(df2.hint("broadcast"), "name").show()
-+----+---+------+
-|name|age|height|
-+----+---+------+
-| Bob|  5|    85|
-+----+---+------+
-New in version 2.2.
-
-intersect(other)
-Return a new DataFrame containing rows only in both this frame and another frame.
-
-This is equivalent to INTERSECT in SQL.
-
-New in version 1.3.
-
-isLocal()
-Returns True if the collect() and take() methods can be run locally (without any Spark executors).
-
-New in version 1.3.
-
-isStreaming
-Returns true if this Dataset contains one or more sources that continuously return data as it arrives. A Dataset that reads data from a streaming source must be executed as a StreamingQuery using the start() method in DataStreamWriter. Methods that return a single answer, (e.g., count() or collect()) will throw an AnalysisException when there is a streaming source present.
-
-Note Evolving
-New in version 2.0.
-
-join(other, on=None, how=None)
-Joins with another DataFrame, using the given join expression.
-
-Parameters:
-other – Right side of the join
-on – a string for the join column name, a list of column names, a join expression (Column), or a list of Columns. If on is a string or a list of strings indicating the name of the join column(s), the column(s) must exist on both sides, and this performs an equi-join.
-how – str, default inner. Must be one of: inner, cross, outer, full, full_outer, left, left_outer, right, right_outer, left_semi, and left_anti.
-The following performs a full outer join between df1 and df2.
-
->>> df.join(df2, df.name == df2.name, 'outer').select(df.name, df2.height).collect()
-[Row(name=None, height=80), Row(name=u'Bob', height=85), Row(name=u'Alice', height=None)]
->>> df.join(df2, 'name', 'outer').select('name', 'height').collect()
-[Row(name=u'Tom', height=80), Row(name=u'Bob', height=85), Row(name=u'Alice', height=None)]
->>> cond = [df.name == df3.name, df.age == df3.age]
->>> df.join(df3, cond, 'outer').select(df.name, df3.age).collect()
-[Row(name=u'Alice', age=2), Row(name=u'Bob', age=5)]
->>> df.join(df2, 'name').select(df.name, df2.height).collect()
-[Row(name=u'Bob', height=85)]
->>> df.join(df4, ['name', 'age']).select(df.name, df.age).collect()
-[Row(name=u'Bob', age=5)]
-New in version 1.3.
-
-limit(num)
-Limits the result count to the number specified.
-
->>> df.limit(1).collect()
-[Row(age=2, name=u'Alice')]
->>> df.limit(0).collect()
-[]
-New in version 1.3.
-
-na
-Returns a DataFrameNaFunctions for handling missing values.
-
-New in version 1.3.1.
-
-orderBy(*cols, **kwargs)
-Returns a new DataFrame sorted by the specified column(s).
-
-Parameters:
-cols – list of Column or column names to sort by.
-ascending – boolean or list of boolean (default True). Sort ascending vs. descending. Specify list for multiple sort orders. If a list is specified, length of the list must equal length of the cols.
->>> df.sort(df.age.desc()).collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
->>> df.sort("age", ascending=False).collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
->>> df.orderBy(df.age.desc()).collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
->>> from pyspark.sql.functions import *
->>> df.sort(asc("age")).collect()
-[Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
->>> df.orderBy(desc("age"), "name").collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
->>> df.orderBy(["age", "name"], ascending=[0, 1]).collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
-New in version 1.3.
-
-persist(storageLevel=StorageLevel(True, True, False, False, 1))
-Sets the storage level to persist the contents of the DataFrame across operations after the first time it is computed. This can only be used to assign a new storage level if the DataFrame does not have a storage level set yet. If no storage level is specified defaults to (MEMORY_AND_DISK).
-
-Note The default storage level has changed to MEMORY_AND_DISK to match Scala in 2.0.
-New in version 1.3.
-
-printSchema()
-Prints out the schema in the tree format.
-
->>> df.printSchema()
-root
- |-- age: integer (nullable = true)
- |-- name: string (nullable = true)
-New in version 1.3.
-
-randomSplit(weights, seed=None)
-Randomly splits this DataFrame with the provided weights.
-
-Parameters:
-weights – list of doubles as weights with which to split the DataFrame. Weights will be normalized if they don’t sum up to 1.0.
-seed – The seed for sampling.
->>> splits = df4.randomSplit([1.0, 2.0], 24)
->>> splits[0].count()
-1
->>> splits[1].count()
-3
-New in version 1.4.
-
-rdd
-Returns the content as an pyspark.RDD of Row.
-
-New in version 1.3.
-
-registerTempTable(name)
-Registers this RDD as a temporary table using the given name.
-
-The lifetime of this temporary table is tied to the SQLContext that was used to create this DataFrame.
-
->>> df.registerTempTable("people")
->>> df2 = spark.sql("select * from people")
->>> sorted(df.collect()) == sorted(df2.collect())
-True
->>> spark.catalog.dropTempView("people")
-Note Deprecated in 2.0, use createOrReplaceTempView instead.
-New in version 1.3.
-
-repartition(numPartitions, *cols)
-Returns a new DataFrame partitioned by the given partitioning expressions. The resulting DataFrame is hash partitioned.
-
-numPartitions can be an int to specify the target number of partitions or a Column. If it is a Column, it will be used as the first partitioning column. If not specified, the default number of partitions is used.
-
-Changed in version 1.6: Added optional arguments to specify the partitioning columns. Also made numPartitions optional if partitioning columns are specified.
-
->>> df.repartition(10).rdd.getNumPartitions()
-10
->>> data = df.union(df).repartition("age")
->>> data.show()
-+---+-----+
-|age| name|
-+---+-----+
-|  5|  Bob|
-|  5|  Bob|
-|  2|Alice|
-|  2|Alice|
-+---+-----+
->>> data = data.repartition(7, "age")
->>> data.show()
-+---+-----+
-|age| name|
-+---+-----+
-|  2|Alice|
-|  5|  Bob|
-|  2|Alice|
-|  5|  Bob|
-+---+-----+
->>> data.rdd.getNumPartitions()
-7
->>> data = data.repartition("name", "age")
->>> data.show()
-+---+-----+
-|age| name|
-+---+-----+
-|  5|  Bob|
-|  5|  Bob|
-|  2|Alice|
-|  2|Alice|
-+---+-----+
-New in version 1.3.
-
-replace(to_replace, value=None, subset=None)
-Returns a new DataFrame replacing a value with another value. DataFrame.replace() and DataFrameNaFunctions.replace() are aliases of each other. Values to_replace and value should contain either all numerics, all booleans, or all strings. When replacing, the new value will be cast to the type of the existing column. For numeric replacements all values to be replaced should have unique floating point representation. In case of conflicts (for example with {42: -1, 42.0: 1}) and arbitrary replacement will be used.
-
-Parameters:
-to_replace – bool, int, long, float, string, list or dict. Value to be replaced. If the value is a dict, then value is ignored and to_replace must be a mapping between a value and a replacement.
-value – int, long, float, string, or list. The replacement value must be an int, long, float, or string. If value is a list, value should be of the same length and type as to_replace. If value is a scalar and to_replace is a sequence, then value is used as a replacement for each item in to_replace.
-subset – optional list of column names to consider. Columns specified in subset that do not have matching data type are ignored. For example, if value is a string, and subset contains a non-string column, then the non-string column is simply ignored.
->>> df4.na.replace(10, 20).show()
-+----+------+-----+
-| age|height| name|
-+----+------+-----+
-|  20|    80|Alice|
-|   5|  null|  Bob|
-|null|  null|  Tom|
-|null|  null| null|
-+----+------+-----+
->>> df4.na.replace(['Alice', 'Bob'], ['A', 'B'], 'name').show()
-+----+------+----+
-| age|height|name|
-+----+------+----+
-|  10|    80|   A|
-|   5|  null|   B|
-|null|  null| Tom|
-|null|  null|null|
-+----+------+----+
-New in version 1.4.
-
-rollup(*cols)
-Create a multi-dimensional rollup for the current DataFrame using the specified columns, so we can run aggregation on them.
-
->>> df.rollup("name", df.age).count().orderBy("name", "age").show()
-+-----+----+-----+
-| name| age|count|
-+-----+----+-----+
-| null|null|    2|
-|Alice|null|    1|
-|Alice|   2|    1|
-|  Bob|null|    1|
-|  Bob|   5|    1|
-+-----+----+-----+
-New in version 1.4.
-
-sample(withReplacement, fraction, seed=None)
-Returns a sampled subset of this DataFrame.
-
-Note This is not guaranteed to provide exactly the fraction specified of the total count of the given DataFrame.
->>> df.sample(False, 0.5, 42).count()
-2
-New in version 1.3.
-
-sampleBy(col, fractions, seed=None)
-Returns a stratified sample without replacement based on the fraction given on each stratum.
-
-Parameters:
-col – column that defines strata
-fractions – sampling fraction for each stratum. If a stratum is not specified, we treat its fraction as zero.
-seed – random seed
-Returns:
-a new DataFrame that represents the stratified sample
->>> from pyspark.sql.functions import col
->>> dataset = sqlContext.range(0, 100).select((col("id") % 3).alias("key"))
->>> sampled = dataset.sampleBy("key", fractions={0: 0.1, 1: 0.2}, seed=0)
->>> sampled.groupBy("key").count().orderBy("key").show()
-+---+-----+
-|key|count|
-+---+-----+
-|  0|    5|
-|  1|    9|
-+---+-----+
-New in version 1.5.
-
-schema
-Returns the schema of this DataFrame as a pyspark.sql.types.StructType.
-
->>> df.schema
-StructType(List(StructField(age,IntegerType,true),StructField(name,StringType,true)))
-New in version 1.3.
-
-select(*cols)
-Projects a set of expressions and returns a new DataFrame.
-
-Parameters:	cols – list of column names (string) or expressions (Column). If one of the column names is ‘*’, that column is expanded to include all columns in the current DataFrame.
->>> df.select('*').collect()
-[Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
->>> df.select('name', 'age').collect()
-[Row(name=u'Alice', age=2), Row(name=u'Bob', age=5)]
->>> df.select(df.name, (df.age + 10).alias('age')).collect()
-[Row(name=u'Alice', age=12), Row(name=u'Bob', age=15)]
-New in version 1.3.
-
-selectExpr(*expr)
-Projects a set of SQL expressions and returns a new DataFrame.
-
-This is a variant of select() that accepts SQL expressions.
-
->>> df.selectExpr("age * 2", "abs(age)").collect()
-[Row((age * 2)=4, abs(age)=2), Row((age * 2)=10, abs(age)=5)]
-New in version 1.3.
-
-show(n=20, truncate=True)
-Prints the first n rows to the console.
-
-Parameters:
-n – Number of rows to show.
-truncate – If set to True, truncate strings longer than 20 chars by default. If set to a number greater than one, truncates long strings to length truncate and align cells right.
->>> df
-DataFrame[age: int, name: string]
->>> df.show()
-+---+-----+
-|age| name|
-+---+-----+
-|  2|Alice|
-|  5|  Bob|
-+---+-----+
->>> df.show(truncate=3)
-+---+----+
-|age|name|
-+---+----+
-|  2| Ali|
-|  5| Bob|
-+---+----+
-New in version 1.3.
-
-sort(*cols, **kwargs)
-Returns a new DataFrame sorted by the specified column(s).
-
-Parameters:
-cols – list of Column or column names to sort by.
-ascending – boolean or list of boolean (default True). Sort ascending vs. descending. Specify list for multiple sort orders. If a list is specified, length of the list must equal length of the cols.
->>> df.sort(df.age.desc()).collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
->>> df.sort("age", ascending=False).collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
->>> df.orderBy(df.age.desc()).collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
->>> from pyspark.sql.functions import *
->>> df.sort(asc("age")).collect()
-[Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
->>> df.orderBy(desc("age"), "name").collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
->>> df.orderBy(["age", "name"], ascending=[0, 1]).collect()
-[Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
-New in version 1.3.
-
-sortWithinPartitions(*cols, **kwargs)
-Returns a new DataFrame with each partition sorted by the specified column(s).
-
-Parameters:
-cols – list of Column or column names to sort by.
-ascending – boolean or list of boolean (default True). Sort ascending vs. descending. Specify list for multiple sort orders. If a list is specified, length of the list must equal length of the cols.
->>> df.sortWithinPartitions("age", ascending=False).show()
-+---+-----+
-|age| name|
-+---+-----+
-|  2|Alice|
-|  5|  Bob|
-+---+-----+
-New in version 1.6.
-
-stat
-Returns a DataFrameStatFunctions for statistic functions.
-
-New in version 1.4.
-
-storageLevel
-Get the DataFrame‘s current storage level.
-
->>> df.storageLevel
-StorageLevel(False, False, False, False, 1)
->>> df.cache().storageLevel
-StorageLevel(True, True, False, True, 1)
->>> df2.persist(StorageLevel.DISK_ONLY_2).storageLevel
-StorageLevel(True, False, False, False, 2)
-New in version 2.1.
-
-subtract(other)
-Return a new DataFrame containing rows in this frame but not in another frame.
-
-This is equivalent to EXCEPT in SQL.
-
-New in version 1.3.
-
-take(num)
-Returns the first num rows as a list of Row.
-
->>> df.take(2)
-[Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
-New in version 1.3.
-
-toDF(*cols)
-Returns a new class:DataFrame that with new specified column names
-
-Parameters:	cols – list of new column names (string)
->>> df.toDF('f1', 'f2').collect()
-[Row(f1=2, f2=u'Alice'), Row(f1=5, f2=u'Bob')]
-toJSON(use_unicode=True)
-Converts a DataFrame into a RDD of string.
-
-Each row is turned into a JSON document as one element in the returned RDD.
-
->>> df.toJSON().first()
-u'{"age":2,"name":"Alice"}'
-New in version 1.3.
-
-toLocalIterator()
-Returns an iterator that contains all of the rows in this DataFrame. The iterator will consume as much memory as the largest partition in this DataFrame.
-
->>> list(df.toLocalIterator())
-[Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
-New in version 2.0.
-
-toPandas()
-Returns the contents of this DataFrame as Pandas pandas.DataFrame.
-
-This is only available if Pandas is installed and available.
-
-Note This method should only be used if the resulting Pandas’s DataFrame is expected to be small, as all the data is loaded into the driver’s memory.
->>> df.toPandas()
-   age   name
-0    2  Alice
-1    5    Bob
-New in version 1.3.
-
-union(other)
-Return a new DataFrame containing union of rows in this and another frame.
-
-This is equivalent to UNION ALL in SQL. To do a SQL-style set union (that does deduplication of elements), use this function followed by a distinct.
-
-Also as standard in SQL, this function resolves columns by position (not by name).
-
-New in version 2.0.
-
-unionAll(other)
-Return a new DataFrame containing union of rows in this and another frame.
-
-This is equivalent to UNION ALL in SQL. To do a SQL-style set union (that does deduplication of elements), use this function followed by a distinct.
-
-Also as standard in SQL, this function resolves columns by position (not by name).
-
-Note Deprecated in 2.0, use union instead.
-New in version 1.3.
-
-unpersist(blocking=False)
-Marks the DataFrame as non-persistent, and remove all blocks for it from memory and disk.
-
-Note blocking default has changed to False to match Scala in 2.0.
-New in version 1.3.
-
+        groupby() is an alias for groupBy().
+        New in version 1.4.
+head(n=None)                                    Returns the first n rows.
+        Note This method should only be used if the resulting array is expected to be small, as all the data is loaded into the driver’s memory.
+        Parameters:	n – int, default 1. Number of rows to return.
+        Returns:	If n is greater than 1, return a list of Row. If n is 1, return a single Row.
+        ```
+        >>> df.head()
+        Row(age=2, name=u'Alice')
+        >>> df.head(1)
+        [Row(age=2, name=u'Alice')]
+        ```
+        New in version 1.3.
+hint(name, *parameters)                         Specifies some hint on the current DataFrame.
+        Parameters:
+        name – A name of the hint.
+        parameters – Optional parameters.
+        Returns:
+        DataFrame
+        ```
+        >>> df.join(df2.hint("broadcast"), "name").show()
+        +----+---+------+
+        |name|age|height|
+        +----+---+------+
+        | Bob|  5|    85|
+        +----+---+------+
+        ```
+        New in version 2.2.
+intersect(other)                                Return a new DataFrame containing rows only in both this frame and another frame.
+        This is equivalent to INTERSECT in SQL.
+        New in version 1.3.
+isLocal()                                       Returns True if the collect() and take() methods can be run locally (without any Spark executors).
+        New in version 1.3.
+isStreaming                                     Returns true if this Dataset contains one or more sources that continuously return data as it arrives. A Dataset that reads data from a streaming source must be executed as a StreamingQuery using the start() method in DataStreamWriter. Methods that return a single answer, (e.g., count() or collect()) will throw an AnalysisException when there is a streaming source present.    Note Evolving
+        New in version 2.0.
+>> join(other, on=None, how=None)               Joins with another DataFrame, using the given join expression.  
+        Parameters:
+        other – Right side of the join
+        on – a string for the join column name, a list of column names, a join expression (Column), or a list of Columns. If on is a string or a list of strings indicating the name of the join column(s), the column(s) must exist on both sides, and this performs an equi-join.
+        how – str, default inner. Must be one of: inner, cross, outer, full, full_outer, left, left_outer, right, right_outer, left_semi, and left_anti.
+        The following performs a full outer join between df1 and df2.
+        ```
+        >>> df.join(df2, df.name == df2.name, 'outer').select(df.name, df2.height).collect()
+        [Row(name=None, height=80), Row(name=u'Bob', height=85), Row(name=u'Alice', height=None)]
+        >>> df.join(df2, 'name', 'outer').select('name', 'height').collect()
+        [Row(name=u'Tom', height=80), Row(name=u'Bob', height=85), Row(name=u'Alice', height=None)]
+        >>> cond = [df.name == df3.name, df.age == df3.age]
+        >>> df.join(df3, cond, 'outer').select(df.name, df3.age).collect()
+        [Row(name=u'Alice', age=2), Row(name=u'Bob', age=5)]
+        >>> df.join(df2, 'name').select(df.name, df2.height).collect()
+        [Row(name=u'Bob', height=85)]
+        >>> df.join(df4, ['name', 'age']).select(df.name, df.age).collect()
+        [Row(name=u'Bob', age=5)]
+        ```
+        New in version 1.3.
+>> limit(num)                                   Limits the result count to the number specified.
+        ```    
+        >>> df.limit(1).collect()
+        [Row(age=2, name=u'Alice')]
+        >>> df.limit(0).collect()
+        []
+        ```
+        New in version 1.3.
+>> na                                           Returns a DataFrameNaFunctions for handling missing values.
+        New in version 1.3.1.
+orderBy(*cols, **kwargs)                        Returns a new DataFrame sorted by the specified column(s).
+        Parameters:
+        cols – list of Column or column names to sort by.
+        ascending – boolean or list of boolean (default True). Sort ascending vs. descending. Specify list for multiple sort orders. If a list is specified, length of the list must equal length of the cols.
+        ```
+        >>> df.sort(df.age.desc()).collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        >>> df.sort("age", ascending=False).collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        >>> df.orderBy(df.age.desc()).collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        >>> from pyspark.sql.functions import *
+        >>> df.sort(asc("age")).collect()
+        [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+        >>> df.orderBy(desc("age"), "name").collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        >>> df.orderBy(["age", "name"], ascending=[0, 1]).collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        ```
+        New in version 1.3.
+>> persist(storageLevel=StorageLevel(True, True, False, False, 1))                  Sets the storage level to persist the contents of the DataFrame across operations after the first time it is computed. This can only be used to assign a new storage level if the DataFrame does not have a storage level set yet. If no storage level is specified defaults to (MEMORY_AND_DISK).    Note The default storage level has changed to MEMORY_AND_DISK to match Scala in 2.0.
+        New in version 1.3.
+printSchema()                                   Prints out the schema in the tree format.
+        ```
+        >>> df.printSchema()
+        root
+         |-- age: integer (nullable = true)
+         |-- name: string (nullable = true)
+         ```
+        New in version 1.3.
+randomSplit(weights, seed=None)                 Randomly splits this DataFrame with the provided weights.
+        Parameters:
+        weights – list of doubles as weights with which to split the DataFrame. Weights will be normalized if they don’t sum up to 1.0.
+        seed – The seed for sampling.
+        ```        
+        >>> splits = df4.randomSplit([1.0, 2.0], 24)
+        >>> splits[0].count()
+        1
+        >>> splits[1].count()
+        3
+        ```
+        New in version 1.4.
+rdd                                             Returns the content as an pyspark.RDD of Row.
+        New in version 1.3.
+>> registerTempTable(name)                      Registers this RDD as a temporary table using the given name. The lifetime of this temporary table is tied to the SQLContext that was used to create this DataFrame.
+        ```
+        >>> df.registerTempTable("people")
+        >>> df2 = spark.sql("select * from people")
+        >>> sorted(df.collect()) == sorted(df2.collect())
+        True
+        >>> spark.catalog.dropTempView("people")
+        ```
+        Note Deprecated in 2.0, use createOrReplaceTempView instead.
+        New in version 1.3.
+repartition(numPartitions, *cols)               Returns a new DataFrame partitioned by the given partitioning expressions. The resulting DataFrame is hash partitioned.
+        numPartitions can be an int to specify the target number of partitions or a Column. If it is a Column, it will be used as the first partitioning column. If not specified, the default number of partitions is used.
+        Changed in version 1.6: Added optional arguments to specify the partitioning columns. Also made numPartitions optional if partitioning columns are specified.
+        ```
+        >>> df.repartition(10).rdd.getNumPartitions()
+        10
+        >>> data = df.union(df).repartition("age")
+        >>> data.show()
+        +---+-----+
+        |age| name|
+        +---+-----+
+        |  5|  Bob|
+        |  5|  Bob|
+        |  2|Alice|
+        |  2|Alice|
+        +---+-----+
+        >>> data = data.repartition(7, "age")
+        >>> data.show()
+        +---+-----+
+        |age| name|
+        +---+-----+
+        |  2|Alice|
+        |  5|  Bob|
+        |  2|Alice|
+        |  5|  Bob|
+        +---+-----+
+        >>> data.rdd.getNumPartitions()
+        7
+        >>> data = data.repartition("name", "age")
+        >>> data.show()
+        +---+-----+
+        |age| name|
+        +---+-----+
+        |  5|  Bob|
+        |  5|  Bob|
+        |  2|Alice|
+        |  2|Alice|
+        +---+-----+
+        ```
+        New in version 1.3.
+replace(to_replace, value=None, subset=None)                    Returns a new DataFrame replacing a value with another value. DataFrame.replace() and DataFrameNaFunctions.replace() are aliases of each other. Values to_replace and value should contain either all numerics, all booleans, or all strings. When replacing, the new value will be cast to the type of the existing column. For numeric replacements all values to be replaced should have unique floating point representation. In case of conflicts (for example with {42: -1, 42.0: 1}) and arbitrary replacement will be used.
+        Parameters:
+        to_replace – bool, int, long, float, string, list or dict. Value to be replaced. If the value is a dict, then value is ignored and to_replace must be a mapping between a value and a replacement.
+        value – int, long, float, string, or list. The replacement value must be an int, long, float, or string. If value is a list, value should be of the same length and type as to_replace. If value is a scalar and to_replace is a sequence, then value is used as a replacement for each item in to_replace.
+        subset – optional list of column names to consider. Columns specified in subset that do not have matching data type are ignored. For example, if value is a string, and subset contains a non-string column, then the non-string column is simply ignored.
+        ```
+        >>> df4.na.replace(10, 20).show()
+        +----+------+-----+
+        | age|height| name|
+        +----+------+-----+
+        |  20|    80|Alice|
+        |   5|  null|  Bob|
+        |null|  null|  Tom|
+        |null|  null| null|
+        +----+------+-----+
+        >>> df4.na.replace(['Alice', 'Bob'], ['A', 'B'], 'name').show()
+        +----+------+----+
+        | age|height|name|
+        +----+------+----+
+        |  10|    80|   A|
+        |   5|  null|   B|
+        |null|  null| Tom|
+        |null|  null|null|
+        +----+------+----+
+        ```
+        New in version 1.4.
+rollup(*cols)                                                   Create a multi-dimensional rollup for the current DataFrame using the specified columns, so we can run aggregation on them.
+        ```
+        >>> df.rollup("name", df.age).count().orderBy("name", "age").show()
+        +-----+----+-----+
+        | name| age|count|
+        +-----+----+-----+
+        | null|null|    2|
+        |Alice|null|    1|
+        |Alice|   2|    1|
+        |  Bob|null|    1|
+        |  Bob|   5|    1|
+        +-----+----+-----+
+        ```
+        New in version 1.4.
+sample(withReplacement, fraction, seed=None)                    Returns a sampled subset of this DataFrame.
+        Note This is not guaranteed to provide exactly the fraction specified of the total count of the given DataFrame.
+        ```
+        >>> df.sample(False, 0.5, 42).count()
+        2
+        ```
+        New in version 1.3.
+sampleBy(col, fractions, seed=None)                             Returns a stratified sample without replacement based on the fraction given on each stratum.
+        Parameters:
+        col – column that defines strata
+        fractions – sampling fraction for each stratum. If a stratum is not specified, we treat its fraction as zero.
+        seed – random seed
+        Returns:
+        a new DataFrame that represents the stratified sample
+        ```        
+        >>> from pyspark.sql.functions import col
+        >>> dataset = sqlContext.range(0, 100).select((col("id") % 3).alias("key"))
+        >>> sampled = dataset.sampleBy("key", fractions={0: 0.1, 1: 0.2}, seed=0)
+        >>> sampled.groupBy("key").count().orderBy("key").show()
+        +---+-----+
+        |key|count|
+        +---+-----+
+        |  0|    5|
+        |  1|    9|
+        +---+-----+
+        ```
+        New in version 1.5.
+schema                                                          Returns the schema of this DataFrame as a pyspark.sql.types.StructType.
+        ```
+        >>> df.schema
+        StructType(List(StructField(age,IntegerType,true),StructField(name,StringType,true)))
+        ```
+        New in version 1.3.
+>> select(*cols)                                Projects a set of expressions and returns a new DataFrame.
+        Parameters:	cols – list of column names (string) or expressions (Column). If one of the column names is ‘*’, that column is expanded to include all columns in the current DataFrame.
+        ```
+        >>> df.select('*').collect()
+        [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+        >>> df.select('name', 'age').collect()
+        [Row(name=u'Alice', age=2), Row(name=u'Bob', age=5)]
+        >>> df.select(df.name, (df.age + 10).alias('age')).collect()
+        [Row(name=u'Alice', age=12), Row(name=u'Bob', age=15)]
+        ```
+        New in version 1.3.
+selectExpr(*expr)                               Projects a set of SQL expressions and returns a new DataFrame.
+        This is a variant of select() that accepts SQL expressions.
+        ```
+        >>> df.selectExpr("age * 2", "abs(age)").collect()
+        [Row((age * 2)=4, abs(age)=2), Row((age * 2)=10, abs(age)=5)]
+        ```
+        New in version 1.3.
+>> show(n=20, truncate=True)                       Prints the first n rows to the console.
+        Parameters:
+        n – Number of rows to show.
+        truncate – If set to True, truncate strings longer than 20 chars by default. If set to a number greater than one, truncates long strings to length truncate and align cells right.
+        ```
+        >>> df
+        DataFrame[age: int, name: string]
+        >>> df.show()
+        +---+-----+
+        |age| name|
+        +---+-----+
+        |  2|Alice|
+        |  5|  Bob|
+        +---+-----+
+        >>> df.show(truncate=3)
+        +---+----+
+        |age|name|
+        +---+----+
+        |  2| Ali|
+        |  5| Bob|
+        +---+----+
+        ```
+        New in version 1.3.
+sort(*cols, **kwargs)                               Returns a new DataFrame sorted by the specified column(s).
+        Parameters:
+        cols – list of Column or column names to sort by.
+        ascending – boolean or list of boolean (default True). Sort ascending vs. descending. Specify list for multiple sort orders. If a list is specified, length of the list must equal length of the cols.
+        ```
+        >>> df.sort(df.age.desc()).collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        >>> df.sort("age", ascending=False).collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        >>> df.orderBy(df.age.desc()).collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        >>> from pyspark.sql.functions import *
+        >>> df.sort(asc("age")).collect()
+        [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+        >>> df.orderBy(desc("age"), "name").collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        >>> df.orderBy(["age", "name"], ascending=[0, 1]).collect()
+        [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
+        ```
+        New in version 1.3.
+sortWithinPartitions(*cols, **kwargs)               Returns a new DataFrame with each partition sorted by the specified column(s).
+        Parameters:
+        cols – list of Column or column names to sort by.
+        ascending – boolean or list of boolean (default True). Sort ascending vs. descending. Specify list for multiple sort orders. If a list is specified, length of the list must equal length of the cols.
+        ```
+        >>> df.sortWithinPartitions("age", ascending=False).show()
+        +---+-----+
+        |age| name|
+        +---+-----+
+        |  2|Alice|
+        |  5|  Bob|
+        +---+-----+
+        ```
+        New in version 1.6.
+stat                                                Returns a DataFrameStatFunctions for statistic functions.
+        New in version 1.4.
+storageLevel                                        Get the DataFrame‘s current storage level.
+        ```
+        >>> df.storageLevel
+        StorageLevel(False, False, False, False, 1)
+        >>> df.cache().storageLevel
+        StorageLevel(True, True, False, True, 1)
+        >>> df2.persist(StorageLevel.DISK_ONLY_2).storageLevel
+        StorageLevel(True, False, False, False, 2)
+        ```
+        New in version 2.1.
+subtract(other)                                     Return a new DataFrame containing rows in this frame but not in another frame.
+        This is equivalent to EXCEPT in SQL.
+        New in version 1.3.
+take(num)                                           Returns the first num rows as a list of Row.
+        ```
+        >>> df.take(2)
+        [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+        ```
+        New in version 1.3.
+toDF(*cols)                                         Returns a new class:DataFrame that with new specified column names
+        Parameters:	cols – list of new column names (string)
+        ```        
+        >>> df.toDF('f1', 'f2').collect()
+        [Row(f1=2, f2=u'Alice'), Row(f1=5, f2=u'Bob')]
+        ```
+toJSON(use_unicode=True)                            Converts a DataFrame into a RDD of string.
+        Each row is turned into a JSON document as one element in the returned RDD.
+        ```
+        >>> df.toJSON().first()
+        u'{"age":2,"name":"Alice"}'
+        ```
+        New in version 1.3.
+toLocalIterator()                                   Returns an iterator that contains all of the rows in this DataFrame. The iterator will consume as much memory as the largest partition in this DataFrame.
+        ```
+        >>> list(df.toLocalIterator())
+        [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+        ```
+        New in version 2.0.
+>> toPandas()                                       Returns the contents of this DataFrame as Pandas pandas.DataFrame.
+        This is only available if Pandas is installed and available.
+        Note This method should only be used if the resulting Pandas’s DataFrame is expected to be small, as all the data is loaded into the driver’s memory.
+        ```
+        >>> df.toPandas()
+           age   name
+        0    2  Alice
+        1    5    Bob
+        ```
+        New in version 1.3.
+union(other)                                        Return a new DataFrame containing union of rows in this and another frame.
+        This is equivalent to UNION ALL in SQL. To do a SQL-style set union (that does deduplication of elements), use this function followed by a distinct.
+        Also as standard in SQL, this function resolves columns by position (not by name).
+        New in version 2.0.
+unionAll(other)                                     Return a new DataFrame containing union of rows in this and another frame.
+        This is equivalent to UNION ALL in SQL. To do a SQL-style set union (that does deduplication of elements), use this function followed by a distinct.
+        Also as standard in SQL, this function resolves columns by position (not by name).
+        Note Deprecated in 2.0, use union instead.
+        New in version 1.3.
+unpersist(blocking=False)                           Marks the DataFrame as non-persistent, and remove all blocks for it from memory and disk.
+        Note blocking default has changed to False to match Scala in 2.0.
+        New in version 1.3.
 where(condition)
-where() is an alias for filter().
+        where() is an alias for filter().
+        New in version 1.3.
+withColumn(colName, col)                            Returns a new DataFrame by adding a column or replacing the existing column that has the same name.
+        Parameters:
+        colName – string, name of the new column.
+        col – a Column expression for the new column.
+        ```
+        >>> df.withColumn('age2', df.age + 2).collect()
+        [Row(age=2, name=u'Alice', age2=4), Row(age=5, name=u'Bob', age2=7)]
+        ```
+        New in version 1.3.
+withColumnRenamed(existing, new)                    Returns a new DataFrame by renaming an existing column. This is a no-op if schema doesn’t contain the given column name.
+        Parameters:
+        existing – string, name of the existing column to rename.
+        col – string, new name of the column.
+        ```
+        >>> df.withColumnRenamed('age', 'age2').collect()
+        [Row(age2=2, name=u'Alice'), Row(age2=5, name=u'Bob')]
+        ```
+        New in version 1.3.
+withWatermark(eventTime, delayThreshold)            Defines an event time watermark for this DataFrame. A watermark tracks a point in time before which we assume no more late data is going to arrive.
+        Spark will use this watermark for several purposes:
+        To know when a given time window aggregation can be finalized and thus can be emitted when using output modes that do not allow updates.
+        To minimize the amount of state that we need to keep for on-going aggregations.
+        The current watermark is computed by looking at the MAX(eventTime) seen across all of the partitions in the query minus a user specified delayThreshold. Due to the cost of coordinating this value across partitions, the actual watermark used is only guaranteed to be at least delayThreshold behind the actual event time. In some cases we may still process records that arrive more than delayThreshold late.
+        Parameters:
+        eventTime – the name of the column that contains the event time of the row.
+        delayThreshold – the minimum delay to wait to data to arrive late, relative to the latest record that has been processed in the form of an interval (e.g. “1 minute” or “5 hours”).
+        Note Evolving
+        ```
+        >>> sdf.select('name', sdf.time.cast('timestamp')).withWatermark('time', '10 minutes')
+        DataFrame[name: string, time: timestamp]
+        ```
+        New in version 2.1.
+write                                               Interface for saving the content of the non-streaming DataFrame out into external storage.
+        Returns:	DataFrameWriter
+        New in version 1.4.
+writeStream                                         Interface for saving the content of the streaming DataFrame out into external storage.
+        Note Evolving.
+        Returns:	DataStreamWriter
+        New in version 2.0.
 
-New in version 1.3.
 
-withColumn(colName, col)
-Returns a new DataFrame by adding a column or replacing the existing column that has the same name.
-
-Parameters:
-colName – string, name of the new column.
-col – a Column expression for the new column.
->>> df.withColumn('age2', df.age + 2).collect()
-[Row(age=2, name=u'Alice', age2=4), Row(age=5, name=u'Bob', age2=7)]
-New in version 1.3.
-
-withColumnRenamed(existing, new)
-Returns a new DataFrame by renaming an existing column. This is a no-op if schema doesn’t contain the given column name.
-
-Parameters:
-existing – string, name of the existing column to rename.
-col – string, new name of the column.
->>> df.withColumnRenamed('age', 'age2').collect()
-[Row(age2=2, name=u'Alice'), Row(age2=5, name=u'Bob')]
-New in version 1.3.
-
-withWatermark(eventTime, delayThreshold)
-Defines an event time watermark for this DataFrame. A watermark tracks a point in time before which we assume no more late data is going to arrive.
-
-Spark will use this watermark for several purposes:
-To know when a given time window aggregation can be finalized and thus can be emitted when using output modes that do not allow updates.
-To minimize the amount of state that we need to keep for on-going aggregations.
-The current watermark is computed by looking at the MAX(eventTime) seen across all of the partitions in the query minus a user specified delayThreshold. Due to the cost of coordinating this value across partitions, the actual watermark used is only guaranteed to be at least delayThreshold behind the actual event time. In some cases we may still process records that arrive more than delayThreshold late.
-
-Parameters:
-eventTime – the name of the column that contains the event time of the row.
-delayThreshold – the minimum delay to wait to data to arrive late, relative to the latest record that has been processed in the form of an interval (e.g. “1 minute” or “5 hours”).
-Note Evolving
->>> sdf.select('name', sdf.time.cast('timestamp')).withWatermark('time', '10 minutes')
-DataFrame[name: string, time: timestamp]
-New in version 2.1.
-
-write
-Interface for saving the content of the non-streaming DataFrame out into external storage.
-
-Returns:	DataFrameWriter
-New in version 1.4.
-
-writeStream
-Interface for saving the content of the streaming DataFrame out into external storage.
-
-Note Evolving.
-Returns:	DataStreamWriter
-New in version 2.0.
-
+## GroupedData 类
 class pyspark.sql.GroupedData(jgd, sql_ctx)
-A set of methods for aggregations on a DataFrame, created by DataFrame.groupBy().
+        A set of methods for aggregations on a DataFrame, created by DataFrame.groupBy().
+        Note Experimental
+        New in version 1.3.
+>> agg(*exprs)                                      Compute aggregates and returns the result as a DataFrame.
+        The available aggregate functions are avg, max, min, sum, count.
+        If exprs is a single dict mapping from string to string, then the key is the column to perform aggregation on, and the value is the aggregate function.
+        Alternatively, exprs can also be a list of aggregate Column expressions.
+        Parameters:	exprs – a dict mapping from column name (string) to aggregate functions (string), or a list of Column.
+        ```
+        >>> gdf = df.groupBy(df.name)
+        >>> sorted(gdf.agg({"*": "count"}).collect())
+        [Row(name=u'Alice', count(1)=1), Row(name=u'Bob', count(1)=1)]
+        >>> from pyspark.sql import functions as F
+        >>> sorted(gdf.agg(F.min(df.age)).collect())
+        [Row(name=u'Alice', min(age)=2), Row(name=u'Bob', min(age)=5)]
+        ```
+        New in version 1.3.
+avg(*cols)                                          Computes average values for each numeric columns for each group.
+        mean() is an alias for avg().
+        Parameters:	cols – list of column names (string). Non-numeric columns are ignored.
+        ```        
+        >>> df.groupBy().avg('age').collect()
+        [Row(avg(age)=3.5)]
+        >>> df3.groupBy().avg('age', 'height').collect()
+        [Row(avg(age)=3.5, avg(height)=82.5)]
+        ```
+        New in version 1.3.
+count()                                             Counts the number of records for each group.
+        ```
+        >>> sorted(df.groupBy(df.age).count().collect())
+        [Row(age=2, count=1), Row(age=5, count=1)]
+        ```
+        New in version 1.3.
+max(*cols)                                          Computes the max value for each numeric columns for each group.
+        ```
+        >>> df.groupBy().max('age').collect()
+        [Row(max(age)=5)]
+        >>> df3.groupBy().max('age', 'height').collect()
+        [Row(max(age)=5, max(height)=85)]
+        ```
+        New in version 1.3.
+mean(*cols)                                         Computes average values for each numeric columns for each group.
+        mean() is an alias for avg().
+        Parameters:	cols – list of column names (string). Non-numeric columns are ignored.
+        ```        
+        >>> df.groupBy().mean('age').collect()
+        [Row(avg(age)=3.5)]
+        >>> df3.groupBy().mean('age', 'height').collect()
+        [Row(avg(age)=3.5, avg(height)=82.5)]
+        ```
+        New in version 1.3.
+min(*cols)                                          Computes the min value for each numeric column for each group.
+        Parameters:	cols – list of column names (string). Non-numeric columns are ignored.
+        ```        
+        >>> df.groupBy().min('age').collect()
+        [Row(min(age)=2)]
+        >>> df3.groupBy().min('age', 'height').collect()
+        [Row(min(age)=2, min(height)=80)]
+        ```
+        New in version 1.3.
+pivot(pivot_col, values=None)                       Pivots a column of the current [[DataFrame]] and perform the specified aggregation. There are two versions of pivot function: one that requires the caller to specify the list of distinct values to pivot on, and one that does not. The latter is more concise but less efficient, because Spark needs to first compute the list of distinct values internally.
+        Parameters:
+        pivot_col – Name of the column to pivot.
+        values – List of values that will be translated to columns in the output DataFrame.
+        # Compute the sum of earnings for each year by course with each course as a separate column
+        ```
+        >>> df4.groupBy("year").pivot("course", ["dotNET", "Java"]).sum("earnings").collect()
+        [Row(year=2012, dotNET=15000, Java=20000), Row(year=2013, dotNET=48000, Java=30000)]
+        # Or without specifying column values (less efficient)
+        >>> df4.groupBy("year").pivot("course").sum("earnings").collect()
+        [Row(year=2012, Java=20000, dotNET=15000), Row(year=2013, Java=30000, dotNET=48000)]
+        ```
+        New in version 1.6.
+sum(*cols)                                          Compute the sum for each numeric columns for each group.
+        Parameters:	cols – list of column names (string). Non-numeric columns are ignored.
+        ```        
+        >>> df.groupBy().sum('age').collect()
+        [Row(sum(age)=7)]
+        >>> df3.groupBy().sum('age', 'height').collect()
+        [Row(sum(age)=7, sum(height)=165)]
+        ```
+        New in version 1.3.
 
-Note Experimental
-New in version 1.3.
 
-agg(*exprs)
-Compute aggregates and returns the result as a DataFrame.
-
-The available aggregate functions are avg, max, min, sum, count.
-
-If exprs is a single dict mapping from string to string, then the key is the column to perform aggregation on, and the value is the aggregate function.
-
-Alternatively, exprs can also be a list of aggregate Column expressions.
-
-Parameters:	exprs – a dict mapping from column name (string) to aggregate functions (string), or a list of Column.
->>> gdf = df.groupBy(df.name)
->>> sorted(gdf.agg({"*": "count"}).collect())
-[Row(name=u'Alice', count(1)=1), Row(name=u'Bob', count(1)=1)]
->>> from pyspark.sql import functions as F
->>> sorted(gdf.agg(F.min(df.age)).collect())
-[Row(name=u'Alice', min(age)=2), Row(name=u'Bob', min(age)=5)]
-New in version 1.3.
-
-avg(*cols)
-Computes average values for each numeric columns for each group.
-
-mean() is an alias for avg().
-
-Parameters:	cols – list of column names (string). Non-numeric columns are ignored.
->>> df.groupBy().avg('age').collect()
-[Row(avg(age)=3.5)]
->>> df3.groupBy().avg('age', 'height').collect()
-[Row(avg(age)=3.5, avg(height)=82.5)]
-New in version 1.3.
-
-count()
-Counts the number of records for each group.
-
->>> sorted(df.groupBy(df.age).count().collect())
-[Row(age=2, count=1), Row(age=5, count=1)]
-New in version 1.3.
-
-max(*cols)
-Computes the max value for each numeric columns for each group.
-
->>> df.groupBy().max('age').collect()
-[Row(max(age)=5)]
->>> df3.groupBy().max('age', 'height').collect()
-[Row(max(age)=5, max(height)=85)]
-New in version 1.3.
-
-mean(*cols)
-Computes average values for each numeric columns for each group.
-
-mean() is an alias for avg().
-
-Parameters:	cols – list of column names (string). Non-numeric columns are ignored.
->>> df.groupBy().mean('age').collect()
-[Row(avg(age)=3.5)]
->>> df3.groupBy().mean('age', 'height').collect()
-[Row(avg(age)=3.5, avg(height)=82.5)]
-New in version 1.3.
-
-min(*cols)
-Computes the min value for each numeric column for each group.
-
-Parameters:	cols – list of column names (string). Non-numeric columns are ignored.
->>> df.groupBy().min('age').collect()
-[Row(min(age)=2)]
->>> df3.groupBy().min('age', 'height').collect()
-[Row(min(age)=2, min(height)=80)]
-New in version 1.3.
-
-pivot(pivot_col, values=None)
-Pivots a column of the current [[DataFrame]] and perform the specified aggregation. There are two versions of pivot function: one that requires the caller to specify the list of distinct values to pivot on, and one that does not. The latter is more concise but less efficient, because Spark needs to first compute the list of distinct values internally.
-
-Parameters:
-pivot_col – Name of the column to pivot.
-values – List of values that will be translated to columns in the output DataFrame.
-# Compute the sum of earnings for each year by course with each course as a separate column
-
->>> df4.groupBy("year").pivot("course", ["dotNET", "Java"]).sum("earnings").collect()
-[Row(year=2012, dotNET=15000, Java=20000), Row(year=2013, dotNET=48000, Java=30000)]
-# Or without specifying column values (less efficient)
-
->>> df4.groupBy("year").pivot("course").sum("earnings").collect()
-[Row(year=2012, Java=20000, dotNET=15000), Row(year=2013, Java=30000, dotNET=48000)]
-New in version 1.6.
-
-sum(*cols)
-Compute the sum for each numeric columns for each group.
-
-Parameters:	cols – list of column names (string). Non-numeric columns are ignored.
->>> df.groupBy().sum('age').collect()
-[Row(sum(age)=7)]
->>> df3.groupBy().sum('age', 'height').collect()
-[Row(sum(age)=7, sum(height)=165)]
-New in version 1.3.
-
+## Column 类
 class pyspark.sql.Column(jc)
-A column in a DataFrame.
+        A column in a DataFrame.
+        Column instances can be created by:
 
-Column instances can be created by:
+        # 1. Select a column out of a DataFrame
+        df.colName
+        df["colName"]
+        # 2. Create from an expression
+        df.colName + 1
+        1 / df.colName
+        New in version 1.3.
 
-# 1. Select a column out of a DataFrame
-
-df.colName
-df["colName"]
-
-# 2. Create from an expression
-df.colName + 1
-1 / df.colName
-New in version 1.3.
-
-alias(*alias, **kwargs)
-Returns this column aliased with a new name or names (in the case of expressions that return more than one column, such as explode).
-
-Parameters:
-alias – strings of desired column names (collects all positional arguments passed)
-metadata – a dict of information to be stored in metadata attribute of the corresponding :class: StructField (optional, keyword only argument)
-Changed in version 2.2: Added optional metadata argument.
-
->>> df.select(df.age.alias("age2")).collect()
-[Row(age2=2), Row(age2=5)]
->>> df.select(df.age.alias("age3", metadata={'max': 99})).schema['age3'].metadata['max']
-99
-New in version 1.3.
-
-asc()
-Returns a sort expression based on the ascending order of the given column name.
-
+alias(*alias, **kwargs)                             Returns this column aliased with a new name or names (in the case of expressions that return more than one column, such as explode).
+        Parameters:
+        alias – strings of desired column names (collects all positional arguments passed)
+        metadata – a dict of information to be stored in metadata attribute of the corresponding :class: StructField (optional, keyword only argument)
+        Changed in version 2.2: Added optional metadata argument.
+        ```
+        >>> df.select(df.age.alias("age2")).collect()
+        [Row(age2=2), Row(age2=5)]
+        >>> df.select(df.age.alias("age3", metadata={'max': 99})).schema['age3'].metadata['max']
+        99
+        ```
+        New in version 1.3.
+asc()                                               Returns a sort expression based on the ascending order of the given column name.
 astype(dataType)
 astype() is an alias for cast().
+        New in version 1.4.
+between(lowerBound, upperBound)                     A boolean expression that is evaluated to true if the value of this expression is between the given columns.
+        ```
+        >>> df.select(df.name, df.age.between(2, 4)).show()
+        +-----+---------------------------+
+        | name|((age >= 2) AND (age <= 4))|
+        +-----+---------------------------+
+        |Alice|                       true|
+        |  Bob|                      false|
+        +-----+---------------------------+
+        ```
+        New in version 1.3.
+bitwiseAND(other)                                   binary operator
+bitwiseOR(other)                                    binary operator
+bitwiseXOR(other)                                   binary operator
+cast(dataType)                                      Convert the column into type dataType.
+        ```
+        >>> df.select(df.age.cast("string").alias('ages')).collect()
+        [Row(ages=u'2'), Row(ages=u'5')]
+        >>> df.select(df.age.cast(StringType()).alias('ages')).collect()
+        [Row(ages=u'2'), Row(ages=u'5')]
+        ```
+        New in version 1.3.
+contains(other)                                     binary operator
+desc()                                              Returns a sort expression based on the descending order of the given column name.
+endswith(other)                                     Return a Boolean Column based on matching end of string.
+        Parameters:	other – string at end of line (do not use a regex $)
+        ```        
+        >>> df.filter(df.name.endswith('ice')).collect()
+        [Row(age=2, name=u'Alice')]
+        >>> df.filter(df.name.endswith('ice$')).collect()
+        []
+        ```
+getField(name)                                      An expression that gets a field by name in a StructField.
+        ```
+        >>> from pyspark.sql import Row
+        >>> df = sc.parallelize([Row(r=Row(a=1, b="b"))]).toDF()
+        >>> df.select(df.r.getField("b")).show()
+        +---+
+        |r.b|
+        +---+
+        |  b|
+        +---+
+        >>> df.select(df.r.a).show()
+        +---+
+        |r.a|
+        +---+
+        |  1|
+        +---+
+        ```
+        New in version 1.3.
+getItem(key)                                        An expression that gets an item at position ordinal out of a list, or gets an item by key out of a dict.
+        ```    
+        >>> df = sc.parallelize([([1, 2], {"key": "value"})]).toDF(["l", "d"])
+        >>> df.select(df.l.getItem(0), df.d.getItem("key")).show()
+        +----+------+
+        |l[0]|d[key]|
+        +----+------+
+        |   1| value|
+        +----+------+
+        >>> df.select(df.l[0], df.d["key"]).show()
+        +----+------+
+        |l[0]|d[key]|
+        +----+------+
+        |   1| value|
+        +----+------+
+        ```
+        New in version 1.3.
+isNotNull()                                         True if the current expression is null. Often combined with DataFrame.filter() to select rows with non-null values.
+        ```
+        >>> from pyspark.sql import Row
+        >>> df2 = sc.parallelize([Row(name=u'Tom', height=80), Row(name=u'Alice', height=None)]).toDF()
+        >>> df2.filter(df2.height.isNotNull()).collect()
+        [Row(height=80, name=u'Tom')]
+        ```
+isNull()                                            True if the current expression is null. Often combined with DataFrame.filter() to select rows with null values.
+        ```
+        >>> from pyspark.sql import Row
+        >>> df2 = sc.parallelize([Row(name=u'Tom', height=80), Row(name=u'Alice', height=None)]).toDF()
+        >>> df2.filter(df2.height.isNull()).collect()
+        [Row(height=None, name=u'Alice')]
+        ```
+isin(*cols)                                         A boolean expression that is evaluated to true if the value of this expression is contained by the evaluated values of the arguments.
+        ```
+        >>> df[df.name.isin("Bob", "Mike")].collect()
+        [Row(age=5, name=u'Bob')]
+        >>> df[df.age.isin([1, 2, 3])].collect()
+        [Row(age=2, name=u'Alice')]
+        ```
+        New in version 1.5.
+like(other)                                         Return a Boolean Column based on a SQL LIKE match.
+        Parameters:	other – a SQL LIKE pattern
+        See rlike() for a regex version
+        ```
+        >>> df.filter(df.name.like('Al%')).collect()
+        [Row(age=2, name=u'Alice')]
+        ```
+name(*alias, **kwargs)                              name() is an alias for alias().
+        New in version 2.0.
+otherwise(value)                                    Evaluates a list of conditions and returns one of multiple possible result expressions. If Column.otherwise() is not invoked, None is returned for unmatched conditions.
+        See pyspark.sql.functions.when() for example usage.
+        Parameters:	value – a literal value, or a Column expression.
+        ```        
+        >>> from pyspark.sql import functions as F
+        >>> df.select(df.name, F.when(df.age > 3, 1).otherwise(0)).show()
+        +-----+-------------------------------------+
+        | name|CASE WHEN (age > 3) THEN 1 ELSE 0 END|
+        +-----+-------------------------------------+
+        |Alice|                                    0|
+        |  Bob|                                    1|
+        +-----+-------------------------------------+
+        ```
+        New in version 1.4.
+over(window)                                        Define a windowing column.
+        Parameters:	window – a WindowSpec
+        Returns:	a Column
+        ```        
+        >>> from pyspark.sql import Window
+        >>> window = Window.partitionBy("name").orderBy("age").rowsBetween(-1, 1)
+        >>> from pyspark.sql.functions import rank, min
+        >>> # df.select(rank().over(window), min('age').over(window))
+        ```
+        New in version 1.4.
+rlike(other)                                        Return a Boolean Column based on a regex match.
+        Parameters:	other – an extended regex expression
+        ```
+        >>> df.filter(df.name.rlike('ice$')).collect()
+        [Row(age=2, name=u'Alice')]
+        ```
+startswith(other)                                   Return a Boolean Column based on a string match.
+        Parameters:	other – string at end of line (do not use a regex ^)
+        ```        
+        >>> df.filter(df.name.startswith('Al')).collect()
+        [Row(age=2, name=u'Alice')]
+        >>> df.filter(df.name.startswith('^Al')).collect()
+        []
+        ```
+substr(startPos, length)                            Return a Column which is a substring of the column.
+        Parameters:
+        startPos – start position (int or Column)
+        length – length of the substring (int or Column)
+        ```
+        >>> df.select(df.name.substr(1, 3).alias("col")).collect()
+        [Row(col=u'Ali'), Row(col=u'Bob')]
+        ```
+        New in version 1.3.
+when(condition, value)                              Evaluates a list of conditions and returns one of multiple possible result expressions. If Column.otherwise() is not invoked, None is returned for unmatched conditions.
+        See pyspark.sql.functions.when() for example usage.
+        Parameters:
+        condition – a boolean Column expression.
+        value – a literal value, or a Column expression.
+        ```        
+        >>> from pyspark.sql import functions as F
+        >>> df.select(df.name, F.when(df.age > 4, 1).when(df.age < 3, -1).otherwise(0)).show()
+        +-----+------------------------------------------------------------+
+        | name|CASE WHEN (age > 4) THEN 1 WHEN (age < 3) THEN -1 ELSE 0 END|
+        +-----+------------------------------------------------------------+
+        |Alice|                                                          -1|
+        |  Bob|                                                           1|
+        +-----+------------------------------------------------------------+
+        ```
+        New in version 1.4.
 
-New in version 1.4.
 
-between(lowerBound, upperBound)
-A boolean expression that is evaluated to true if the value of this expression is between the given columns.
-
->>> df.select(df.name, df.age.between(2, 4)).show()
-+-----+---------------------------+
-| name|((age >= 2) AND (age <= 4))|
-+-----+---------------------------+
-|Alice|                       true|
-|  Bob|                      false|
-+-----+---------------------------+
-New in version 1.3.
-
-bitwiseAND(other)
-binary operator
-
-bitwiseOR(other)
-binary operator
-
-bitwiseXOR(other)
-binary operator
-
-cast(dataType)
-Convert the column into type dataType.
-
->>> df.select(df.age.cast("string").alias('ages')).collect()
-[Row(ages=u'2'), Row(ages=u'5')]
->>> df.select(df.age.cast(StringType()).alias('ages')).collect()
-[Row(ages=u'2'), Row(ages=u'5')]
-New in version 1.3.
-
-contains(other)
-binary operator
-
-desc()
-Returns a sort expression based on the descending order of the given column name.
-
-endswith(other)
-Return a Boolean Column based on matching end of string.
-
-Parameters:	other – string at end of line (do not use a regex $)
->>> df.filter(df.name.endswith('ice')).collect()
-[Row(age=2, name=u'Alice')]
->>> df.filter(df.name.endswith('ice$')).collect()
-[]
-getField(name)
-An expression that gets a field by name in a StructField.
-
->>> from pyspark.sql import Row
->>> df = sc.parallelize([Row(r=Row(a=1, b="b"))]).toDF()
->>> df.select(df.r.getField("b")).show()
-+---+
-|r.b|
-+---+
-|  b|
-+---+
->>> df.select(df.r.a).show()
-+---+
-|r.a|
-+---+
-|  1|
-+---+
-New in version 1.3.
-
-getItem(key)
-An expression that gets an item at position ordinal out of a list, or gets an item by key out of a dict.
-
->>> df = sc.parallelize([([1, 2], {"key": "value"})]).toDF(["l", "d"])
->>> df.select(df.l.getItem(0), df.d.getItem("key")).show()
-+----+------+
-|l[0]|d[key]|
-+----+------+
-|   1| value|
-+----+------+
->>> df.select(df.l[0], df.d["key"]).show()
-+----+------+
-|l[0]|d[key]|
-+----+------+
-|   1| value|
-+----+------+
-New in version 1.3.
-
-isNotNull()
-True if the current expression is null. Often combined with DataFrame.filter() to select rows with non-null values.
-
->>> from pyspark.sql import Row
->>> df2 = sc.parallelize([Row(name=u'Tom', height=80), Row(name=u'Alice', height=None)]).toDF()
->>> df2.filter(df2.height.isNotNull()).collect()
-[Row(height=80, name=u'Tom')]
-isNull()
-True if the current expression is null. Often combined with DataFrame.filter() to select rows with null values.
-
->>> from pyspark.sql import Row
->>> df2 = sc.parallelize([Row(name=u'Tom', height=80), Row(name=u'Alice', height=None)]).toDF()
->>> df2.filter(df2.height.isNull()).collect()
-[Row(height=None, name=u'Alice')]
-isin(*cols)
-A boolean expression that is evaluated to true if the value of this expression is contained by the evaluated values of the arguments.
-
->>> df[df.name.isin("Bob", "Mike")].collect()
-[Row(age=5, name=u'Bob')]
->>> df[df.age.isin([1, 2, 3])].collect()
-[Row(age=2, name=u'Alice')]
-New in version 1.5.
-
-like(other)
-Return a Boolean Column based on a SQL LIKE match.
-
-Parameters:	other – a SQL LIKE pattern
-See rlike() for a regex version
-
->>> df.filter(df.name.like('Al%')).collect()
-[Row(age=2, name=u'Alice')]
-name(*alias, **kwargs)
-name() is an alias for alias().
-
-New in version 2.0.
-
-otherwise(value)
-Evaluates a list of conditions and returns one of multiple possible result expressions. If Column.otherwise() is not invoked, None is returned for unmatched conditions.
-
-See pyspark.sql.functions.when() for example usage.
-
-Parameters:	value – a literal value, or a Column expression.
->>> from pyspark.sql import functions as F
->>> df.select(df.name, F.when(df.age > 3, 1).otherwise(0)).show()
-+-----+-------------------------------------+
-| name|CASE WHEN (age > 3) THEN 1 ELSE 0 END|
-+-----+-------------------------------------+
-|Alice|                                    0|
-|  Bob|                                    1|
-+-----+-------------------------------------+
-New in version 1.4.
-
-over(window)
-Define a windowing column.
-
-Parameters:	window – a WindowSpec
-Returns:	a Column
->>> from pyspark.sql import Window
->>> window = Window.partitionBy("name").orderBy("age").rowsBetween(-1, 1)
->>> from pyspark.sql.functions import rank, min
->>> # df.select(rank().over(window), min('age').over(window))
-New in version 1.4.
-
-rlike(other)
-Return a Boolean Column based on a regex match.
-
-Parameters:	other – an extended regex expression
->>> df.filter(df.name.rlike('ice$')).collect()
-[Row(age=2, name=u'Alice')]
-startswith(other)
-Return a Boolean Column based on a string match.
-
-Parameters:	other – string at end of line (do not use a regex ^)
->>> df.filter(df.name.startswith('Al')).collect()
-[Row(age=2, name=u'Alice')]
->>> df.filter(df.name.startswith('^Al')).collect()
-[]
-substr(startPos, length)
-Return a Column which is a substring of the column.
-
-Parameters:
-startPos – start position (int or Column)
-length – length of the substring (int or Column)
->>> df.select(df.name.substr(1, 3).alias("col")).collect()
-[Row(col=u'Ali'), Row(col=u'Bob')]
-New in version 1.3.
-
-when(condition, value)
-Evaluates a list of conditions and returns one of multiple possible result expressions. If Column.otherwise() is not invoked, None is returned for unmatched conditions.
-
-See pyspark.sql.functions.when() for example usage.
-
-Parameters:
-condition – a boolean Column expression.
-value – a literal value, or a Column expression.
->>> from pyspark.sql import functions as F
->>> df.select(df.name, F.when(df.age > 4, 1).when(df.age < 3, -1).otherwise(0)).show()
-+-----+------------------------------------------------------------+
-| name|CASE WHEN (age > 4) THEN 1 WHEN (age < 3) THEN -1 ELSE 0 END|
-+-----+------------------------------------------------------------+
-|Alice|                                                          -1|
-|  Bob|                                                           1|
-+-----+------------------------------------------------------------+
-New in version 1.4.
-
+## Row 类
 class pyspark.sql.Row
 A row in DataFrame. The fields in it can be accessed:
-
 like attributes (row.key)
 like dictionary values (row[key])
 key in row will search through row keys.
-
 Row can be used to create a row object by using named arguments, the fields will be sorted by names. It is not allowed to omit a named argument to represent the value is None or missing. This should be explicitly set to None in this case.
-
+```
 >>> row = Row(name="Alice", age=11)
 >>> row
 Row(age=11, name='Alice')
@@ -1761,8 +1511,9 @@ Row(age=11, name='Alice')
 True
 >>> 'wrong_key' in row
 False
+```
 Row also can be used to create another Row like class, then it could be used to create Row objects, such as
-
+```
 >>> Person = Row("name", "age")
 >>> Person
 <Row(name, age)>
@@ -1772,62 +1523,63 @@ True
 False
 >>> Person("Alice", 11)
 Row(name='Alice', age=11)
-asDict(recursive=False)
-Return as an dict
+```
+asDict(recursive=False)                     Return as an dict
+        Parameters:	recursive – turns the nested Row as dict (default: False).
+        ```        
+        >>> Row(name="Alice", age=11).asDict() == {'name': 'Alice', 'age': 11}
+        True
+        >>> row = Row(key=1, value=Row(name='a', age=2))
+        >>> row.asDict() == {'key': 1, 'value': Row(age=2, name='a')}
+        True
+        >>> row.asDict(True) == {'key': 1, 'value': {'name': 'a', 'age': 2}}
+        True
+        ```
 
-Parameters:	recursive – turns the nested Row as dict (default: False).
->>> Row(name="Alice", age=11).asDict() == {'name': 'Alice', 'age': 11}
-True
->>> row = Row(key=1, value=Row(name='a', age=2))
->>> row.asDict() == {'key': 1, 'value': Row(age=2, name='a')}
-True
->>> row.asDict(True) == {'key': 1, 'value': {'name': 'a', 'age': 2}}
-True
+## DataFrameNaFunctions 类
 class pyspark.sql.DataFrameNaFunctions(df)
-Functionality for working with missing data in DataFrame.
+        Functionality for working with missing data in DataFrame.
+        New in version 1.4.
 
-New in version 1.4.
-
-drop(how='any', thresh=None, subset=None)
-Returns a new DataFrame omitting rows with null values. DataFrame.dropna() and DataFrameNaFunctions.drop() are aliases of each other.
-
-Parameters:
-how – ‘any’ or ‘all’. If ‘any’, drop a row if it contains any nulls. If ‘all’, drop a row only if all its values are null.
-thresh – int, default None If specified, drop rows that have less than thresh non-null values. This overwrites the how parameter.
-subset – optional list of column names to consider.
->>> df4.na.drop().show()
-+---+------+-----+
-|age|height| name|
-+---+------+-----+
-| 10|    80|Alice|
-+---+------+-----+
-New in version 1.3.1.
-
-fill(value, subset=None)
-Replace null values, alias for na.fill(). DataFrame.fillna() and DataFrameNaFunctions.fill() are aliases of each other.
-
-Parameters:
-value – int, long, float, string, or dict. Value to replace null values with. If the value is a dict, then subset is ignored and value must be a mapping from column name (string) to replacement value. The replacement value must be an int, long, float, boolean, or string.
-subset – optional list of column names to consider. Columns specified in subset that do not have matching data type are ignored. For example, if value is a string, and subset contains a non-string column, then the non-string column is simply ignored.
->>> df4.na.fill(50).show()
-+---+------+-----+
-|age|height| name|
-+---+------+-----+
-| 10|    80|Alice|
-|  5|    50|  Bob|
-| 50|    50|  Tom|
-| 50|    50| null|
-+---+------+-----+
->>> df4.na.fill({'age': 50, 'name': 'unknown'}).show()
-+---+------+-------+
-|age|height|   name|
-+---+------+-------+
-| 10|    80|  Alice|
-|  5|  null|    Bob|
-| 50|  null|    Tom|
-| 50|  null|unknown|
-+---+------+-------+
-New in version 1.3.1.
+drop(how='any', thresh=None, subset=None)               Returns a new DataFrame omitting rows with null values. DataFrame.dropna() and DataFrameNaFunctions.drop() are aliases of each other.
+        Parameters:
+        how – ‘any’ or ‘all’. If ‘any’, drop a row if it contains any nulls. If ‘all’, drop a row only if all its values are null.
+        thresh – int, default None If specified, drop rows that have less than thresh non-null values. This overwrites the how parameter.
+        subset – optional list of column names to consider.
+        ```
+        >>> df4.na.drop().show()
+        +---+------+-----+
+        |age|height| name|
+        +---+------+-----+
+        | 10|    80|Alice|
+        +---+------+-----+
+        ```
+        New in version 1.3.1.
+fill(value, subset=None)                                Replace null values, alias for na.fill(). DataFrame.fillna() and DataFrameNaFunctions.fill() are aliases of each other.
+        Parameters:
+        value – int, long, float, string, or dict. Value to replace null values with. If the value is a dict, then subset is ignored and value must be a mapping from column name (string) to replacement value. The replacement value must be an int, long, float, boolean, or string.
+        subset – optional list of column names to consider. Columns specified in subset that do not have matching data type are ignored. For example, if value is a string, and subset contains a non-string column, then the non-string column is simply ignored.
+        ```
+        >>> df4.na.fill(50).show()
+        +---+------+-----+
+        |age|height| name|
+        +---+------+-----+
+        | 10|    80|Alice|
+        |  5|    50|  Bob|
+        | 50|    50|  Tom|
+        | 50|    50| null|
+        +---+------+-----+
+        >>> df4.na.fill({'age': 50, 'name': 'unknown'}).show()
+        +---+------+-------+
+        |age|height|   name|
+        +---+------+-------+
+        | 10|    80|  Alice|
+        |  5|  null|    Bob|
+        | 50|  null|    Tom|
+        | 50|  null|unknown|
+        +---+------+-------+
+        ```
+        New in version 1.3.1.
 
 replace(to_replace, value, subset=None)
 Returns a new DataFrame replacing a value with another value. DataFrame.replace() and DataFrameNaFunctions.replace() are aliases of each other. Values to_replace and value should contain either all numerics, all booleans, or all strings. When replacing, the new value will be cast to the type of the existing column. For numeric replacements all values to be replaced should have unique floating point representation. In case of conflicts (for example with {42: -1, 42.0: 1}) and arbitrary replacement will be used.
