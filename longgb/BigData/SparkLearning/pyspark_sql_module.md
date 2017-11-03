@@ -2350,7 +2350,7 @@ pyspark.sql.functions.collect_list(col)                                 Aggregat
 pyspark.sql.functions.collect_set(col)                                  Aggregate function: returns a set of objects with duplicate elements eliminated.
         New in version 1.6.
 pyspark.sql.functions.column(col)                                       Returns a Column based on the given column name.
-        New in version 1.3.
+        New in version 1.3. 
 pyspark.sql.functions.concat(*cols)[source]                             Concatenates multiple input string columns together into a single string column.
         ```
         >>> df = spark.createDataFrame([('abcd','123')], ['s', 'd'])
@@ -3550,4 +3550,3 @@ trigger(*args, **kwargs)[source]            Set the trigger for the stream query
         New in version 2.0.
 
 
-        
