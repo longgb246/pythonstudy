@@ -12,8 +12,7 @@ StorageLevel: Finer-grained cache persistence levels.
 
 ## 一、SparkConf 类
 class pyspark.SparkConf(loadDefaults=True, _jvm=None, _jconf=None)
-基本配置. Used to set various Spark parameters as key-value pairs.
-Note Once a SparkConf object is passed to Spark, it is cloned and can no longer be modified by the user.
+基本配置. 用于将各种Spark参数设置为键值对。 注意一旦SparkConf对象被传递给Spark，它就被克隆，不能再被用户修改。
 
 方法：
 >> setAppName(value)		设置应用名 Set application name.
@@ -28,14 +27,15 @@ setIfMissing(key, value)	Set a configuration property, if not already set.
 setSparkHome(value)			Set path where Spark is installed on worker nodes.
 toDebugString()				Returns a printable version of the configuration, as a list of key=value pairs, one per line.
 
+
 ## 二、SparkContext 类
 class pyspark.SparkContext(master=None, appName=None, sparkHome=None, pyFiles=None, environment=None, batchSize=0, 
 							serializer=PickleSerializer(), conf=None, gateway=None, jsc=None, profiler_cls=<class 'pyspark.profiler.BasicProfiler'>)
-Spark 的主入口，代表对集群的连接。 A SparkContext represents the connection to a Spark cluster, and can be used to create RDD and broadcast variables on that cluster.
+Spark 的主入口，代表对集群的连接。SparkContext表示与Spark集群的连接，可用于在该集群上创建RDD和广播变量。
 PACKAGE_EXTENSIONS = ('.zip', '.egg', '.jar')
 
 方法：
->> accumulator(value, accum_param=None)	Create an Accumulator with the given initial value, using a given AccumulatorParam helper object to define how to add values of the data type if provided. Default AccumulatorParams are used for integers and floating-point numbers if you do not provide one. For other types, a custom AccumulatorParam can be used.
+>> accumulator(value, accum_param=None)	用给定的初始值创建一个累加器，使用给定的AccumulatorParam助手对象来定义如何提供数据类型的值。 默认AccumulatorParams用于整数和浮点数，如果你没有提供。 对于其他类型，可以使用自定义的AccumulatorParam。
 >> applicationId						唯一的 identifier 在 Spark application. 
 ```
 # spark 的applicationId是 ‘local-1433865536131’
@@ -47,11 +47,11 @@ u'local-...'
 >> defaultMinPartitions					默认最小的 partitions 数目 for Hadoop RDDs 当不指定的时候
 >> defaultParallelism					默认 parallelism 水平当使用的时候且用户不指定 (e.g. for reduce tasks)
 >> emptyRDD()							创建 no partitions or elements 的 RDD 
->> getConf()
->> classmethod getOrCreate(conf=None)	Get or instantiate a SparkContext and register it as a singleton object.
+>> getConf()							返回 pyspark.conf.SparkConf
+>> classmethod getOrCreate(conf=None)	获取或实例化一个SparkContext并将其注册为一个单例对象。
 		Parameters:	conf – SparkConf (optional)
->> cancelJobGroup(groupId)				Cancel active jobs for the specified group. See SparkContext.setJobGroup for more information.
->> setJobGroup(groupId, description, interruptOnCancel=False)	Assigns a group ID to all the jobs started by this thread until the group ID is set to a different value or cleared.	Often, a unit of execution in an application consists of multiple Spark actions or jobs. Application programmers can use this method to group all those jobs together and give a group description. Once set, the Spark web UI will associate such jobs with this group.	The application can use SparkContext.cancelJobGroup to cancel all running jobs in this group.	Cancelled	If interruptOnCancel is set to true for the job group, then job cancellation will result in Thread.interrupt() being called on the job’s executor threads. This is useful to help ensure that the tasks are actually stopped in a timely manner, but is off by default due to HDFS-1208, where HDFS may respond to Thread.interrupt() by marking nodes as dead.
+>> cancelJobGroup(groupId)				取消指定组的活动作业。 有关更多信息，请参见SparkContext.setJobGroup。
+>> setJobGroup(groupId, description, interruptOnCancel=False)	为此线程启动的所有作业分配一个组ID，直到组ID被设置为不同的值或清除。 通常，应用程序中的执行单元由多个Spark操作或作业组成。 应用程序员可以使用这种方法将所有这些作业分组在一起，并给出一个组描述。 一旦设置，Spark Web UI将把这些作业与这个组关联起来。 应用程序可以使用SparkContext.cancelJobGroup取消该组中的所有正在运行的作业。 取消如果作业组的interruptOnCancel设置为true，则作业取消将导致在作业的执行程序线程上调用Thread.interrupt（）。 这有助于确保任务实际上被及时停止，但由于HDFS-1208的原因，默认情况下会关闭，HDFS可能会通过将节点标记为死亡来响应Thread.interrupt（）。
 ```
 >>> import threading
 >>> from time import sleep
@@ -103,7 +103,7 @@ u'local-...'
 >>> sc.range(1, 7, 2).collect()
 [1, 3, 5]
 ```
->> runJob(rdd, partitionFunc, partitions=None, allowLocal=False)		Executes the given partitionFunc on the specified set of partitions, returning the result as an array of elements. 如果 partitions 没有被指定，则运行在所有的分区上
+>> runJob(rdd, partitionFunc, partitions=None, allowLocal=False)			在指定的一组分区上执行给定的partitionFunc，并将结果作为元素数组返回。 如果 partitions 没有被指定，则运行在所有的分区上
 ```
 >>> myRDD = sc.parallelize(range(6), 3)
 >>> sc.runJob(myRDD, lambda part: [x * x for x in part])

@@ -15,39 +15,41 @@ pyspark.sql.Window                  窗口函数
 ## 一、SparkSession 类
 class pyspark.sql.SparkSession(sparkContext, jsparkSession=None)
 能用来创建 DataFrame ，形成表，执行 SQL。创建 SparkSession ，需要使用下面的模式：
-```
-spark = SparkSession.builder \
-        .master("local") \
-        .appName("Word Count") \
-        .config("spark.some.config.option", "some-value") \
-        .getOrCreate()
-```
->> appName(name)                        设置一个 app 的 name，将被展现在 Spark web UI。如果没有设置名字，将随机生成。
->> config(key=None, value=None, conf=None)                          设置一个配置，用于 SparkConf 和 SparkSession 的配置
-        参数设置:
-                key – 一个 key name 对于 configuration property
-                value – 一个 value 对于 configuration property
-                conf – 一个 SparkConf 的实例
-```
-    from pyspark.conf import SparkConf
-    SparkSession.builder.config(conf=SparkConf())
-    SparkSession.builder.config("spark.some.config.option", "some-value")
-```
->> enableHiveSupport()                  Enables Hive support, including connectivity to a persistent Hive metastore, support for Hive serdes, and Hive user-defined functions.
->> getOrCreate()                        获得一个存在的 SparkSession，或者如果没有存在的 SparkSession，将创建一个依据 builder。 该方法是检查是否存在一个默认的 SparkSession，如果有将返回那个。如果没有，该方法创建一个 SparkSession ，并且分配一个全局的默认。
-```
-    >>> s1 = SparkSession.builder.config("k1", "v1").getOrCreate()
-    >>> s1.conf.get("k1") == s1.sparkContext.getConf().get("k1") == "v1"
-    True
-    >>> s2 = SparkSession.builder.config("k2", "v2").getOrCreate()
-    >>> s1.conf.get("k1") == s2.conf.get("k1")
-    True
-    >>> s1.conf.get("k2") == s2.conf.get("k2")
-    True
-```
->> master(master)                       设置 Spark master URL 的链接，例如：“local”本地运行，“local[4]”本地运行4核，“spark://master:7077”运行spark集群。
-        参数设置:
-                master – a url for spark master
+
+class Builder
+        ```
+        spark = SparkSession.builder \
+                .master("local") \
+                .appName("Word Count") \
+                .config("spark.some.config.option", "some-value") \
+                .getOrCreate()
+        ```
+        >> appName(name)                        设置一个 app 的 name，将被展现在 Spark web UI。如果没有设置名字，将随机生成。
+        >> config(key=None, value=None, conf=None)                          设置一个配置，用于 SparkConf 和 SparkSession 的配置
+                参数设置:
+                        key – 一个 key name 对于 configuration property
+                        value – 一个 value 对于 configuration property
+                        conf – 一个 SparkConf 的实例
+        ```
+            from pyspark.conf import SparkConf
+            SparkSession.builder.config(conf=SparkConf())
+            SparkSession.builder.config("spark.some.config.option", "some-value")
+        ```
+        >> enableHiveSupport()                  Enables Hive support, including connectivity to a persistent Hive metastore, support for Hive serdes, and Hive user-defined functions.
+        >> getOrCreate()                        获得一个存在的 SparkSession，或者如果没有存在的 SparkSession，将创建一个依据 builder。 该方法是检查是否存在一个默认的 SparkSession，如果有将返回那个。如果没有，该方法创建一个 SparkSession ，并且分配一个全局的默认。
+        ```
+            >>> s1 = SparkSession.builder.config("k1", "v1").getOrCreate()
+            >>> s1.conf.get("k1") == s1.sparkContext.getConf().get("k1") == "v1"
+            True
+            >>> s2 = SparkSession.builder.config("k2", "v2").getOrCreate()
+            >>> s1.conf.get("k1") == s2.conf.get("k1")
+            True
+            >>> s1.conf.get("k2") == s2.conf.get("k2")
+            True
+        ```
+        >> master(master)                       设置 Spark master URL 的链接，例如：“local”本地运行，“local[4]”本地运行4核，“spark://master:7077”运行spark集群。
+                参数设置:
+                        master – a url for spark master
 >> SparkSession.conf                    Runtime configuration interface for Spark.
 >> SparkSession.createDataFrame(data, schema=None, samplingRatio=None, verifySchema=True)                   创建一个 RDD 的 DataFrame，一个 list 或者 pandas。1、When schema is a list of column names, the type of each column will be inferred from data.2、When schema is None, it will try to infer the schema (column names and types) from data, which should be an RDD of Row, or namedtuple, or dict.3、When schema is pyspark.sql.types.DataType or a datatype string, it must match the real data, or an exception will be thrown at runtime. If the given schema is not pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType as its only field, and the field name will be “value”, each record will also be wrapped into a tuple, which can be converted to row later.4、If schema inference is needed, samplingRatio is used to determined the ratio of rows used for schema inference. The first row will be used if samplingRatio is None.
         参数设置:
