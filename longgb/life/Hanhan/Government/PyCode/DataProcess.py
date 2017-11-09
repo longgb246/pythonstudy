@@ -3,6 +3,13 @@ from __future__ import division
 import os
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set(style="ticks", color_codes=True)
+import statsmodels.api as sm
+from copy import deepcopy
+import warnings
+warnings.filterwarnings('ignore')
 
 
 def mapProv(str_code, prov_map):
@@ -15,7 +22,7 @@ def mapProv(str_code, prov_map):
     return ''
 
 
-def readData(read_path, date_limit):
+def readData(read_path, date_limit, prov_map, order_pd):
     '''
     read Data
     '''
@@ -73,6 +80,9 @@ def transData(all_data):
 
 
 def getVarName(keep_data):
+    '''
+    Get the Variable Char Name
+    '''
     dependent_var = ['FiscalTransparency']
     independent_var = ['MarketizationIndex', 'ProvincialFinancialStatisticsExpenditure']
     control_var_drop = ['province', 'order', 'year'] + dependent_var + independent_var
@@ -96,63 +106,178 @@ def standardData(data, cols):
     return data
 
 
-read_path = r'C:\Users\longguangbin\Desktop\Data_Code\origin_data'
-save_path = r'C:\Users\longguangbin\Desktop\Data_Code\arange_data'
+def getStatIndex(data, func, func_name, cols):
+    '''
+    cal the index of stat
+    '''
+    tmp_list = []
+    for col in cols:
+        this_data = data[col]
+        tmp_list.append([col, func(this_data)])
+    tmp_data = pd.DataFrame(tmp_list, columns = ['Variable', func_name])
+    return tmp_data
 
-prov_map = [[u'安徽',	'Anhui'],
-            [u'北京',	'Beijing'],
-            [u'重庆',	'Chongqing'],
-            [u'福建',	'Fujian'],
-            [u'甘肃',	'Gansu'],
-            [u'广东',	'Guangdong'],
-            [u'广西',	'Guangxi'],
-            [u'贵州',	'Guizhou'],
-            [u'海南',	'Hainan'],
-            [u'河北',	'Hebei'],
-            [u'黑龙江',	'Heilongjiang'],
-            [u'河南',	'Henan'],
-            [u'湖北',	'Hubei'],
-            [u'湖南',	'Hunan'],
-            [u'江苏',	'Jiangsu'],
-            [u'江西',	'Jiangxi'],
-            [u'吉林',	'Jilin'],
-            [u'辽宁',	'Liaoning'],
-            [u'内蒙古',	'NeiMongol'],
-            [u'宁夏',	'NingxiaHui'],
-            [u'青海',	'Qinghai'],
-            [u'陕西',	'Shaanxi'],
-            [u'山东',	'Shandong'],
-            [u'上海',	'Shanghai'],
-            [u'山西',	'Shanxi'],
-            [u'四川',	'Sichuan'],
-            [u'天津',	'Tianjin'],
-            [u'新疆',	'XinjiangUygur'],
-            [u'西藏',	'Xizang'],
-            [u'云南',	'Yunnan'],
-            [u'浙江',	'Zhejiang']]
-order_pd = pd.DataFrame(zip(map(lambda x: x[1],prov_map), range(len(prov_map))), columns=['province', 'order'])
-date_limit = map(lambda x: str(x), range(2008, 2015))
 
-all_data = readData(read_path, date_limit)
-all_data_trans = transData(all_data)
+def getDescripStat(keep_data, stat_cols):
+    '''
+    get the Descriptive statistic
+    '''
+    get_stat = [[np.mean, 'mean'], [np.median, 'median'], [np.std, 'std'], [np.min, 'min'], [np.max, 'max'],
+                [lambda x: np.mean(x)/np.std(x), 'cv'], [len,'Obs']]
+    stat_list = []
+    for stat_index in get_stat:
+        stat_list.append(getStatIndex(keep_data, stat_index[0], stat_index[1], stat_cols))
+    descrip_stat = reduce(lambda x, y: x.merge(y, on=['Variable']), stat_list)
+    return descrip_stat
 
-keep_data = reduce(lambda x, y: x.merge(y, on=['province', 'order', 'year']),all_data_trans)
-dependent_var, independent_var, control_var = getVarName(keep_data)
 
-keep_col = ['year', 'province'] + dependent_var + independent_var + control_var
-keep_data.loc[:, keep_col].to_csv(save_path + os.sep + 'arange_data.csv', index=False)
+def plotPairPlot(save_path, keep_data, cols):
+    '''
+    Plot the Scatter Plot
+    '''
+    a = sns.pairplot(keep_data.loc[:, cols])
+    a.savefig(save_path + os.sep + 'test.pdf', format='pdf')
 
-keep_data_center = keep_data.copy()
-keep_data_center = standardData(keep_data_center, dependent_var + independent_var + control_var)
-keep_data_center.loc[:, keep_col].to_csv(save_path + os.sep + 'arange_data_standard.csv', index=False)
 
-# For Corr
-keep_data.loc[:, dependent_var + independent_var + control_var].to_csv(save_path + os.sep + 'arange_data_corr.csv', index=False)
+def logData(data, cols):
+    '''
+    Log the Data
+    '''
+    for col in cols:
+        data[col] = np.log(data[col])
+    return data
 
-# For MD
-keep_data_md = keep_data.groupby(['province']).mean().reset_index()
-keep_data_md = pd.concat([keep_data_md.iloc[:20,:], pd.DataFrame(np.zeros([1,len(keep_data_md.columns)]), columns=keep_data_md.columns), keep_data_md.iloc[20:,:]])
-keep_data_md.to_csv(save_path + os.sep + 'arange_data_md.csv', index=False)
+
+def rmDataName(control_var, cols):
+    '''
+    remove the Data Name
+    '''
+    for col in cols:
+        try:
+            control_var.remove(col)
+        except:
+            pass
+    return control_var
+
+
+def main():
+    # Set the path
+    read_path = r'C:\Users\longguangbin\Desktop\Data_Code\data_origin'
+    save_path = r'C:\Users\longguangbin\Desktop\Data_Code\data_arange'
+    save_stat_path = r'C:\Users\longguangbin\Desktop\Data_Code\results'
+
+    prov_map = [[u'安徽',	'Anhui'],
+                [u'北京',	'Beijing'],
+                [u'重庆',	'Chongqing'],
+                [u'福建',	'Fujian'],
+                [u'甘肃',	'Gansu'],
+                [u'广东',	'Guangdong'],
+                [u'广西',	'Guangxi'],
+                [u'贵州',	'Guizhou'],
+                [u'海南',	'Hainan'],
+                [u'河北',	'Hebei'],
+                [u'黑龙江',	'Heilongjiang'],
+                [u'河南',	'Henan'],
+                [u'湖北',	'Hubei'],
+                [u'湖南',	'Hunan'],
+                [u'江苏',	'Jiangsu'],
+                [u'江西',	'Jiangxi'],
+                [u'吉林',	'Jilin'],
+                [u'辽宁',	'Liaoning'],
+                [u'内蒙古',	'NeiMongol'],
+                [u'宁夏',	'NingxiaHui'],
+                [u'青海',	'Qinghai'],
+                [u'陕西',	'Shaanxi'],
+                [u'山东',	'Shandong'],
+                [u'上海',	'Shanghai'],
+                [u'山西',	'Shanxi'],
+                [u'四川',	'Sichuan'],
+                [u'天津',	'Tianjin'],
+                [u'新疆',	'XinjiangUygur'],
+                [u'西藏',	'Xizang'],
+                [u'云南',	'Yunnan'],
+                [u'浙江',	'Zhejiang']]
+    order_pd = pd.DataFrame(zip(map(lambda x: x[1],prov_map), range(len(prov_map))), columns=['province', 'order'])
+    date_limit = map(lambda x: str(x), range(2008, 2015))
+
+    all_data = readData(read_path, date_limit, prov_map, order_pd)
+    all_data_trans = transData(all_data)
+
+    keep_data = reduce(lambda x, y: x.merge(y, on=['province', 'order', 'year']),all_data_trans)
+    dependent_var, independent_var, control_var = getVarName(keep_data)
+
+    keep_data['GovernmentScaleExpenditurePre'] = keep_data['GovernmentScaleExpenditure'] / keep_data['GovernmentScaleRegionalGrossDomesticProduct']
+    control_var = control_var + ['GovernmentScaleExpenditurePre']
+    need_log = [ 'LocalFiscalTaxRevenue',
+                 'UrbanPopulationDensity',
+                 'TotalInvestmentOfForeignInvestedEnterprises',
+                 'ManyPermanentPopulation',
+                 'AverageWageOfStateOwnedUnit',
+                 'ProvincialFinancialStatisticsIncome',
+                 'GovernmentScaleRegionalGrossDomesticProduct',
+                 'ProvincialFinancialStatisticsIncomePre',
+                 'LocalFiscalRevenue',
+                 'EducationLevelOfResidents',
+                 'GovernmentScaleExpenditure']
+    need_rm = ['GovernmentScaleRegionalGrossDomesticProduct', 'GovernmentScaleExpenditure',
+               'ManyBasicOilReserves', 'ManyBasicReservesOfNaturalGas', 'ManyBasicCoalReserves',
+               'ManyPrefectureLevelDivisionNumber','ManyCountyDivisionNumber']
+
+    # Log the Data
+    keep_data = logData(keep_data, need_log)
+    control_var = rmDataName(control_var, need_rm)
+
+    # LocalFiscalTaxRevenue   log
+    # UrbanPopulationDensity    log
+    # TotalInvestmentOfForeignInvestedEnterprises   log
+    # ManyPermanentPopulation       log
+    # AverageWageOfStateOwnedUnit   log
+    # ProvincialFinancialStatisticsIncome       log
+    # ProvincialFinancialStatisticsIncomePre    log
+    # LocalFiscalRevenue            log
+    # EducationLevelOfResidents     log
+    # ManyBasicOilReserves      [ rm ]
+    # GovernmentScaleRegionalGrossDomesticProduct        [ rm ]
+    # GovernmentScaleExpenditure    [ rm ]
+    # ManyBasicReservesOfNaturalGas     [ rm ]
+
+
+    # Descriptive statistical analysis
+    descrip_stat = getDescripStat(keep_data, dependent_var + independent_var + control_var)
+    descrip_stat.to_csv(save_stat_path + os.sep + 'describe_stat.csv', index=False)
+
+    # Plot the Scatter Plots
+    plotPairPlot(save_stat_path, keep_data, dependent_var + independent_var + control_var)
+
+    # Save Data
+    keep_col = ['year', 'province'] + dependent_var + independent_var + control_var
+    keep_data.loc[:, keep_col].to_csv(save_path + os.sep + 'arange_data.csv', index=False)
+
+    keep_data_center = keep_data.copy()
+    keep_data_center = standardData(keep_data_center, dependent_var + independent_var + control_var)
+    keep_data_center.loc[:, keep_col].to_csv(save_path + os.sep + 'arange_data_standard.csv', index=False)
+
+    # For Corr
+    keep_data.loc[:, dependent_var + independent_var + control_var].to_csv(save_path + os.sep + 'arange_data_corr.csv', index=False)
+
+    # For MD
+    keep_data_md = keep_data.groupby(['province']).mean().reset_index()
+    keep_data_md = pd.concat([keep_data_md.iloc[:20,:], pd.DataFrame(np.zeros([1,len(keep_data_md.columns)]), columns=keep_data_md.columns), keep_data_md.iloc[20:,:]])
+    keep_data_md.to_csv(save_path + os.sep + 'arange_data_md.csv', index=False)
+
+    # Print Regression
+    mod = sm.OLS(keep_data[dependent_var], keep_data.loc[:, independent_var + control_var])
+    res = mod.fit()
+    print control_var
+    print res.summary()
+    # res.rsquared        # 调整后的 R 方
+    # res.pvalues         # P 值
+    # res.params          # 回归结果
+
+
+if __name__ == '__main__':
+    main()
+
 
 # FiscalTransparency
 # MarketizationIndex
@@ -177,4 +302,22 @@ keep_data_md.to_csv(save_path + os.sep + 'arange_data_md.csv', index=False)
 # + ManyPrefectureLevelCity
 # + GovernmentScaleExpenditure
 # + ManyBasicReservesOfNaturalGas
+# + GovernmentScaleExpenditurePre
+
+
+# + LocalFiscalTaxRevenue
+# + UrbanPopulationDensity
+# + ManyPerCapitaUrbanRoadArea
+# + TotalInvestmentOfForeignInvestedEnterprises
+# + ManyPermanentPopulation
+# + AverageWageOfStateOwnedUnit
+# + ProvincialFinancialStatisticsIncome
+# + ProvincialFinancialStatisticsIncomePre
+# + ManyDeathRate
+# + ManyBirthRate
+# + LocalFiscalRevenue
+# + EducationLevelOfResidents
+# + ManyPrefectureLevelCity
+# + GovernmentScaleExpenditurePre
+
 
