@@ -66,7 +66,7 @@ plotTmpMap <- function(Mapdata, res, this_text, save_name, save_path){
     pdf(paste(save_path, save_name, sep='/'))
     res.palette <- colorRampPalette(c("#C44E52","#FFA455","#EEEED1", "#6AB27B","#4C72B0"), space = "rgb")
     pal <- res.palette(5)
-    classes_fx <- classIntervals(res, n=5, style="fixed", fixedBreaks=c(-10,-5,-2,2,5,10), rtimes = 1)
+    classes_fx <- classIntervals(res, n=5, style="fixed", fixedBreaks=c(-20,-8,-3,3,8,20), rtimes = 1)
     cols <- findColours(classes_fx,pal)
     par(mar=rep(0,4))
     plot(Mapdata,col=cols, main=this_text, pretty=T, border="grey")
@@ -97,8 +97,8 @@ mydata_corr <- read.csv(paste(data_path, 'arange_data_corr.csv', sep='/'))
 # -------------------------------------------------------
 sm <- summary(mydata_corr)
 ct <- corr.test(mydata_corr)
-print(ct, digits=4)
-write.csv(sm, file="summary.csv")
+# print(ct, digits=4)
+# write.csv(sm, file="summary.csv")
 write.csv(ct$r, file="corr_r.csv")
 write.csv(ct$p, file="corr_p.csv")
 
@@ -133,85 +133,82 @@ write.csv(ct$p, file="corr_p.csv")
 # summary(mod.tobit)
 
 
+# ### Step Regression
+# lm0 <- lm(FiscalTransparency~MarketizationIndex + ProvincialFinancialStatisticsExpenditure, data=mydata)
+# lm.ste <- step(lm0, scope = ~+MarketizationIndex + ProvincialFinancialStatisticsExpenditure
+#              + LocalFiscalTaxRevenue
+#              + UrbanPopulationDensity
+#              + ManyPerCapitaUrbanRoadArea
+#              + TotalInvestmentOfForeignInvestedEnterprises
+#              + ManyPermanentPopulation
+#              + AverageWageOfStateOwnedUnit
+#              + ProvincialFinancialStatisticsIncome
+#              + ProvincialFinancialStatisticsIncomePre
+#              + ManyDeathRate
+#              + ManyBirthRate
+#              + LocalFiscalRevenue
+#              + EducationLevelOfResidents
+#              + ManyPrefectureLevelCity
+#              + GovernmentScaleExpenditurePre, k=2)
+# summary(lm.ste)
+
+
 ### OLS regression
-mod.lm <- lm(FiscalTransparency ~ MarketizationIndex + ProvincialFinancialStatisticsExpenditure
-             + LocalFiscalTaxRevenue
-             + UrbanPopulationDensity
-             + ManyPerCapitaUrbanRoadArea
-             + TotalInvestmentOfForeignInvestedEnterprises
-             + ManyPermanentPopulation
-             + AverageWageOfStateOwnedUnit
-             + ProvincialFinancialStatisticsIncome
-             + ProvincialFinancialStatisticsIncomePre
-             + ManyDeathRate
-             + ManyBirthRate
-             + LocalFiscalRevenue
-             + EducationLevelOfResidents
-             + ManyPrefectureLevelCity
-             + GovernmentScaleExpenditurePre
+mod.lm <- lm(FT ~ Institution + GovComp
+             + FinancialIncome 
+             + BirthRate 
+             + FinancialIncomePer 
+             + PrefectureLevelCity 
+             + FinancialExpenditure 
+             + TotInvestOfForeign 
+             + AvgWageSO 
+             + EduLevelOfResidents
              , data=mydata)
 summary(mod.lm)
 vif(mod.lm, digits = 3)
-
-
 # 画散点图
-pdf(paste(save_path, "output.pdf", sep='/'))
-plot(mydata_corr[, 1:23])
-dev.off()
-
-
-
+# pdf(paste(save_path, "output.pdf", sep='/'))
+# plot(mydata_corr[, 1:10])
+# dev.off()
 res <- mod.lm$residuals
 res_div <- getavg(res, 7)
-plotTmpMap(CHN_adm1, res_div, "Residuals from OLS Model")
+plotTmpMap(CHN_adm1, res_div, "Residuals from OLS Model", "Res_OLS_reg.pdf", save_path)
 # Residual Autocorrelation
 moran.test(res_div, listw=CHN_adm1_mat, zero.policy=T)
 
 
 ### SAR regression
-mod.sar <- lagsarlm(FiscalTransparency ~ MarketizationIndex + ProvincialFinancialStatisticsExpenditure
-                    + LocalFiscalTaxRevenue
-                    + UrbanPopulationDensity
-                    + ManyPerCapitaUrbanRoadArea
-                    + TotalInvestmentOfForeignInvestedEnterprises
-                    + ManyPermanentPopulation
-                    + AverageWageOfStateOwnedUnit
-                    + ProvincialFinancialStatisticsIncome
-                    + ProvincialFinancialStatisticsIncomePre
-                    + ManyDeathRate
-                    + ManyBirthRate
-                    + LocalFiscalRevenue
-                    + EducationLevelOfResidents
-                    + ManyPrefectureLevelCity
-                    + GovernmentScaleExpenditurePre
+mod.sar <- lagsarlm(FT ~ Institution + GovComp
+                    + FinancialIncome 
+                    + BirthRate 
+                    + FinancialIncomePer 
+                    + PrefectureLevelCity 
+                    + FinancialExpenditure 
+                    + TotInvestOfForeign 
+                    + AvgWageSO 
+                    + EduLevelOfResidents
                     , data=mydata_md, listw=CHN_adm1_mat, zero.policy=T, tol.solve=1e-12)
 summary(mod.sar)
 res <- mod.sar$residuals
 # Residual Autocorrelation
 moran.test(res, listw=CHN_adm1_mat, zero.policy=T)
+plotTmpMap(CHN_adm1, res_div, "Residuals from SAR Model", "Res_SAR_reg.pdf", save_path)
 
 
 ### SEM regression
-mod.sem <- errorsarlm(FiscalTransparency ~ MarketizationIndex + ProvincialFinancialStatisticsExpenditure
-                      + LocalFiscalTaxRevenue
-                      + UrbanPopulationDensity
-                      + ManyPerCapitaUrbanRoadArea
-                      + TotalInvestmentOfForeignInvestedEnterprises
-                      + ManyPermanentPopulation
-                      + AverageWageOfStateOwnedUnit
-                      + ProvincialFinancialStatisticsIncome
-                      + ProvincialFinancialStatisticsIncomePre
-                      + ManyDeathRate
-                      + ManyBirthRate
-                      + LocalFiscalRevenue
-                      + EducationLevelOfResidents
-                      + ManyPrefectureLevelCity
-                      + GovernmentScaleExpenditurePre
+mod.sem <- errorsarlm(FT ~ Institution + GovComp
+                      + FinancialIncome 
+                      + BirthRate 
+                      + FinancialIncomePer 
+                      + PrefectureLevelCity 
+                      + FinancialExpenditure 
+                      + TotInvestOfForeign 
+                      + AvgWageSO 
+                      + EduLevelOfResidents
                       , data=mydata_md, listw=CHN_adm1_mat, zero.policy=T, tol.solve=1e-15)
 summary(mod.sem)
 res <- mod.sem$residuals
 # Residual Autocorrelation
 moran.test(res, listw=CHN_adm1_mat, zero.policy=T)
-
-
+plotTmpMap(CHN_adm1, res_div, "Residuals from SEM Model", "Res_SEM_reg.pdf", save_path)
 

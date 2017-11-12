@@ -136,7 +136,7 @@ def plotPairPlot(save_path, keep_data, cols):
     Plot the Scatter Plot
     '''
     a = sns.pairplot(keep_data.loc[:, cols])
-    a.savefig(save_path + os.sep + 'test.pdf', format='pdf')
+    a.savefig(save_path + os.sep + 'corr_scatter_var.pdf', format='pdf')
 
 
 def logData(data, cols):
@@ -227,6 +227,35 @@ def main():
     keep_data = logData(keep_data, need_log)
     control_var = rmDataName(control_var, need_rm)
 
+    patch_map = {
+        'FiscalTransparency' : 'FT',
+        'MarketizationIndex' : 'Institution',
+        'ProvincialFinancialStatisticsExpenditure' : 'GovComp',
+        'ProvincialFinancialStatisticsIncome' : 'FinancialIncome',
+        'ManyBirthRate' : 'BirthRate',
+        'ProvincialFinancialStatisticsIncomePre' : 'FinancialIncomePer',
+        'ManyPrefectureLevelCity' : 'PrefectureLevelCity',
+        'GovernmentScaleExpenditurePre' : 'FinancialExpenditure',
+        'TotalInvestmentOfForeignInvestedEnterprises' : 'TotInvestOfForeign',
+        'AverageWageOfStateOwnedUnit' : 'AvgWageSO',
+        'EducationLevelOfResidents' : 'EduLevelOfResidents'
+    }
+
+    for key, value in patch_map.iteritems():
+        keep_data[value] = keep_data[key]
+
+    # Step Regression in R : Results
+    dependent_var = ['FT']
+    independent_var = ['Institution', 'GovComp']
+    control_var = ['FinancialIncome',
+                   'BirthRate',
+                   'FinancialIncomePer',
+                   'PrefectureLevelCity',
+                   'FinancialExpenditure',
+                   'TotInvestOfForeign',
+                   'AvgWageSO',
+                   'EduLevelOfResidents']
+
     # LocalFiscalTaxRevenue   log
     # UrbanPopulationDensity    log
     # TotalInvestmentOfForeignInvestedEnterprises   log
@@ -273,6 +302,19 @@ def main():
     # res.rsquared        # 调整后的 R 方
     # res.pvalues         # P 值
     # res.params          # 回归结果
+
+
+    # + FT
+    # + Institution
+    # + GovComp
+    # + FinancialIncome                                 # 地方财政统计总收入
+    # + BirthRate                                       # 出生率
+    # + FinancialIncomePer                              # 地方财政统计人均收入
+    # + PrefectureLevelCity                             # 地级区划数
+    # + FinancialExpenditure                            # 政府规模财政支出
+    # + TotInvestOfForeign                              # 外商投资企业投资总额
+    # + AvgWageSO                                       # 国有单位平均工资
+    # + EduLevelOfResidents                             # 居民受教育程度
 
 
 if __name__ == '__main__':
