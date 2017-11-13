@@ -129,7 +129,7 @@ SparkSession.sparkContext                       返回一个潜在的 SparkConte
 SparkSession.stop()                             Stop the underlying SparkContext.
 SparkSession.streams                            Returns a StreamingQueryManager that allows managing all the StreamingQuery StreamingQueries active on this context.
         Returns:	StreamingQueryManager
-SparkSession.table(tableName)                   Returns the specified table as a DataFrame.
+SparkSession.table(tableName)                   以DataFrame的形式返回指定的表。
         Returns:	DataFrame
 ```
     >>> df.createOrReplaceTempView("table1")
