@@ -35,7 +35,7 @@ class Builder
             SparkSession.builder.config(conf=SparkConf())
             SparkSession.builder.config("spark.some.config.option", "some-value")
         ```
-        >> enableHiveSupport()                  Enables Hive support, including connectivity to a persistent Hive metastore, support for Hive serdes, and Hive user-defined functions.
+        >> enableHiveSupport()                  启用Hive支持，包括连接到持续Hive Metastore，支持Hive serdes和Hive用户定义的功能。
         >> getOrCreate()                        获得一个存在的 SparkSession，或者如果没有存在的 SparkSession，将创建一个依据 builder。 该方法是检查是否存在一个默认的 SparkSession，如果有将返回那个。如果没有，该方法创建一个 SparkSession ，并且分配一个全局的默认。
         ```
             >>> s1 = SparkSession.builder.config("k1", "v1").getOrCreate()
@@ -48,9 +48,8 @@ class Builder
             True
         ```
         >> master(master)                       设置 Spark master URL 的链接，例如：“local”本地运行，“local[4]”本地运行4核，“spark://master:7077”运行spark集群。
-                参数设置:
-                        master – a url for spark master
->> SparkSession.conf                    Runtime configuration interface for Spark.
+                参数设置:   master – a url for spark master
+>> SparkSession.conf                            Spark的运行时配置界面。
 >> SparkSession.createDataFrame(data, schema=None, samplingRatio=None, verifySchema=True)                   创建一个 RDD 的 DataFrame，一个 list 或者 pandas。1、When schema is a list of column names, the type of each column will be inferred from data.2、When schema is None, it will try to infer the schema (column names and types) from data, which should be an RDD of Row, or namedtuple, or dict.3、When schema is pyspark.sql.types.DataType or a datatype string, it must match the real data, or an exception will be thrown at runtime. If the given schema is not pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType as its only field, and the field name will be “value”, each record will also be wrapped into a tuple, which can be converted to row later.4、If schema inference is needed, samplingRatio is used to determined the ratio of rows used for schema inference. The first row will be used if samplingRatio is None.
         参数设置:
                 data – 一个 RDD 来自 list 或者 pandas.
@@ -59,43 +58,43 @@ class Builder
                 verifySchema – verify data types of every row against schema.
         返回值:
                 DataFrame
-```
-    >>> l = [('Alice', 1)]
-    >>> spark.createDataFrame(l).collect()
-    [Row(_1=u'Alice', _2=1)]
-    >>> spark.createDataFrame(l, ['name', 'age']).collect()
-    [Row(name=u'Alice', age=1)]
-    >>> d = [{'name': 'Alice', 'age': 1}]
-    >>> spark.createDataFrame(d).collect()
-    [Row(age=1, name=u'Alice')]
-    >>> rdd = sc.parallelize(l)
-    >>> spark.createDataFrame(rdd).collect()
-    [Row(_1=u'Alice', _2=1)]
-    >>> df = spark.createDataFrame(rdd, ['name', 'age'])
-    >>> df.collect()
-    [Row(name=u'Alice', age=1)]
-    >>> from pyspark.sql import Row
-    >>> Person = Row('name', 'age')
-    >>> person = rdd.map(lambda r: Person(*r))
-    >>> df2 = spark.createDataFrame(person)
-    >>> df2.collect()
-    [Row(name=u'Alice', age=1)]
-    >>> from pyspark.sql.types import *
-    >>> schema = StructType([StructField("name", StringType(), True), StructField("age", IntegerType(), True)])
-    >>> df3 = spark.createDataFrame(rdd, schema)
-    >>> df3.collect()
-    [Row(name=u'Alice', age=1)]
-    >>> spark.createDataFrame(df.toPandas()).collect()
-    [Row(name=u'Alice', age=1)]
-    >>> spark.createDataFrame(pandas.DataFrame([[1, 2]])).collect()
-    [Row(0=1, 1=2)]
-    >>> spark.createDataFrame(rdd, "a: string, b: int").collect()
-    [Row(a=u'Alice', b=1)]
-    >>> rdd = rdd.map(lambda row: row[1])
-    >>> spark.createDataFrame(rdd, "int").collect()
-    [Row(value=1)]
-```
-SparkSession.newSession()                        返回一个新的 session ，has separate SQLConf, registered temporary views and UDFs, but shared SparkContext and table cache.
+        ```
+            >>> l = [('Alice', 1)]
+            >>> spark.createDataFrame(l).collect()
+            [Row(_1=u'Alice', _2=1)]
+            >>> spark.createDataFrame(l, ['name', 'age']).collect()
+            [Row(name=u'Alice', age=1)]
+            >>> d = [{'name': 'Alice', 'age': 1}]
+            >>> spark.createDataFrame(d).collect()
+            [Row(age=1, name=u'Alice')]
+            >>> rdd = sc.parallelize(l)
+            >>> spark.createDataFrame(rdd).collect()
+            [Row(_1=u'Alice', _2=1)]
+            >>> df = spark.createDataFrame(rdd, ['name', 'age'])
+            >>> df.collect()
+            [Row(name=u'Alice', age=1)]
+            >>> from pyspark.sql import Row
+            >>> Person = Row('name', 'age')
+            >>> person = rdd.map(lambda r: Person(*r))
+            >>> df2 = spark.createDataFrame(person)
+            >>> df2.collect()
+            [Row(name=u'Alice', age=1)]
+            >>> from pyspark.sql.types import *
+            >>> schema = StructType([StructField("name", StringType(), True), StructField("age", IntegerType(), True)])
+            >>> df3 = spark.createDataFrame(rdd, schema)
+            >>> df3.collect()
+            [Row(name=u'Alice', age=1)]
+            >>> spark.createDataFrame(df.toPandas()).collect()
+            [Row(name=u'Alice', age=1)]
+            >>> spark.createDataFrame(pandas.DataFrame([[1, 2]])).collect()
+            [Row(0=1, 1=2)]
+            >>> spark.createDataFrame(rdd, "a: string, b: int").collect()
+            [Row(a=u'Alice', b=1)]
+            >>> rdd = rdd.map(lambda row: row[1])
+            >>> spark.createDataFrame(rdd, "int").collect()
+            [Row(value=1)]
+        ```
+SparkSession.newSession()                        返回一个新的 session ，有单独的SQLConf、registered临时视图 和UDF，但有共享SparkContext和table cache。
 SparkSession.range(start, end=None, step=1, numPartitions=None)                  创建 DataFrame ，使用 pyspark.sql.types.LongType，从 start 到 end。
         参数设置：
                 start – the start value
@@ -104,12 +103,12 @@ SparkSession.range(start, end=None, step=1, numPartitions=None)                 
                 numPartitions – DataFrame 的分区数
         返回值:
                 DataFrame
-```
-    >>> spark.range(1, 7, 2).collect()
-    [Row(id=1), Row(id=3), Row(id=5)]
-    >>> spark.range(3).collect()
-    [Row(id=0), Row(id=1), Row(id=2)]
-```
+        ```
+            >>> spark.range(1, 7, 2).collect()
+            [Row(id=1), Row(id=3), Row(id=5)]
+            >>> spark.range(3).collect()
+            [Row(id=0), Row(id=1), Row(id=2)]
+        ```
 SparkSession.read                               返回一个能用于读数据为 DataFrame 的 DataFrameReader。
         返回值:
                 DataFrameReader
@@ -120,23 +119,23 @@ SparkSession.sparkContext                       返回一个潜在的 SparkConte
 >> SparkSession.sql(sqlQuery)                   返回一个 DataFrame 来代表给定的查询结果。
         返回值:
                 DataFrame
-```
-    >>> df.createOrReplaceTempView("table1")
-    >>> df2 = spark.sql("SELECT field1 AS f1, field2 as f2 from table1")
-    >>> df2.collect()
-    [Row(f1=1, f2=u'row1'), Row(f1=2, f2=u'row2'), Row(f1=3, f2=u'row3')]
-```
+        ```
+            >>> df.createOrReplaceTempView("table1")
+            >>> df2 = spark.sql("SELECT field1 AS f1, field2 as f2 from table1")
+            >>> df2.collect()
+            [Row(f1=1, f2=u'row1'), Row(f1=2, f2=u'row2'), Row(f1=3, f2=u'row3')]
+        ```
 SparkSession.stop()                             Stop the underlying SparkContext.
 SparkSession.streams                            Returns a StreamingQueryManager that allows managing all the StreamingQuery StreamingQueries active on this context.
         Returns:	StreamingQueryManager
 SparkSession.table(tableName)                   以DataFrame的形式返回指定的表。
         Returns:	DataFrame
-```
-    >>> df.createOrReplaceTempView("table1")
-    >>> df2 = spark.table("table1")
-    >>> sorted(df.collect()) == sorted(df2.collect())
-    True
-```
+        ```
+            >>> df.createOrReplaceTempView("table1")
+            >>> df2 = spark.table("table1")
+            >>> sorted(df.collect()) == sorted(df2.collect())
+            True
+        ```
 >> SparkSession.udf                            Returns a UDFRegistration for UDF registration.
         Returns:	UDFRegistration
 SparkSession.version                           The version of Spark on which this application is running.
@@ -144,458 +143,450 @@ SparkSession.version                           The version of Spark on which thi
 
 ## 二、SQLContext类
 class pyspark.sql.SQLContext(sparkContext, sparkSession=None, jsqlContext=None)
-    处理结构化数据的类，行、列。
-    As of Spark 2.0, this is replaced by SparkSession. However, we are keeping the class here for backward compatibility.
-    A SQLContext can be used create DataFrame, register DataFrame as tables, execute SQL over tables, cache tables, and read parquet files.
+        处理结构化数据的类，行、列。
+        从Spark 2.0开始，它被SparkSession所取代。 但是，为了向后兼容，我们在这里保留这个类。 
+        可以使用SQLContext创建DataFrame，将DataFrame注册为表，在表上执行SQL，缓存表和读取实地标（parquet）文件。
 
 参数设置:
-    sparkContext – The SparkContext backing this SQLContext.
-    sparkSession – The SparkSession around which this SQLContext wraps.
-    jsqlContext – An optional JVM Scala SQLContext. If set, we do not instantiate a new SQLContext in the JVM, instead we make all calls to this object.
+        sparkContext – The SparkContext backing this SQLContext.
+        sparkSession – The SparkSession around which this SQLContext wraps.
+        jsqlContext – An optional JVM Scala SQLContext. If set, we do not instantiate a new SQLContext in the JVM, instead we make all calls to this object.
 
-cacheTable(tableName)                           Caches the specified table in-memory.    New in version 1.0.
-clearCache()                                    Removes all cached tables from the in-memory cache.    New in version 1.3.
-createDataFrame(data, schema=None, samplingRatio=None, verifySchema=True)
-    Creates a DataFrame from an RDD, a list or a pandas.DataFrame.
-    When schema is a list of column names, the type of each column will be inferred from data.
-    When schema is None, it will try to infer the schema (column names and types) from data, which should be an RDD of Row, or namedtuple, or dict.
-    When schema is pyspark.sql.types.DataType or a datatype string it must match the real data, or an exception will be thrown at runtime. If the given schema is not pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType as its only field, and the field name will be “value”, each record will also be wrapped into a tuple, which can be converted to row later.
-    If schema inference is needed, samplingRatio is used to determined the ratio of rows used for schema inference. The first row will be used if samplingRatio is None.
-    Parameters:
-        data – an RDD of any kind of SQL data representation(e.g. Row, tuple, int, boolean, etc.), or list, or pandas.DataFrame.
-        schema – a pyspark.sql.types.DataType or a datatype string or a list of column names, default is None. The data type string format equals to pyspark.sql.types.DataType.simpleString, except that top level struct type can omit the struct<> and atomic types use typeName() as their format, e.g. use byte instead of tinyint for pyspark.sql.types.ByteType. We can also use int as a short name for pyspark.sql.types.IntegerType.
-        samplingRatio – the sample ratio of rows used for inferring
-        verifySchema – verify data types of every row against schema.
-    Returns:
-        DataFrame
-    Changed in version 2.0: The schema parameter can be a pyspark.sql.types.DataType or a datatype string after 2.0. If it’s not a pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType and each record will also be wrapped into a tuple.
-    Changed in version 2.1: Added verifySchema.
-```
-    >>> l = [('Alice', 1)]
-    >>> sqlContext.createDataFrame(l).collect()
-    [Row(_1=u'Alice', _2=1)]
-    >>> sqlContext.createDataFrame(l, ['name', 'age']).collect()
-    [Row(name=u'Alice', age=1)]
-    >>> d = [{'name': 'Alice', 'age': 1}]
-    >>> sqlContext.createDataFrame(d).collect()
-    [Row(age=1, name=u'Alice')]
-    >>> rdd = sc.parallelize(l)
-    >>> sqlContext.createDataFrame(rdd).collect()
-    [Row(_1=u'Alice', _2=1)]
-    >>> df = sqlContext.createDataFrame(rdd, ['name', 'age'])
-    >>> df.collect()
-    [Row(name=u'Alice', age=1)]
-    >>> from pyspark.sql import Row
-    >>> Person = Row('name', 'age')
-    >>> person = rdd.map(lambda r: Person(*r))
-    >>> df2 = sqlContext.createDataFrame(person)
-    >>> df2.collect()
-    [Row(name=u'Alice', age=1)]
-    >>> from pyspark.sql.types import *
-    >>> schema = StructType([
-    ...    StructField("name", StringType(), True),
-    ...    StructField("age", IntegerType(), True)])
-    >>> df3 = sqlContext.createDataFrame(rdd, schema)
-    >>> df3.collect()
-    [Row(name=u'Alice', age=1)]
-    >>> sqlContext.createDataFrame(df.toPandas()).collect()
-    [Row(name=u'Alice', age=1)]
-    >>> sqlContext.createDataFrame(pandas.DataFrame([[1, 2]])).collect()
-    [Row(0=1, 1=2)]
-    >>> sqlContext.createDataFrame(rdd, "a: string, b: int").collect()
-    [Row(a=u'Alice', b=1)]
-    >>> rdd = rdd.map(lambda row: row[1])
-    >>> sqlContext.createDataFrame(rdd, "int").collect()
-    [Row(value=1)]
-    >>> sqlContext.createDataFrame(rdd, "boolean").collect()
-    Traceback (most recent call last):
-        ...
-    Py4JJavaError: ...
-```
+cacheTable(tableName)                           在内存中缓存指定的表.    New in version 1.0.
+clearCache()                                    从内存缓存中删除所有缓存的表.    New in version 1.3.
+>> createDataFrame(data, schema=None, samplingRatio=None, verifySchema=True)
+        Creates a DataFrame from an RDD, a list or a pandas.DataFrame.
+        When schema is a list of column names, the type of each column will be inferred from data.
+        When schema is None, it will try to infer the schema (column names and types) from data, which should be an RDD of Row, or namedtuple, or dict.
+        When schema is pyspark.sql.types.DataType or a datatype string it must match the real data, or an exception will be thrown at runtime. If the given schema is not pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType as its only field, and the field name will be “value”, each record will also be wrapped into a tuple, which can be converted to row later.
+        If schema inference is needed, samplingRatio is used to determined the ratio of rows used for schema inference. The first row will be used if samplingRatio is None.
+        Parameters:
+            data – an RDD of any kind of SQL data representation(e.g. Row, tuple, int, boolean, etc.), or list, or pandas.DataFrame.
+            schema – a pyspark.sql.types.DataType or a datatype string or a list of column names, default is None. The data type string format equals to pyspark.sql.types.DataType.simpleString, except that top level struct type can omit the struct<> and atomic types use typeName() as their format, e.g. use byte instead of tinyint for pyspark.sql.types.ByteType. We can also use int as a short name for pyspark.sql.types.IntegerType.
+            samplingRatio – the sample ratio of rows used for inferring
+            verifySchema – verify data types of every row against schema.
+        Returns:
+            DataFrame
+        Changed in version 2.0: The schema parameter can be a pyspark.sql.types.DataType or a datatype string after 2.0. If it’s not a pyspark.sql.types.StructType, it will be wrapped into a pyspark.sql.types.StructType and each record will also be wrapped into a tuple.
+        Changed in version 2.1: Added verifySchema.
+        ```
+            >>> l = [('Alice', 1)]
+            >>> sqlContext.createDataFrame(l).collect()
+            [Row(_1=u'Alice', _2=1)]
+            >>> sqlContext.createDataFrame(l, ['name', 'age']).collect()
+            [Row(name=u'Alice', age=1)]
+            >>> d = [{'name': 'Alice', 'age': 1}]
+            >>> sqlContext.createDataFrame(d).collect()
+            [Row(age=1, name=u'Alice')]
+            >>> rdd = sc.parallelize(l)
+            >>> sqlContext.createDataFrame(rdd).collect()
+            [Row(_1=u'Alice', _2=1)]
+            >>> df = sqlContext.createDataFrame(rdd, ['name', 'age'])
+            >>> df.collect()
+            [Row(name=u'Alice', age=1)]
+            >>> from pyspark.sql import Row
+            >>> Person = Row('name', 'age')
+            >>> person = rdd.map(lambda r: Person(*r))
+            >>> df2 = sqlContext.createDataFrame(person)
+            >>> df2.collect()
+            [Row(name=u'Alice', age=1)]
+            >>> from pyspark.sql.types import *
+            >>> schema = StructType([
+            ...    StructField("name", StringType(), True),
+            ...    StructField("age", IntegerType(), True)])
+            >>> df3 = sqlContext.createDataFrame(rdd, schema)
+            >>> df3.collect()
+            [Row(name=u'Alice', age=1)]
+            >>> sqlContext.createDataFrame(df.toPandas()).collect()
+            [Row(name=u'Alice', age=1)]
+            >>> sqlContext.createDataFrame(pandas.DataFrame([[1, 2]])).collect()
+            [Row(0=1, 1=2)]
+            >>> sqlContext.createDataFrame(rdd, "a: string, b: int").collect()
+            [Row(a=u'Alice', b=1)]
+            >>> rdd = rdd.map(lambda row: row[1])
+            >>> sqlContext.createDataFrame(rdd, "int").collect()
+            [Row(value=1)]
+            >>> sqlContext.createDataFrame(rdd, "boolean").collect()
+            Traceback (most recent call last):
+                ...
+            Py4JJavaError: ...
+        ```
         New in version 1.3.
 createExternalTable(tableName, path=None, source=None, schema=None, **options)
-    Creates an external table based on the dataset in a data source.
-    It returns the DataFrame associated with the external table.
-    The data source is specified by the source and a set of options. If source is not specified, the default data source configured by spark.sql.sources.default will be used.
-    Optionally, a schema can be provided as the schema of the returned DataFrame and created external table.
-    Returns:	DataFrame
-    New in version 1.3.
-dropTempTable(tableName)
-    Remove the temp table from catalog.
-    ```
-        >>> sqlContext.registerDataFrameAsTable(df, "table1")
-        >>> sqlContext.dropTempTable("table1")
-    ```
-    New in version 1.6.
+        Creates an external table based on the dataset in a data source.
+        It returns the DataFrame associated with the external table.
+        The data source is specified by the source and a set of options. If source is not specified, the default data source configured by spark.sql.sources.default will be used.
+        Optionally, a schema can be provided as the schema of the returned DataFrame and created external table.
+        Returns:	DataFrame
+        New in version 1.3.
+dropTempTable(tableName)                            从目录中删除临时表。
+        ```
+            >>> sqlContext.registerDataFrameAsTable(df, "table1")
+            >>> sqlContext.dropTempTable("table1")
+        ```
+        New in version 1.6.
 getConf(key, defaultValue=None)
-    Returns the value of Spark SQL configuration property for the given key.
-    If the key is not set and defaultValue is not None, return defaultValue. If the key is not set and defaultValue is None, return the system default value.
-    ```
-        >>> sqlContext.getConf("spark.sql.shuffle.partitions")
-        u'200'
-        >>> sqlContext.getConf("spark.sql.shuffle.partitions", u"10")
-        u'10'
-        >>> sqlContext.setConf("spark.sql.shuffle.partitions", u"50")
-        >>> sqlContext.getConf("spark.sql.shuffle.partitions", u"10")
-        u'50'
-    ```
-    New in version 1.3.
+        返回给定键的Spark SQL配置属性的值。 如果该键没有设置，并且defaultValue不是None，则返回defaultValue。 如果没有设置key，并且defaultValue为None，则返回系统默认值。
+        ```
+            >>> sqlContext.getConf("spark.sql.shuffle.partitions")
+            u'200'
+            >>> sqlContext.getConf("spark.sql.shuffle.partitions", u"10")
+            u'10'
+            >>> sqlContext.setConf("spark.sql.shuffle.partitions", u"50")
+            >>> sqlContext.getConf("spark.sql.shuffle.partitions", u"10")
+            u'50'
+        ```
+        New in version 1.3.
 classmethod getOrCreate(sc)
-    Get the existing SQLContext or create a new one with given SparkContext.
-    Parameters:	sc – SparkContext
-    New in version 1.6.
+        获取现有的SQLContext或使用给定的SparkContext创建一个新的SQLContext。
+        Parameters:	sc – SparkContext
+        New in version 1.6.
 newSession()
-    Returns a new SQLContext as new session, that has separate SQLConf, registered temporary views and UDFs, but shared SparkContext and table cache.
-    New in version 1.6.
+        Returns a new SQLContext as new session, that has separate SQLConf, registered temporary views and UDFs, but shared SparkContext and table cache.
+        New in version 1.6.
 range(start, end=None, step=1, numPartitions=None)
-    Create a DataFrame with single pyspark.sql.types.LongType column named id, containing elements in a range from start to end (exclusive) with step value step.
-    Parameters:
-        start – the start value
-        end – the end value (exclusive)
-        step – the incremental step (default: 1)
-        numPartitions – the number of partitions of the DataFrame
-    Returns:
-        DataFrame
-    ```
-        >>> sqlContext.range(1, 7, 2).collect()
-        [Row(id=1), Row(id=3), Row(id=5)]
-        >>> sqlContext.range(3).collect()
-        [Row(id=0), Row(id=1), Row(id=2)]
-    ```
-    New in version 1.4.
+        Create a DataFrame with single pyspark.sql.types.LongType column named id, containing elements in a range from start to end (exclusive) with step value step.
+        Parameters:
+            start – the start value
+            end – the end value (exclusive)
+            step – the incremental step (default: 1)
+            numPartitions – the number of partitions of the DataFrame
+        Returns:
+            DataFrame
+        ```
+            >>> sqlContext.range(1, 7, 2).collect()
+            [Row(id=1), Row(id=3), Row(id=5)]
+            >>> sqlContext.range(3).collect()
+            [Row(id=0), Row(id=1), Row(id=2)]
+        ```
+        New in version 1.4.
 read
-    Returns a DataFrameReader that can be used to read data in as a DataFrame.
-    Returns:	DataFrameReader
-    New in version 1.4.
+        Returns a DataFrameReader that can be used to read data in as a DataFrame.
+        Returns:	DataFrameReader
+        New in version 1.4.
 readStream
-    Returns a DataStreamReader that can be used to read data streams as a streaming DataFrame.
-    Returns:	DataStreamReader
-    ```
-        >>> text_sdf = sqlContext.readStream.text(tempfile.mkdtemp())
-        >>> text_sdf.isStreaming
-        True
-    ```
-    New in version 2.0.
-registerDataFrameAsTable(df, tableName)
-    Registers the given DataFrame as a temporary table in the catalog.
-    Temporary tables exist only during the lifetime of this instance of SQLContext.
-    ```
-        >>> sqlContext.registerDataFrameAsTable(df, "table1")
-    ```
-    New in version 1.3.
-registerFunction(name, f, returnType=StringType)
-    Registers a python function (including lambda function) as a UDF so it can be used in SQL statements.
-    In addition to a name and the function itself, the return type can be optionally specified. When the return type is not given it default to a string and conversion will automatically be done. For any other return type, the produced object must match the specified type.
-    Parameters:
-        name – name of the UDF
-        f – python function
-        returnType – a pyspark.sql.types.DataType object
-    ```
-        >>> sqlContext.registerFunction("stringLengthString", lambda x: len(x))
-        >>> sqlContext.sql("SELECT stringLengthString('test')").collect()
-        [Row(stringLengthString(test)=u'4')]
+        Returns a DataStreamReader that can be used to read data streams as a streaming DataFrame.
+        Returns:	DataStreamReader
+        ```
+            >>> text_sdf = sqlContext.readStream.text(tempfile.mkdtemp())
+            >>> text_sdf.isStreaming
+            True
+        ```
+        New in version 2.0.
+>> registerDataFrameAsTable(df, tableName)
+        将给定的DataFrame注册为目录中的临时表。 临时表仅在此SQLContext实例的生命周期中存在。
+        ```
+            >>> sqlContext.registerDataFrameAsTable(df, "table1")
+        ```
+        New in version 1.3.
+>> registerFunction(name, f, returnType=StringType)
+        将一个python函数（包括lambda函数）注册为UDF，以便在SQL语句中使用。
+        除了名称和函数本身之外，还可以指定返回类型。 当返回类型没有给出它默认为一个字符串和转换将自动完成。 对于任何其他返回类型，生成的对象必须匹配指定的类型。
+        Parameters:
+            name – name of the UDF
+            f – python function
+            returnType – a pyspark.sql.types.DataType object
+        ```
+            >>> sqlContext.registerFunction("stringLengthString", lambda x: len(x))
+            >>> sqlContext.sql("SELECT stringLengthString('test')").collect()
+            [Row(stringLengthString(test)=u'4')]
 
-        >>> from pyspark.sql.types import IntegerType
-        >>> sqlContext.registerFunction("stringLengthInt", lambda x: len(x), IntegerType())
-        >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
-        [Row(stringLengthInt(test)=4)]
+            >>> from pyspark.sql.types import IntegerType
+            >>> sqlContext.registerFunction("stringLengthInt", lambda x: len(x), IntegerType())
+            >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
+            [Row(stringLengthInt(test)=4)]
 
-        >>> from pyspark.sql.types import IntegerType
-        >>> sqlContext.udf.register("stringLengthInt", lambda x: len(x), IntegerType())
-        >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
-        [Row(stringLengthInt(test)=4)]
-    ```
-    New in version 1.2.
+            >>> from pyspark.sql.types import IntegerType
+            >>> sqlContext.udf.register("stringLengthInt", lambda x: len(x), IntegerType())
+            >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
+            [Row(stringLengthInt(test)=4)]
+        ```
+        New in version 1.2.
 registerJavaFunction(name, javaClassName, returnType=None)
-    Register a java UDF so it can be used in SQL statements.
-    In addition to a name and the function itself, the return type can be optionally specified. When the return type is not specified we would infer it via reflection. :param name: name of the UDF :param javaClassName: fully qualified name of java class :param returnType: a pyspark.sql.types.DataType object
-    ```
-        >>> sqlContext.registerJavaFunction("javaStringLength", "test.org.apache.spark.sql.JavaStringLength", IntegerType())
-        >>> sqlContext.sql("SELECT javaStringLength('test')").collect()
-        [Row(UDF(test)=4)]
-        >>> sqlContext.registerJavaFunction("javaStringLength2", "test.org.apache.spark.sql.JavaStringLength")
-        >>> sqlContext.sql("SELECT javaStringLength2('test')").collect()
-        [Row(UDF(test)=4)]
-    ```
-    New in version 2.1.
+        Register a java UDF so it can be used in SQL statements.
+        In addition to a name and the function itself, the return type can be optionally specified. When the return type is not specified we would infer it via reflection. :param name: name of the UDF :param javaClassName: fully qualified name of java class :param returnType: a pyspark.sql.types.DataType object
+        ```
+            >>> sqlContext.registerJavaFunction("javaStringLength", "test.org.apache.spark.sql.JavaStringLength", IntegerType())
+            >>> sqlContext.sql("SELECT javaStringLength('test')").collect()
+            [Row(UDF(test)=4)]
+            >>> sqlContext.registerJavaFunction("javaStringLength2", "test.org.apache.spark.sql.JavaStringLength")
+            >>> sqlContext.sql("SELECT javaStringLength2('test')").collect()
+            [Row(UDF(test)=4)]
+        ```
+        New in version 2.1.
 setConf(key, value)
-    Sets the given Spark SQL configuration property.
-    New in version 1.3.
->> sql(sqlQuery)
-    Returns a DataFrame representing the result of the given query.
-    Returns:	DataFrame
-    ```
-        >>> sqlContext.registerDataFrameAsTable(df, "table1")
-        >>> df2 = sqlContext.sql("SELECT field1 AS f1, field2 as f2 from table1")
-        >>> df2.collect()
-        [Row(f1=1, f2=u'row1'), Row(f1=2, f2=u'row2'), Row(f1=3, f2=u'row3')]
-    ```
-    New in version 1.0.
+        Sets the given Spark SQL configuration property.
+        New in version 1.3.
+>> sql(sqlQuery)                                        返回表示给定查询结果的DataFrame。
+        Returns:	DataFrame
+        ```
+            >>> sqlContext.registerDataFrameAsTable(df, "table1")
+            >>> df2 = sqlContext.sql("SELECT field1 AS f1, field2 as f2 from table1")
+            >>> df2.collect()
+            [Row(f1=1, f2=u'row1'), Row(f1=2, f2=u'row2'), Row(f1=3, f2=u'row3')]
+        ```
+        New in version 1.0.
 streams
-    Returns a StreamingQueryManager that allows managing all the StreamingQuery StreamingQueries active on this context.
-    New in version 2.0.
+        Returns a StreamingQueryManager that allows managing all the StreamingQuery StreamingQueries active on this context.
+        New in version 2.0.
 >> table(tableName)
-    Returns the specified table or view as a DataFrame.
-    Returns:	DataFrame
-    ```
-        >>> sqlContext.registerDataFrameAsTable(df, "table1")
-        >>> df2 = sqlContext.table("table1")
-        >>> sorted(df.collect()) == sorted(df2.collect())
-        True
-    ```
-    New in version 1.0.
+        Returns the specified table or view as a DataFrame.
+        Returns:	DataFrame
+        ```
+            >>> sqlContext.registerDataFrameAsTable(df, "table1")
+            >>> df2 = sqlContext.table("table1")
+            >>> sorted(df.collect()) == sorted(df2.collect())
+            True
+        ```
+        New in version 1.0.
 tableNames(dbName=None)
-    Returns a list of names of tables in the database dbName.
-    Parameters:	dbName – string, name of the database to use. Default to the current database.
-    Returns:	list of table names, in string
-    ```
-        >>> sqlContext.registerDataFrameAsTable(df, "table1")
-        >>> "table1" in sqlContext.tableNames()
-        True
-        >>> "table1" in sqlContext.tableNames("default")
-        True
-    ```
-    New in version 1.3.
+        Returns a list of names of tables in the database dbName.
+        Parameters:	dbName – string, name of the database to use. Default to the current database.
+        Returns:	list of table names, in string
+        ```
+            >>> sqlContext.registerDataFrameAsTable(df, "table1")
+            >>> "table1" in sqlContext.tableNames()
+            True
+            >>> "table1" in sqlContext.tableNames("default")
+            True
+        ```
+        New in version 1.3.
 >> tables(dbName=None)
-    Returns a DataFrame containing names of tables in the given database.
-    If dbName is not specified, the current database will be used.
-    The returned DataFrame has two columns: tableName and isTemporary (a column with BooleanType indicating if a table is a temporary one or not).
-    Parameters:	dbName – string, name of the database to use.
-    Returns:	DataFrame
-    ```
-        >>> sqlContext.registerDataFrameAsTable(df, "table1")
-        >>> df2 = sqlContext.tables()
-        >>> df2.filter("tableName = 'table1'").first()
-        Row(database=u'', tableName=u'table1', isTemporary=True)
-    ```
-    New in version 1.3.
+        Returns a DataFrame containing names of tables in the given database.
+        If dbName is not specified, the current database will be used.
+        The returned DataFrame has two columns: tableName and isTemporary (a column with BooleanType indicating if a table is a temporary one or not).
+        Parameters:	dbName – string, name of the database to use.
+        Returns:	DataFrame
+        ```
+            >>> sqlContext.registerDataFrameAsTable(df, "table1")
+            >>> df2 = sqlContext.tables()
+            >>> df2.filter("tableName = 'table1'").first()
+            Row(database=u'', tableName=u'table1', isTemporary=True)
+        ```
+        New in version 1.3.
 udf
-    Returns a UDFRegistration for UDF registration.
-    Returns:	UDFRegistration
-    New in version 1.3.1.
-uncacheTable(tableName)
-    Removes the specified table from the in-memory cache.
-    New in version 1.0.
+        Returns a UDFRegistration for UDF registration.
+        Returns:	UDFRegistration
+        New in version 1.3.1.
+uncacheTable(tableName)                             从内存缓存中删除指定的表。
+        New in version 1.0.
 
 
 ## 三、HiveContext类
 class pyspark.sql.HiveContext(sparkContext, jhiveContext=None)
-    A variant of Spark SQL that integrates with data stored in Hive.
-    Configuration for Hive is read from hive-site.xml on the classpath. It supports running both SQL and HiveQL commands.
+        Spark SQL的一个变体，与存储在Hive中的数据集成在一起。 Hive配置是从classpath的hive-site.xml中读取的。 它支持同时运行SQL和HiveQL命令。
 
 Parameters:
-    sparkContext – The SparkContext to wrap.
-    jhiveContext – An optional JVM Scala HiveContext. If set, we do not instantiate a new HiveContext in the JVM, instead we make all calls to this object.
-    Note Deprecated in 2.0.0. Use SparkSession.builder.enableHiveSupport().getOrCreate().
-    refreshTable(tableName)
-    Invalidate and refresh all the cached the metadata of the given table. For performance reasons, Spark SQL or the external data source library it uses might cache certain metadata about a table, such as the location of blocks. When those change outside of Spark SQL, users should call this function to invalidate the cache.
+        sparkContext – The SparkContext to wrap.
+        jhiveContext – An optional JVM Scala HiveContext. If set, we do not instantiate a new HiveContext in the JVM, instead we make all calls to this object.
+        注意在2.0.0中已弃用。 使用SparkSession.builder.enableHiveSupport().getOrCreate()
+        refreshTable(tableName)
+        Invalidate and refresh all the cached the metadata of the given table. For performance reasons, Spark SQL or the external data source library it uses might cache certain metadata about a table, such as the location of blocks. When those change outside of Spark SQL, users should call this function to invalidate the cache.
 
 
 ## 四、UDFRegistration类
 class pyspark.sql.UDFRegistration(sqlContext)
-Wrapper for user-defined function registration.
+        用户自定义函数注册的包装器。
 
->> register(name, f, returnType=StringType)                    Registers a python function (including lambda function) as a UDF so it can be used in SQL statements. In addition to a name and the function itself, the return type can be optionally specified. When the return type is not given it default to a string and conversion will automatically be done. For any other return type, the produced object must match the specified type.
+>> register(name, f, returnType=StringType)                    将一个python函数（包括lambda函数）注册为UDF，以便在SQL语句中使用。 除了名称和函数本身之外，还可以指定返回类型。 当返回类型没有给出它默认为一个字符串和转换将自动完成。 对于任何其他返回类型，生成的对象必须匹配指定的类型。
         Parameters:
                 name – name of the UDF
                 f – python function
         returnType – a pyspark.sql.types.DataType object
-```
-    >>> sqlContext.registerFunction("stringLengthString", lambda x: len(x))
-    >>> sqlContext.sql("SELECT stringLengthString('test')").collect()
-    [Row(stringLengthString(test)=u'4')]
-    >>> from pyspark.sql.types import IntegerType
-    >>> sqlContext.registerFunction("stringLengthInt", lambda x: len(x), IntegerType())
-    >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
-    [Row(stringLengthInt(test)=4)]
-    >>> from pyspark.sql.types import IntegerType
-    >>> sqlContext.udf.register("stringLengthInt", lambda x: len(x), IntegerType())
-    >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
-    [Row(stringLengthInt(test)=4)]
-```
-    New in version 1.2.
+        ```
+            >>> sqlContext.registerFunction("stringLengthString", lambda x: len(x))
+            >>> sqlContext.sql("SELECT stringLengthString('test')").collect()
+            [Row(stringLengthString(test)=u'4')]
+            >>> from pyspark.sql.types import IntegerType
+            >>> sqlContext.registerFunction("stringLengthInt", lambda x: len(x), IntegerType())
+            >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
+            [Row(stringLengthInt(test)=4)]
+            >>> from pyspark.sql.types import IntegerType
+            >>> sqlContext.udf.register("stringLengthInt", lambda x: len(x), IntegerType())
+            >>> sqlContext.sql("SELECT stringLengthInt('test')").collect()
+            [Row(stringLengthInt(test)=4)]
+        ```
+        New in version 1.2.
 
 
 ## 五、DataFrame类
 class pyspark.sql.DataFrame(jdf, sql_ctx)
-    A distributed collection of data grouped into named columns.
-    A DataFrame is equivalent to a relational table in Spark SQL, and can be created using various functions in SQLContext:
+        以列命名的分布式的数据集.
+        DataFrame相当于Spark SQL中的关系表，可以使用SQLContext中的各种函数创建
 people = sqlContext.read.parquet("...")
-Once created, it can be manipulated using the various domain-specific-language (DSL) functions defined in: DataFrame, Column.
-```
-    ageCol = people.age
-    people = sqlContext.read.parquet("...")
-    department = sqlContext.read.parquet("...")
-    people.filter(people.age > 30).join(department, people.deptId == department.id).groupBy(department.name, "gender").agg({"salary": "avg", "age": "max"})
-```
-New in version 1.3.
-
+创建完成后，可以使用DataFrame，Column中定义的各种域特定语言（DSL）函数对其进行操作。
+        ```
+            ageCol = people.age
+            people = sqlContext.read.parquet("...")
+            department = sqlContext.read.parquet("...")
+            people.filter(people.age > 30).join(department, people.deptId == department.id).groupBy(department.name, "gender").agg({"salary": "avg", "age": "max"})
+        ```
+        New in version 1.3.
 
 >> agg(*exprs)                              Aggregate on the entire DataFrame without groups (shorthand for df.groupBy.agg()).
-```
-    >>> df.agg({"age": "max"}).collect()
-    [Row(max(age)=5)]
-    >>> from pyspark.sql import functions as F
-    >>> df.agg(F.min(df.age)).collect()
-    [Row(min(age)=2)]
-```
-    New in version 1.3.
->> alias(alias)                             Returns a new DataFrame with an alias set.
-```
-    >>> from pyspark.sql.functions import *
-    >>> df_as1 = df.alias("df_as1")
-    >>> df_as2 = df.alias("df_as2")
-    >>> joined_df = df_as1.join(df_as2, col("df_as1.name") == col("df_as2.name"), 'inner')
-    >>> joined_df.select("df_as1.name", "df_as2.name", "df_as2.age").collect()
-    [Row(name=u'Bob', name=u'Bob', age=5), Row(name=u'Alice', name=u'Alice', age=2)]
-```
-    New in version 1.3.
+        ```
+            >>> df.agg({"age": "max"}).collect()
+            [Row(max(age)=5)]
+            >>> from pyspark.sql import functions as F
+            >>> df.agg(F.min(df.age)).collect()
+            [Row(min(age)=2)]
+        ```
+            New in version 1.3.
+>> alias(alias)                             返回一个带有别名集的新DataFrame。
+        ```
+            >>> from pyspark.sql.functions import *
+            >>> df_as1 = df.alias("df_as1")
+            >>> df_as2 = df.alias("df_as2")
+            >>> joined_df = df_as1.join(df_as2, col("df_as1.name") == col("df_as2.name"), 'inner')
+            >>> joined_df.select("df_as1.name", "df_as2.name", "df_as2.age").collect()
+            [Row(name=u'Bob', name=u'Bob', age=5), Row(name=u'Alice', name=u'Alice', age=2)]
+        ```
+            New in version 1.3.
 approxQuantile(col, probabilities, relativeError)
-    Calculates the approximate quantiles of numerical columns of a DataFrame.
-    这个算法的结果有下面的确定性跳跃：如果该 DataFrame 有 N 个元素，我们需要probability p up to error err, 算法将返回 a sample x from the DataFrame 以至于 exact rank of x is close to (p * N). 更精确地,
-    floor((p - err) * N) <= rank(x) <= ceil((p + err) * N).
-    This method implements a variation of the Greenwald-Khanna algorithm (with some speed optimizations).
-    这个算法首先出现在 [[http://dx.doi.org/10.1145/375663.375670 Space-efficient Online Computation of Quantile Summaries]] by Greenwald and Khanna.
-    空值在计算前将被忽略，所有值都是空值的时候，将返回空的list。
-    参数设置:
-        col – str, list. 一个列名字，或者一些列名字的list。
-        probabilities – 分位数的概率，在[0,1]之间
-        relativeError – 相对目标精度 (>= 0). 如果设置0，则将计算精确的分位数，花费会很大. Note that values greater than 1 are accepted but give the same result as 1.
-    返回值:
-        the approximate quantiles at the given probabilities. If the input col is a string, the output is a list of floats. If the input col is a list or tuple of strings, the output is also a list, but each element in it is a list of floats, i.e., the output is a list of list of floats.
-    Changed in version 2.2: Added support for multiple columns.
-    New in version 2.0.
+        Calculates the approximate quantiles of numerical columns of a DataFrame.
+        这个算法的结果有下面的确定性跳跃：如果该 DataFrame 有 N 个元素，我们需要probability p up to error err, 算法将返回 a sample x from the DataFrame 以至于 exact rank of x is close to (p * N). 更精确地,
+        floor((p - err) * N) <= rank(x) <= ceil((p + err) * N).
+        This method implements a variation of the Greenwald-Khanna algorithm (with some speed optimizations).
+        这个算法首先出现在 [[http://dx.doi.org/10.1145/375663.375670 Space-efficient Online Computation of Quantile Summaries]] by Greenwald and Khanna.
+        空值在计算前将被忽略，所有值都是空值的时候，将返回空的list。
+        参数设置:
+            col – str, list. 一个列名字，或者一些列名字的list。
+            probabilities – 分位数的概率，在[0,1]之间
+            relativeError – 相对目标精度 (>= 0). 如果设置0，则将计算精确的分位数，花费会很大. Note that values greater than 1 are accepted but give the same result as 1.
+        返回值:
+            the approximate quantiles at the given probabilities. If the input col is a string, the output is a list of floats. If the input col is a list or tuple of strings, the output is also a list, but each element in it is a list of floats, i.e., the output is a list of list of floats.
+        Changed in version 2.2: Added support for multiple columns.
+        New in version 2.0.
 >> cache()
-    Persists the DataFrame with the default storage level (MEMORY_AND_DISK).
-    Note The default storage level has changed to MEMORY_AND_DISK to match Scala in 2.0.
-    New in version 1.3.
+        使用默认存储级别（MEMORY_AND_DISK）保留DataFrame。
+        Note The default storage level has changed to MEMORY_AND_DISK to match Scala in 2.0.
+        New in version 1.3.
 checkpoint(eager=True)
-    Returns a checkpointed version of this Dataset. Checkpointing can be used to truncate the logical plan of this DataFrame, which is especially useful in iterative algorithms where the plan may grow exponentially. It will be saved to files inside the checkpoint directory set with SparkContext.setCheckpointDir().
-    Parameters:	eager – Whether to checkpoint this DataFrame immediately
-    Note Experimental
-    New in version 2.1.
+        Returns a checkpointed version of this Dataset. Checkpointing can be used to truncate the logical plan of this DataFrame, which is especially useful in iterative algorithms where the plan may grow exponentially. It will be saved to files inside the checkpoint directory set with SparkContext.setCheckpointDir().
+        Parameters:	eager – Whether to checkpoint this DataFrame immediately
+        Note Experimental
+        New in version 2.1.
 >> coalesce(numPartitions)
-    返回一个有精确分区的 DataFrame。
-    和RDD类似,这个运行结果是一个narrow dependency。例如，if you go from 1000 partitions to 100 partitions, there will not be a shuffle, instead each of the 100 new partitions will claim 10 of the current partitions. If a larger number of partitions is requested, it will stay at the current number of partitions.
-    然而,如果你做一个大的汇集,如设置 numPartitions = 1, 也许导致你的计算taking place on fewer nodes than you like (e.g. one node in the case of numPartitions = 1). To avoid this, you can call repartition(). This will add a shuffle step, but means the current upstream partitions will be executed in parallel (per whatever the current partitioning is).
-```
-    >>> df.coalesce(1).rdd.getNumPartitions()
-    1
-```
-    New in version 1.4.
+        返回一个有精确分区的 DataFrame。
+        和RDD类似,这个运行结果是一个窄依赖。例如，如果你从1000个分区转换到100个分区，那么不会有一个洗牌，而是100个新分区中的每一个都将要求10个当前分区。 如果请求更多的分区，它将保持在当前的分区数量。
+        然而,如果你做一个大的汇集,如设置 numPartitions = 1, 也许导致你的计算taking place on fewer nodes than you like (e.g. one node in the case of numPartitions = 1). 为了避免这种情况，你可以调用repartition（）。 这将添加一个shuffle步骤，但意味着当前的上游分区将并行执行（无论当前分区是什么）。
+        ```
+            >>> df.coalesce(1).rdd.getNumPartitions()
+            1
+        ```
+        New in version 1.4.
 >> collect()
-    返回一个包括所有行的list。
-```
-    >>> df.collect()
-    [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
-```
-    New in version 1.3.
+        返回一个包括所有行的list。
+        ```
+            >>> df.collect()
+            [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+        ```
+        New in version 1.3.
 >> columns
-    返回一个包含列名的list。
-```
-    >>> df.columns
-    ['age', 'name']
-```
-    New in version 1.3.
+        返回一个包含列名的list。
+        ```
+            >>> df.columns
+            ['age', 'name']
+        ```
+        New in version 1.3.
 corr(col1, col2, method=None)
-    计算2列数据的相关系数，目前仅仅支持计算Pearson相关系数。
-    Currently only supports the Pearson Correlation Coefficient. DataFrame.corr() and DataFrameStatFunctions.corr() are aliases of each other.
-    参数设置:
-        col1 – The name of the first column
-        col2 – The name of the second column
-        method – The correlation method. Currently only supports “pearson”
-    New in version 1.4.
+        计算2列数据的相关系数，目前仅仅支持计算Pearson相关系数。
+        Currently only supports the Pearson Correlation Coefficient. DataFrame.corr() and DataFrameStatFunctions.corr() are aliases of each other.
+        参数设置:
+            col1 – The name of the first column
+            col2 – The name of the second column
+            method – The correlation method. Currently only supports “pearson”
+        New in version 1.4.
 >> count()
-    返回这个 DataFrame 有多少行
-```
-    >>> df.count()
-    2
-```
-    New in version 1.3.
+        返回这个 DataFrame 有多少行
+        ```
+            >>> df.count()
+            2
+        ```
+        New in version 1.3.
 cov(col1, col2)
-    计算指定列的样本方差，
-    参数设置:
-        col1 – The name of the first column
-        col2 – The name of the second column
-    New in version 1.4.
+        计算指定列的样本方差，
+        参数设置:
+            col1 – The name of the first column
+            col2 – The name of the second column
+        New in version 1.4.
 createGlobalTempView(name)
-    Creates a global temporary view with this DataFrame.
-    The lifetime of this temporary view is tied to this Spark application. throws TempTableAlreadyExistsException, if the view name already exists in the catalog.
-    ```
-        >>> df.createGlobalTempView("people")
-        >>> df2 = spark.sql("select * from global_temp.people")
-        >>> sorted(df.collect()) == sorted(df2.collect())
-        True
-        >>> df.createGlobalTempView("people")
-        Traceback (most recent call last):
-        ...
-        AnalysisException: u"Temporary table 'people' already exists;"
-        >>> spark.catalog.dropGlobalTempView("people")
-    ```
-    New in version 2.1.
+        使用此DataFrame创建全局临时视图。 这个临时视图的生命周期与这个Spark应用程序有关。 抛出TempTableAlreadyExistsException，如果视图名称已经存在于目录中。
+        ```
+            >>> df.createGlobalTempView("people")
+            >>> df2 = spark.sql("select * from global_temp.people")
+            >>> sorted(df.collect()) == sorted(df2.collect())
+            True
+            >>> df.createGlobalTempView("people")
+            Traceback (most recent call last):
+            ...
+            AnalysisException: u"Temporary table 'people' already exists;"
+            >>> spark.catalog.dropGlobalTempView("people")
+        ```
+        New in version 2.1.
 createOrReplaceGlobalTempView(name)
-    Creates or replaces a global temporary view using the given name.
-    The lifetime of this temporary view is tied to this Spark application.
-    ```
-        >>> df.createOrReplaceGlobalTempView("people")
-        >>> df2 = df.filter(df.age > 3)
-        >>> df2.createOrReplaceGlobalTempView("people")
-        >>> df3 = spark.sql("select * from global_temp.people")
-        >>> sorted(df3.collect()) == sorted(df2.collect())
-        True
-        >>> spark.catalog.dropGlobalTempView("people")
-    ```
-    New in version 2.2.
+        Creates or replaces a global temporary view using the given name.
+        The lifetime of this temporary view is tied to this Spark application.
+        ```
+            >>> df.createOrReplaceGlobalTempView("people")
+            >>> df2 = df.filter(df.age > 3)
+            >>> df2.createOrReplaceGlobalTempView("people")
+            >>> df3 = spark.sql("select * from global_temp.people")
+            >>> sorted(df3.collect()) == sorted(df2.collect())
+            True
+            >>> spark.catalog.dropGlobalTempView("people")
+        ```
+        New in version 2.2.
 createOrReplaceTempView(name)
-    Creates or replaces a local temporary view with this DataFrame.
-    The lifetime of this temporary table is tied to the SparkSession that was used to create this DataFrame.
-    ```
-        >>> df.createOrReplaceTempView("people")
-        >>> df2 = df.filter(df.age > 3)
-        >>> df2.createOrReplaceTempView("people")
-        >>> df3 = spark.sql("select * from people")
-        >>> sorted(df3.collect()) == sorted(df2.collect())
-        True
-        >>> spark.catalog.dropTempView("people")
-    ```
-    New in version 2.0.
+        Creates or replaces a local temporary view with this DataFrame.
+        The lifetime of this temporary table is tied to the SparkSession that was used to create this DataFrame.
+        ```
+            >>> df.createOrReplaceTempView("people")
+            >>> df2 = df.filter(df.age > 3)
+            >>> df2.createOrReplaceTempView("people")
+            >>> df3 = spark.sql("select * from people")
+            >>> sorted(df3.collect()) == sorted(df2.collect())
+            True
+            >>> spark.catalog.dropTempView("people")
+        ```
+        New in version 2.0.
 createTempView(name)
-    Creates a local temporary view with this DataFrame.
-    The lifetime of this temporary table is tied to the SparkSession that was used to create this DataFrame. throws TempTableAlreadyExistsException, if the view name already exists in the catalog.
-    ```
-        >>> df.createTempView("people")
-        >>> df2 = spark.sql("select * from people")
-        >>> sorted(df.collect()) == sorted(df2.collect())
-        True
-        >>> df.createTempView("people")
-        Traceback (most recent call last):
-        ...
-        AnalysisException: u"Temporary table 'people' already exists;"
-        >>> spark.catalog.dropTempView("people")
-    ```
-    New in version 2.0.
+        Creates a local temporary view with this DataFrame.
+        The lifetime of this temporary table is tied to the SparkSession that was used to create this DataFrame. throws TempTableAlreadyExistsException, if the view name already exists in the catalog.
+        ```
+            >>> df.createTempView("people")
+            >>> df2 = spark.sql("select * from people")
+            >>> sorted(df.collect()) == sorted(df2.collect())
+            True
+            >>> df.createTempView("people")
+            Traceback (most recent call last):
+            ...
+            AnalysisException: u"Temporary table 'people' already exists;"
+            >>> spark.catalog.dropTempView("people")
+        ```
+        New in version 2.0.
 >> crossJoin(other)
-    笛卡尔积
-    参数设置:
-        other – Right side of the cartesian product.
-    ```
-        >>> df.select("age", "name").collect()
-        [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
-        >>> df2.select("name", "height").collect()
-        [Row(name=u'Tom', height=80), Row(name=u'Bob', height=85)]
-        >>> df.crossJoin(df2.select("height")).select("age", "name", "height").collect()
-        [Row(age=2, name=u'Alice', height=80), Row(age=2, name=u'Alice', height=85),
-         Row(age=5, name=u'Bob', height=80), Row(age=5, name=u'Bob', height=85)]
-    ```
-    New in version 2.1.
+        笛卡尔积
+        参数设置:
+            other – Right side of the cartesian product.
+        ```
+            >>> df.select("age", "name").collect()
+            [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+            >>> df2.select("name", "height").collect()
+            [Row(name=u'Tom', height=80), Row(name=u'Bob', height=85)]
+            >>> df.crossJoin(df2.select("height")).select("age", "name", "height").collect()
+            [Row(age=2, name=u'Alice', height=80), Row(age=2, name=u'Alice', height=85),
+             Row(age=5, name=u'Bob', height=80), Row(age=5, name=u'Bob', height=85)]
+        ```
+        New in version 2.1.
 crosstab(col1, col2)
         Computes a pair-wise frequency table of the given columns. Also known as a contingency table. The number of distinct values for each column should be less than 1e4. At most 1e6 non-zero pair frequencies will be returned. The first column of each row will be the distinct values of col1 and the column names will be the distinct values of col2. The name of the first column will be $col1_$col2. Pairs that have no occurrences will have zero as their counts. DataFrame.crosstab() and DataFrameStatFunctions.crosstab() are aliases.
         Parameters:
         col1 – The name of the first column. Distinct items will make the first item of each row.
         col2 – The name of the second column. Distinct items will make the column names of the DataFrame.
         New in version 1.4.
->> cube(*cols)
-        Create a multi-dimensional cube for the current DataFrame using the specified columns, so we can run aggregation on them.
+cube(*cols)
+        使用指定的列为当前的DataFrame创建一个多维数据集，所以我们可以对它们进行聚合。
         ```
         >>> df.cube("name", df.age).count().orderBy("name", "age").show()
         +-----+----+-----+
@@ -611,7 +602,7 @@ crosstab(col1, col2)
         +-----+----+-----+
         ```
         New in version 1.4.
->> describe(*cols)                              Computes statistics for numeric and string columns.    This include count, mean, stddev, min, and max. If no columns are given, this function computes statistics for all numerical or string columns.    Note This function is meant for exploratory data analysis, as we make no guarantee about the backward compatibility of the schema of the resulting DataFrame.
+>> describe(*cols)                              计算数字和字符串列的统计信息。 这包括count，mean，stddev，min和max。 如果未给出列，则此函数计算所有数字或字符串列的统计信息。 注意这个函数是用于探索性数据分析的，因为我们不保证所产生的DataFrame的模式的向后兼容性。
         ```
         >>> df.describe(['age']).show()
         +-------+------------------+
@@ -635,13 +626,13 @@ crosstab(col1, col2)
         +-------+------------------+-----+
         ```
         New in version 1.3.1.
->> distinct()                                   Returns a new DataFrame containing the distinct rows in this DataFrame.
+>> distinct()                                   返回包含此DataFrame中不同行的新DataFrame。
         ```
         >>> df.distinct().count()
         2
         ```
         New in version 1.3.
->> drop(*cols)                                  Returns a new DataFrame that drops the specified column. This is a no-op if schema doesn’t contain the given column name(s).
+>> drop(*cols)                                  返回删除指定列的新DataFrame。 如果模式不包含给定的列名，这是一个无操作。
         Parameters:	cols – 传入一个 [ string ] 或者 [ string 的 list ] 或者 [ Column ].
         ```
         >>> df.drop('age').collect()
@@ -657,9 +648,9 @@ crosstab(col1, col2)
         ```
         New in version 1.4.
 >> dropDuplicates(subset=None)
-        Return a new DataFrame with duplicate rows removed, optionally only considering certain columns.
-        For a static batch DataFrame, it just drops duplicate rows. For a streaming DataFrame, it will keep all data across triggers as intermediate state to drop duplicates rows. You can use withWatermark() to limit how late the duplicate data can be and system will accordingly limit the state. In addition, too late data older than watermark will be dropped to avoid any possibility of duplicates.
-        drop_duplicates() is an alias for dropDuplicates().
+        返回删除重复行的新DataFrame，可选地仅考虑某些列。
+        对于一个静态的批量DataFrame，它只是丢弃重复的行。 对于流式DataFrame，它会将触发器中的所有数据保留为中间状态，以删除重复的行。 您可以使用withWatermark（）来限制重复数据的时间，因此系统会限制状态。 另外，比水印更早的数据将被丢弃以避免重复的可能性。
+        drop_duplicates()是dropDuplicates()的别名。
         ```
         >>> from pyspark.sql import Row
         >>> df = sc.parallelize([ \
@@ -681,12 +672,12 @@ crosstab(col1, col2)
         +---+------+-----+
         ```
         New in version 1.4.
->> drop_duplicates(subset=None)                 drop_duplicates() is an alias for dropDuplicates().
+>> drop_duplicates(subset=None)                 drop_duplicates()是dropDuplicates()的别名。
         New in version 1.4.
->> dropna(how='any', thresh=None, subset=None)                          Returns a new DataFrame omitting rows with null values. DataFrame.dropna() and DataFrameNaFunctions.drop() are aliases of each other.
+>> dropna(how='any', thresh=None, subset=None)                          返回一个新的DataFrame，省略含有空值的行。 DataFrame.dropna（）和DataFrameNaFunctions.drop（）是彼此的别名。
         Parameters:
-        how – ‘any’ or ‘all’. If ‘any’, drop a row if it contains any nulls. If ‘all’, drop a row only if all its values are null.
-        thresh – int, default None If specified, drop rows that have less than thresh non-null values. This overwrites the how parameter.
+        how – ‘any’ or ‘all’. 如果“any”，如果它包含任何空值，则删除一行。 如果'all'，只有当所有的值都为null时才删除一行。
+        thresh – int, default None 如果指定，则删除行数小于非阈值的行。 这将覆盖如何参数。
         subset – optional list of column names to consider.
         ```
         >>> df4.na.drop().show()
@@ -697,13 +688,13 @@ crosstab(col1, col2)
         +---+------+-----+
         ```
         New in version 1.3.1.
->> dtypes                                       Returns all column names and their data types as a list.
+>> dtypes                                       以列表形式返回所有列名称及其数据类型。
         ```
         >>> df.dtypes
         [('age', 'int'), ('name', 'string')]
         ```
         New in version 1.3.
-explain(extended=False)                         Prints the (logical and physical) plans to the console for debugging purpose.
+explain(extended=False)                         打印（逻辑和物理）计划到控制台进行调试。
         Parameters:	extended – boolean, default False. If False, prints only the physical plan.
         ```        
         >>> df.explain()
@@ -720,10 +711,10 @@ explain(extended=False)                         Prints the (logical and physical
         ...
         ```
         New in version 1.3.
->> fillna(value, subset=None)                   Replace null values, alias for na.fill(). DataFrame.fillna() and DataFrameNaFunctions.fill() are aliases of each other.
+>> fillna(value, subset=None)                   替换na.fill（）的空值，别名。 DataFrame.fillna（）和DataFrameNaFunctions.fill（）是彼此的别名。
         Parameters:
-        value – int, long, float, string, or dict. Value to replace null values with. If the value is a dict, then subset is ignored and value must be a mapping from column name (string) to replacement value. The replacement value must be an int, long, float, boolean, or string.
-        subset – optional list of column names to consider. Columns specified in subset that do not have matching data type are ignored. For example, if value is a string, and subset contains a non-string column, then the non-string column is simply ignored.
+        value – int, long, float, string, or dict. 用来替换空值的值。 如果值是字典，则子集将被忽略，值必须是从列名（字符串）到替换值的映射。 替换值必须是int，long，float，boolean或string。
+        subset – 列名的可选列表要考虑。 子集中指定的不具有匹配数据类型的列将被忽略。 例如，如果value是一个字符串，并且子集包含一个非字符串列，那么非字符串列将被忽略。
         ```
         >>> df4.na.fill(50).show()
         +---+------+-----+
@@ -745,8 +736,8 @@ explain(extended=False)                         Prints the (logical and physical
         +---+------+-------+
         ```
         New in version 1.3.1.
->> filter(condition)                            Filters rows using the given condition.
-        where() is an alias for filter().
+>> filter(condition)                            使用给定的条件过滤行。
+        where（）是filter（）的别名。
         Parameters:	condition – a Column of types.BooleanType or a string of SQL expression.
         ```        
         >>> df.filter(df.age > 3).collect()
@@ -765,8 +756,7 @@ explain(extended=False)                         Prints the (logical and physical
         Row(age=2, name=u'Alice')
         ```
         New in version 1.3.
->> foreach(f)                                   Applies the f function to all Row of this DataFrame.
-        This is a shorthand for df.rdd.foreach().
+>> foreach(f)                                   将f函数应用于此DataFrame的所有行。 这是df.rdd.foreach（）的简写。
         ```
         >>> def f(person):
         ...     print(person.name)
@@ -782,15 +772,15 @@ explain(extended=False)                         Prints the (logical and physical
         >>> df.foreachPartition(f)
         ```
         New in version 1.3.
-freqItems(cols, support=None)                   Finding frequent items for columns, possibly with false positives. Using the frequent element count algorithm described in “http://dx.doi.org/10.1145/762471.762473, proposed by Karp, Schenker, and Papadimitriou”. DataFrame.freqItems() and DataFrameStatFunctions.freqItems() are aliases.
+freqItems(cols, support=None)                   找到列的频繁项目，可能有误报。 使用由Karp，Schenker和Papadimitriou提出的“http://dx.doi.org/10.1145/762471.762473”中描述的频繁元素计数算法。 DataFrame.freqItems（）和DataFrameStatFunctions.freqItems（）是别名。
         Note This function is meant for exploratory data analysis, as we make no guarantee about the backward compatibility of the schema of the resulting DataFrame.
         Parameters:
         cols – Names of the columns to calculate frequent items for as a list or tuple of strings.
         support – The frequency with which to consider an item ‘frequent’. Default is 1%. The support must be greater than 1e-4.
         New in version 1.4.
->> groupBy(*cols)                               Groups the DataFrame using the specified columns, so we can run aggregation on them. See GroupedData for all the available aggregate functions.
-        groupby() is an alias for groupBy().
-        Parameters:	cols – list of columns to group by. Each element should be a column name (string) or an expression (Column).
+>> groupBy(*cols)                               使用指定的列对DataFrame进行分组，所以我们可以对它们进行聚合。 有关所有可用的聚合函数，请参阅分组数据。
+        groupby（）是groupBy（）的别名。
+        Parameters:	cols – 按列分组的列表。 每个元素应该是列名（字符串）或表达式（列）。
         ```        
         >>> df.groupBy().avg().collect()
         [Row(avg(age)=3.5)]
@@ -803,10 +793,10 @@ freqItems(cols, support=None)                   Finding frequent items for colum
         ```
         New in version 1.3.
 groupby(*cols)
-        groupby() is an alias for groupBy().
+        groupby（）是groupBy（）的别名。
         New in version 1.4.
-head(n=None)                                    Returns the first n rows.
-        Note This method should only be used if the resulting array is expected to be small, as all the data is loaded into the driver’s memory.
+head(n=None)                                    返回前n行。
+        注意只有当结果数组很小时，才能使用该方法，因为所有数据都被加载到驱动程序的内存中。
         Parameters:	n – int, default 1. Number of rows to return.
         Returns:	If n is greater than 1, return a list of Row. If n is 1, return a single Row.
         ```
@@ -816,7 +806,7 @@ head(n=None)                                    Returns the first n rows.
         [Row(age=2, name=u'Alice')]
         ```
         New in version 1.3.
-hint(name, *parameters)                         Specifies some hint on the current DataFrame.
+hint(name, *parameters)                         在当前的DataFrame上指定一些提示。
         Parameters:
         name – A name of the hint.
         parameters – Optional parameters.
