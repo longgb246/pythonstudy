@@ -1042,10 +1042,10 @@ selectExpr(*expr)                               Projects a set of SQL expression
         [Row((age * 2)=4, abs(age)=2), Row((age * 2)=10, abs(age)=5)]
         ```
         New in version 1.3.
->> show(n=20, truncate=True)                       Prints the first n rows to the console.
+>> show(n=20, truncate=True)                       将前n行打印到控制台。
         Parameters:
         n – Number of rows to show.
-        truncate – If set to True, truncate strings longer than 20 chars by default. If set to a number greater than one, truncates long strings to length truncate and align cells right.
+        truncate – 如果设置为True，则默认截断长度超过20个字符的字符串。 如果设置为大于1的数字，则截断长整数字符串以截断长度并将其右对齐。
         ```
         >>> df
         DataFrame[age: int, name: string]
