@@ -821,17 +821,16 @@ hint(name, *parameters)                         在当前的DataFrame上指定�
         +----+---+------+
         ```
         New in version 2.2.
-intersect(other)                                Return a new DataFrame containing rows only in both this frame and another frame.
-        This is equivalent to INTERSECT in SQL.
+intersect(other)                                仅返回包含此框架和另一框架中的行的新DataFrame。 这相当于SQL中的INTERSECT。 相交
         New in version 1.3.
-isLocal()                                       Returns True if the collect() and take() methods can be run locally (without any Spark executors).
+isLocal()                                       如果collect（）和take（）方法可以在本地运行（没有任何Spark执行器），则返回True。
         New in version 1.3.
 isStreaming                                     Returns true if this Dataset contains one or more sources that continuously return data as it arrives. A Dataset that reads data from a streaming source must be executed as a StreamingQuery using the start() method in DataStreamWriter. Methods that return a single answer, (e.g., count() or collect()) will throw an AnalysisException when there is a streaming source present.    Note Evolving
         New in version 2.0.
->> join(other, on=None, how=None)               Joins with another DataFrame, using the given join expression.  
+>> join(other, on=None, how=None)               使用给定的连接表达式与另一个DataFrame进行连接。
         Parameters:
         other – Right side of the join
-        on – a string for the join column name, a list of column names, a join expression (Column), or a list of Columns. If on is a string or a list of strings indicating the name of the join column(s), the column(s) must exist on both sides, and this performs an equi-join.
+        on – 连接列名称的字符串，列名称列表，连接表达式（列）或列的列表。 如果on是一个字符串或者是一个表示连接列名的字符串列表，则这个列必须存在于两边，并且执行一个等连接。
         how – str, default inner. Must be one of: inner, cross, outer, full, full_outer, left, left_outer, right, right_outer, left_semi, and left_anti.
         The following performs a full outer join between df1 and df2.
         ```
