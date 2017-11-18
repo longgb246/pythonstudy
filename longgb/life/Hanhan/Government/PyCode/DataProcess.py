@@ -162,9 +162,9 @@ def rmDataName(control_var, cols):
 
 def main():
     # Set the path
-    read_path = r'C:\Users\longguangbin\Desktop\Data_Code\data_origin'
-    save_path = r'C:\Users\longguangbin\Desktop\Data_Code\data_arange'
-    save_stat_path = r'C:\Users\longguangbin\Desktop\Data_Code\results'
+    read_path = r'D:\SelfLife\HanHan\Data_Code\data_origin'
+    save_path = r'D:\SelfLife\HanHan\Data_Code\data_arange'
+    save_stat_path = r'D:\SelfLife\HanHan\Data_Code\results'
 
     prov_map = [[u'安徽',	'Anhui'],
                 [u'北京',	'Beijing'],
@@ -235,7 +235,7 @@ def main():
         'ManyBirthRate' : 'BirthRate',
         'ProvincialFinancialStatisticsIncomePre' : 'FinancialIncomePer',
         'ManyPrefectureLevelCity' : 'PrefectureLevelCity',
-        'GovernmentScaleExpenditurePre' : 'FinancialExpenditure',
+        'GovernmentScaleExpenditurePre' : 'Governmentsize',
         'TotalInvestmentOfForeignInvestedEnterprises' : 'TotInvestOfForeign',
         'AverageWageOfStateOwnedUnit' : 'AvgWageSO',
         'EducationLevelOfResidents' : 'EduLevelOfResidents'
@@ -251,7 +251,7 @@ def main():
                    'BirthRate',
                    'FinancialIncomePer',
                    'PrefectureLevelCity',
-                   'FinancialExpenditure',
+                   'Governmentsize',
                    'TotInvestOfForeign',
                    'AvgWageSO',
                    'EduLevelOfResidents']
@@ -299,6 +299,23 @@ def main():
     res = mod.fit()
     print control_var
     print res.summary()
+
+    # Robustness test Regression
+    print '-----------------------------------------------------------'
+    print '                 Robustness test Regression'
+    print '-----------------------------------------------------------'
+    independent_var = ['Institution', 'TotInvestOfForeign']
+    control_var = ['FinancialIncome',
+                   'BirthRate',
+                   'FinancialIncomePer',
+                   'PrefectureLevelCity',
+                   'Governmentsize',
+                   'AvgWageSO',
+                   'EduLevelOfResidents']
+    mod = sm.OLS(keep_data[dependent_var], keep_data.loc[:, independent_var + control_var])
+    res = mod.fit()
+    print res.summary()
+
     # res.rsquared        # 调整后的 R 方
     # res.pvalues         # P 值
     # res.params          # 回归结果
@@ -311,7 +328,7 @@ def main():
     # + BirthRate                                       # 出生率
     # + FinancialIncomePer                              # 地方财政统计人均收入
     # + PrefectureLevelCity                             # 地级区划数
-    # + FinancialExpenditure                            # 政府规模财政支出
+    # + Governmentsize                                  # 政府规模财政支出
     # + TotInvestOfForeign                              # 外商投资企业投资总额
     # + AvgWageSO                                       # 国有单位平均工资
     # + EduLevelOfResidents                             # 居民受教育程度

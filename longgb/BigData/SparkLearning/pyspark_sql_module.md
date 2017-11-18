@@ -1139,9 +1139,8 @@ toLocalIterator()                                   Returns an iterator that con
         [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
         ```
         New in version 2.0.
->> toPandas()                                       Returns the contents of this DataFrame as Pandas pandas.DataFrame.
-        This is only available if Pandas is installed and available.
-        Note This method should only be used if the resulting Pandas’s DataFrame is expected to be small, as all the data is loaded into the driver’s memory.
+>> toPandas()                                       以Pandas pandas.DataFrame的形式返回此DataFrame的内容。
+        这只有在Pandas已安装且可用的情况下才可用。 注意只有当所产生的Pandas的DataFrame要小时才能使用这个方法，因为所有的数据都被加载到driver程序的内存中。
         ```
         >>> df.toPandas()
            age   name

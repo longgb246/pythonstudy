@@ -74,11 +74,23 @@ plotTmpMap <- function(Mapdata, res, this_text, save_name, save_path){
     dev.off()
 }
 
+plotTmpMapFT <- function(Mapdata, res, this_text, save_name, save_path){
+    pdf(paste(save_path, save_name, sep='/'))
+    res.palette <- colorRampPalette(c("#C44E52","#FFA455","#EEEED1", "#6AB27B","#4C72B0"), space = "rgb")
+    pal <- res.palette(5)
+    classes_fx <- classIntervals(res, n=5, style="fixed", fixedBreaks=c(0,20,25,30,35,50), rtimes = 1)
+    cols <- findColours(classes_fx,pal)
+    par(mar=rep(0,4))
+    plot(Mapdata,col=cols, main=this_text, pretty=T, border="grey")
+    legend(x="bottom",cex=1,fill=attr(cols,"palette"),bty="n",legend=names(attr(cols, "table")),title=this_text,ncol=5)
+    dev.off()
+}
+
 
 # set the path args
-save_path <- 'C:/Users/longguangbin/Desktop/Data_Code/results'
-data_path <- 'C:/Users/longguangbin/Desktop/Data_Code/data_arange'
-map_path <- 'C:/Users/longguangbin/Desktop/Data_Code/data_map'
+save_path <- 'D:/SelfLife/HanHan/Data_Code/results'
+data_path <- 'D:/SelfLife/HanHan/Data_Code/data_arange'
+map_path <- 'D:/SelfLife/HanHan/Data_Code/data_map'
 setwd(save_path)
 
 # get the map data
@@ -152,6 +164,9 @@ write.csv(ct$p, file="corr_p.csv")
 #              + GovernmentScaleExpenditurePre, k=2)
 # summary(lm.ste)
 
+mydata_ft <- getavg(mydata$FT, 7)
+plotTmpMapFT(CHN_adm1, mydata_ft, "FT in the Area", "FT.pdf", save_path)
+
 
 ### OLS regression
 mod.lm <- lm(FT ~ Institution + GovComp
@@ -159,7 +174,7 @@ mod.lm <- lm(FT ~ Institution + GovComp
              + BirthRate 
              + FinancialIncomePer 
              + PrefectureLevelCity 
-             + FinancialExpenditure 
+             + Governmentsize 
              + TotInvestOfForeign 
              + AvgWageSO 
              + EduLevelOfResidents
@@ -183,7 +198,7 @@ mod.sar <- lagsarlm(FT ~ Institution + GovComp
                     + BirthRate 
                     + FinancialIncomePer 
                     + PrefectureLevelCity 
-                    + FinancialExpenditure 
+                    + Governmentsize 
                     + TotInvestOfForeign 
                     + AvgWageSO 
                     + EduLevelOfResidents
@@ -201,7 +216,7 @@ mod.sem <- errorsarlm(FT ~ Institution + GovComp
                       + BirthRate 
                       + FinancialIncomePer 
                       + PrefectureLevelCity 
-                      + FinancialExpenditure 
+                      + Governmentsize 
                       + TotInvestOfForeign 
                       + AvgWageSO 
                       + EduLevelOfResidents
@@ -211,4 +226,31 @@ res <- mod.sem$residuals
 # Residual Autocorrelation
 moran.test(res, listw=CHN_adm1_mat, zero.policy=T)
 plotTmpMap(CHN_adm1, res_div, "Residuals from SEM Model", "Res_SEM_reg.pdf", save_path)
+
+
+### Robustness test Regression
+### SAR regression
+mod.sar <- lagsarlm(FT ~ Institution + TotInvestOfForeign
+                    + FinancialIncome 
+                    + BirthRate 
+                    + FinancialIncomePer 
+                    + PrefectureLevelCity 
+                    + Governmentsize 
+                    + AvgWageSO 
+                    + EduLevelOfResidents
+                    , data=mydata_md, listw=CHN_adm1_mat, zero.policy=T, tol.solve=1e-12)
+summary(mod.sar)
+
+### SEM regression
+mod.sem <- errorsarlm(FT ~ Institution + TotInvestOfForeign
+                      + FinancialIncome 
+                      + BirthRate 
+                      + FinancialIncomePer 
+                      + PrefectureLevelCity 
+                      + Governmentsize 
+                      + AvgWageSO 
+                      + EduLevelOfResidents
+                      , data=mydata_md, listw=CHN_adm1_mat, zero.policy=T, tol.solve=1e-15)
+summary(mod.sem)
+
 

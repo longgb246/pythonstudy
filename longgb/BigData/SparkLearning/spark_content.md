@@ -43,7 +43,7 @@ PACKAGE_EXTENSIONS = ('.zip', '.egg', '.jar')
 >>> sc.applicationId  
 u'local-...'
 ```
->> broadcast(value)						在集群上广播一个只读变量在集群上, 返回 L{Broadcast<pyspark.broadcast.Broadcast>} object for reading it in distributed functions. 
+>> broadcast(value)						在集群上广播一个只读变量在集群上, 返回 L{Broadcast<pyspark.broadcast.Broadcast>} 在分布式函数中读取它的对象. 
 >> defaultMinPartitions					默认最小的 partitions 数目 for Hadoop RDDs 当不指定的时候
 >> defaultParallelism					默认 parallelism 水平当使用的时候且用户不指定 (e.g. for reduce tasks)
 >> emptyRDD()							创建 no partitions or elements 的 RDD 

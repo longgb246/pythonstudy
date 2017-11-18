@@ -113,3 +113,83 @@ data2 = data1.limit(1000)
 data2.write.csv(r'hdfs://ns15/user/cmo_ipc/longguangbin/work/count_cates/data_csv', header=True, mode="overwrite")         # 存储为 csv
 data3 = spark.read.csv(r'hdfs://ns15/user/cmo_ipc/longguangbin/work/count_cates/data_csv')
 
+
+# ---------------------------------------------------------
+# 172.21.9.69:50010
+# 172.21.9.226:50010
+
+# 172.21.17.99:50010
+# 172.21.17.102:50010
+
+# 172.21.18.166:50010
+# 172.21.18.168:50010
+
+# 172.21.26.165:50010
+
+# 172.21.29.3:50010
+# 172.21.29.227:50010
+# 172.21.29.235:50010
+
+# 172.21.78.194:50010
+# 172.21.78.199:50010
+# ---------------------------------------------------------
+
+
+# ---------------------------------------------------------
+# 科学算法集市
+import numpy as np
+import pandas as pd
+
+df1.show()
+df1.select(df1.columns).show()
+np.array(df1.select(df1.columns).collect())
+
+df1.select(df1.columns).toArray()
+mm = np.matrix(df1.toPandas())
+
+
+from py_offline_ipc_ioa_inv_loc_cost_cal import CostCal, getSampleData
+sku, Q, P_order, P_store, P_trans, Tau, v, weight, p_sale, beta, Const_num, Const_p, A_Matrix, T_period, r_ratio = getSampleData()
+
+
+A_Matrix = spark.createDataFrame(A_Matrix)
+Q = spark.createDataFrame(Q)
+P_store = spark.createDataFrame(map(lambda x: [x], P_store))
+P_order = spark.createDataFrame(map(lambda x: [x], P_order))
+P_trans = spark.createDataFrame(P_trans)
+Tau = spark.createDataFrame(Tau)
+Const_num = spark.createDataFrame(map(lambda x: [x], Const_num))
+Const_p = spark.createDataFrame(map(lambda x: [x], Const_p))
+
+
+def calRes(sku, Q, P_order, P_store, P_trans, Tau, v, weight, p_sale, beta, Const_num, Const_p, T_period, r_ratio):
+    cost_cal = CostCal(sku, Q, P_order, P_store, P_trans, Tau, v, weight, p_sale, beta, Const_num, Const_p, T_period, r_ratio)
+    total_cost, total_cost_list = cost_cal.run(A_Matrix)
+    return total_cost
+
+
+A_Matrix = A_Matrix.toPandas()
+Q = Q.toPandas()
+
+
+P_store = P_store.toPandas()        # store     [ broadcast ]
+P_order = P_order.toPandas()        # order     [ broadcast ]
+P_trans = P_trans.toPandas()        # trans     [ broadcast ]
+Tau = Tau.toPandas()                # tau       [ broadcast ]
+Const_num = Const_num.toPandas()    # no need   []
+Const_p = Const_p.toPandas()        # no need   []
+
+
+calRes(sku, Q, P_order, P_store, P_trans, Tau, v, weight, p_sale, beta, Const_num, Const_p, T_period, r_ratio)
+
+
+P_store_broadcast = sc.broadcast(P_store)
+P_order_broadcast = sc.broadcast(P_order)
+P_trans_broadcast = sc.broadcast(P_trans)
+Tau_broadcast = sc.broadcast(Tau)
+Const_num_broadcast = sc.broadcast(Const_num)
+Const_p_broadcast = sc.broadcast(Const_p)
+
+
+
+
