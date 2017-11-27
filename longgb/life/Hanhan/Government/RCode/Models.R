@@ -76,13 +76,17 @@ plotTmpMap <- function(Mapdata, res, this_text, save_name, save_path){
 
 plotTmpMapFT <- function(Mapdata, res, this_text, save_name, save_path){
     pdf(paste(save_path, save_name, sep='/'))
-    res.palette <- colorRampPalette(c("#C44E52","#FFA455","#EEEED1", "#6AB27B","#4C72B0"), space = "rgb")
-    pal <- res.palette(5)
-    classes_fx <- classIntervals(res, n=5, style="fixed", fixedBreaks=c(0,20,25,30,35,50), rtimes = 1)
+    # res.palette <- colorRampPalette(c("#C44E52","#FFA455","#EEEED1", "#6AB27B","#4C72B0"), space = "rgb")
+    res.palette <- colorRampPalette(c("#C44E52","#FFA455","#EEEED1"), space = "rgb")
+    # pal <- res.palette(5)
+    pal <- res.palette(3)
+    # classes_fx <- classIntervals(res, n=5, style="fixed", fixedBreaks=c(0,10,15,20,25,50), rtimes = 1)
+    classes_fx <- classIntervals(res, n=3, style="fixed", fixedBreaks=c(10,20,30,80), rtimes = 1)
     cols <- findColours(classes_fx,pal)
     par(mar=rep(0,4))
     plot(Mapdata,col=cols, main=this_text, pretty=T, border="grey")
-    legend(x="bottom",cex=1,fill=attr(cols,"palette"),bty="n",legend=names(attr(cols, "table")),title=this_text,ncol=5)
+    # legend(x="bottom",cex=1,fill=attr(cols,"palette"),bty="n",legend=names(attr(cols, "table")),title=this_text,ncol=5)
+    legend(x="bottom",cex=1,fill=attr(cols,"palette"),bty="n",legend=names(attr(cols, "table")),title=this_text,ncol=3)
     dev.off()
 }
 
@@ -166,6 +170,12 @@ write.csv(ct$p, file="corr_p.csv")
 
 mydata_ft <- getavg(mydata$FT, 7)
 plotTmpMapFT(CHN_adm1, mydata_ft, "FT in the Area", "FT.pdf", save_path)
+
+
+test <- read.csv(paste(data_path, 'test.csv', sep='/'))
+test_dt <- getavg(test$a2006, 1)
+plotTmpMapFT(CHN_adm1, test_dt, "FT in the Area", "Test.pdf", save_path)
+
 
 
 ### OLS regression

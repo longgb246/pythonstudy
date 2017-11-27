@@ -51,7 +51,7 @@ def getDateRangeDemo():
 # 3.1 引入包
 from copy import deepcopy
 import numpy as np
-# 3.2 主函数
+# 3.2 主类
 class Combine():
     def __init__(self, arr_list=['0']):
         '''
@@ -112,7 +112,55 @@ def combineDemo():
     print combine.tree_combine_List
 
 
-if __name__ == '__main__':
-    # printRunTimeDemo()
-    combineDemo()
-    pass
+# 4、numpy的方便处理的包
+# 4.1 引入包
+import numpy as np
+# 4.2 主类
+class npl():
+    '''
+    numpy local method : npl
+    '''
+    @staticmethod
+    def loc(np_array, cols):
+        '''
+        按照cols的布尔序列选出array的某些行
+        cols 为 [True, False] 组成的 list 或者 np.array
+        使用方法如下：
+        loc(test, test[:,-1] == 1)  # 抽出test最后一列为1的np.array
+        '''
+        return np_array[np.where(cols)[0], :]
+    @staticmethod
+    def sort(np_array, cols, ascending=[]):
+        '''
+        按cols从小到大排列array的行数据
+        cols 为 [3, 1] 数字组成的 list
+        使用方法如下：
+        sort(test, [3, 1])           # 按照test的第4列，第2列从小到大排序
+        '''
+        if ascending==[]:
+            sort_data = np_array[:, cols[::-1]].T
+        else:
+            sort_data = ([map(lambda x: 1 if x else -1, ascending[::-1])] * np_array[:, cols[::-1]]).T
+        return np_array[np.lexsort(sort_data), :]
+    @staticmethod
+    def drop_duplicates(np_array):
+        '''
+        去重
+        使用方法如下：
+        drop_duplicates(test)           # 去除test的重复的行
+        '''
+        return np.array(list(set([tuple(x) for x in np_array])))
+# 3.3 demo运行函数
+def combineDemo():
+    def get_data():
+        index_data = range(8)
+        sales = np.random.rand(8) * 8
+        std = np.random.rand(8) * 2
+        labels = [0, 1, 0, 1, 2, 0, 2, 1]
+        data = np.array(zip(index_data, sales, std, labels))
+        return data
+    data = get_data()
+    npl.loc(data, data[:,-1] == 1)                      # 取出最后一列为1的行
+    npl.sort(data, [1, 2], ascending=[True, False])     # 按照第0列升序，第1列降序
+    npl.drop_duplicates(data)                           # data数据去重，以每行数据为粒度
+
