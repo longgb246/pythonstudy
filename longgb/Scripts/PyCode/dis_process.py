@@ -78,12 +78,16 @@ def getData():
         splitData.append(tmpData)
     return splitData
 
-
-if __name__ == '__main__':
-    print 'Read Data ...'
+def main(logger):
+    logger.info('Start dis main : PID[{0}]'.format(os.getpid()))
+    logger.info('Read Data ...')
+    # print 'Start dis main : PID[{0}]'.format(os.getpid())
+    # print 'Read Data ...'
     splitData = getData()
-    print 'Read Data Finish ! '
-    print 'Process ...'
+    logger.info('Read Data Finish ! ')
+    logger.info('Process ...')
+    # print 'Read Data Finish ! '
+    # print 'Process ...'
     div_n = 10
     result_list = []
     result_q = Queue()
@@ -97,7 +101,8 @@ if __name__ == '__main__':
     for each in multi_pools:
         each.start()
     is_alive = len(multi_pools)
-    print 'Process Finish ! '
+    logger.info('Process Finish ! ')
+    # print 'Process Finish ! '
 
     while is_alive > 0:
         last_alive = 0
@@ -120,11 +125,25 @@ if __name__ == '__main__':
                 result_list += this_data
             except:
                 break
-        print 'is_alive : {0}'.format(is_alive), str(mon_pro_list)
+        # print 'is_alive : {0}'.format(is_alive), str(mon_pro_list)
+        logger.info('is_alive : {0} {1}'.format(is_alive, str(mon_pro_list)))
         time.sleep(1)
 
-    print 'result_list[0] : ', result_list[0]
-    print 'result_list[1] : ', result_list[1]
-    print 'result_list[2] : ', result_list[2]
-    print len(result_list)
+    # print 'result_list[0] : ', result_list[0]
+    # print 'result_list[1] : ', result_list[1]
+    # print 'result_list[2] : ', result_list[2]
+    # print len(result_list)
+    logger.info('result_list[0] : {0}'.format(result_list[0]))
+    logger.info('result_list[0] : {0}'.format(result_list[1]))
+    logger.info('result_list[0] : {0}'.format(result_list[2]))
+    logger.info(len(result_list))
+    return result_list
 
+
+if __name__ == '__main__':
+    main()
+
+
+# 1767334.0 / 1618918.0
+# 1.0916760453586902
+# 2 / 1.0916760453586902 = 1.8320453292925953  ~ 1.832
