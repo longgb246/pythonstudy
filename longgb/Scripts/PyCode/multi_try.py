@@ -2,12 +2,11 @@
 import numpy as np
 import sys
 import time
-
-from multi.multi import Process
-from MyTools import myTools
-
-
 import logging
+from multi.multi import Process
+
+
+from MyTools import myTools
 
 
 def aa(x):
@@ -29,7 +28,7 @@ def main():
 
     print 'Method 1 ...'
     t1 = time.time()
-    sub = Process(split_data=data, target=aa, dis_n=10, keep_dis=True, logger=logger, dis_files=['MyTools.py', 'multi'])
+    sub = Process(split_data=data, target=aa, dis_n=10, keep_dis=True, logger=logger, dis_files=['MyTools.py'])
     results2 = sub.start()
     myTools.runTime(t1)
     print len(results2)

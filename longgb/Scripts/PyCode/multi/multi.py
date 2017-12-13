@@ -52,7 +52,7 @@ class Process(object):
         self._root_dis_path = self._root_path + os.sep + self._name
         self._keep_dis = keep_dis               # 保留中间文件
         # self._dis_py = sys.argv[0].split('.')[0]
-        self._dis_files = dis_files
+        self._dis_files = ['multi'] + dis_files
         self._dis_run_py = 'multi_dis.py'
         self._dis_py = sys.argv[0].split('.')[0] # 调用的文件
         self._dis_data = 'split_data.pkl'
@@ -165,6 +165,7 @@ class Process(object):
                          self._kwargs]
             myTools.cp(self._root_path + os.sep + '{0}.py'.format(self._dis_py), sub_path + '/.')
             myTools.cp(self._file_path + os.sep + self._dis_run_py, sub_path + '/.')
+            myTools.cp(self._file_path + os.sep + '__init__.py', sub_path + '/.')
             for each in self._dis_files:
                 is_dir = os.path.isdir(self._root_path + os.sep + each)
                 myTools.cp(self._root_path + os.sep + each, sub_path + '/.', is_dir=is_dir)
