@@ -29,6 +29,10 @@ data = [[2,3,4], [1,2,3], [7,6,5]]
 data_df = spark.createDataFrame(data, list('abc'))                                          # create a DF, with columns name
 data_df2 = spark.createDataFrame(data)                                                      # create a DF
 
+
+data = [[2,3,4], [1,2,3], [7,6,5]]
+
+
 sqlContext.registerDataFrameAsTable(data_df2, "test_table")                                 # register a Tmp Table
 test_data = spark.sql('select * from test_table')
 # sqlContext.dropTempTable("test_table")

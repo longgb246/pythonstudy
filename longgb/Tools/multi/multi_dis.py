@@ -65,20 +65,27 @@ class SubProcess(object):
             self._split_data = split_data[0]
             self._args = split_data[1]
             self._kwargs = split_data[2]
+            self._is_class = split_data[3]
 
     def calSolver(self):
         '''
-        100个数据一批的求解
+        max(1000, 数据量的1%) 个数据一批的求解
         '''
+        def runClass(x):
+            tmp_c = self._target(x, *self._args, **self._kwargs)
+            return tmp_c.run()
         all_data_len = len(self._split_data)
-        step_n = max([100, int(math.floor(all_data_len / 100))])
+        step_n = max([1000, int(math.floor(all_data_len / 100))])
         split_step = int(math.ceil(all_data_len / step_n))
         t1 = time.time()
         for i in xrange(split_step):
             run_str = myTools.runTime(t1, is_print=False)
             os.system(''' echo '( {0}/{1} )  {2}'  >>  run_log.log; '''.format( i*step_n, all_data_len, run_str))
             subSplitData = self._split_data[(i*step_n) : ((i+1)*step_n)]
-            tmp_results = map(lambda x: self._target(x, *self._args, **self._kwargs), subSplitData)
+            if self._is_class:
+                tmp_results = map(lambda x: runClass(x), subSplitData)
+            else:
+                tmp_results = map(lambda x: self._target(x, *self._args, **self._kwargs), subSplitData)
             self._all_results.extend(tmp_results)
         return self._all_results
 

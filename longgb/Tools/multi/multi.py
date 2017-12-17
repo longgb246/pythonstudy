@@ -40,13 +40,14 @@ class myTools(object):
 
 
 class Process(object):
-    def __init__(self, split_data=None, target=None, args=(), kwargs={}, logger='', dis_n=10, name='', keep_dis=False, dis_files=[]):
+    def __init__(self, split_data=None, target=None, args=(), kwargs={}, logger='', dis_n=10, name='', keep_dis=False, dis_files=[], is_class=False):
         self._target = target.__name__          # 目标函数
         self._split_data = split_data           # 拆分数据
         self._args = args                       # 函数参数
         self._kwargs = kwargs                   # 函数参数
         self._dis_n = dis_n                     # 进程数
         self._name = name if name != '' else 'dis_run'
+        self._is_class = is_class
         # 设置路径
         self._root_path = os.getcwd()
         self._root_dis_path = self._root_path + os.sep + self._name
@@ -162,7 +163,8 @@ class Process(object):
             tmp_split = [self._split_data[i*self.split_step: (i+1)*self.split_step],
                          # self._target,
                          self._args,
-                         self._kwargs]
+                         self._kwargs,
+                         self._is_class]
             myTools.cp(self._root_path + os.sep + '{0}.py'.format(self._dis_py), sub_path + '/.')
             myTools.cp(self._file_path + os.sep + self._dis_run_py, sub_path + '/.')
             myTools.cp(self._file_path + os.sep + '__init__.py', sub_path + '/.')
