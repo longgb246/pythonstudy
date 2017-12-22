@@ -1,4 +1,5 @@
 #-*- coding:utf-8 -*-
+from __future__ import division
 import os
 import sys
 import cPickle
@@ -42,6 +43,8 @@ class SubProcess(object):
         self._target = target
         self._args = None
         self._kwargs = None
+        self._broadcast = None
+        self._is_class = None
         self._all_results = []
         self._monitor(type='s')     # 进程监控
 
@@ -62,20 +65,23 @@ class SubProcess(object):
         '''
         with open(self._dis_data, 'rb') as f:
             split_data = cPickle.load(f)
-            self._split_data = split_data[0]
+            self._split_data = split_data[0][0]
+            self._broadcast = split_data[0][1:]
             self._args = split_data[1]
             self._kwargs = split_data[2]
             self._is_class = split_data[3]
+            self._args = tuple(self._broadcast) + self._args
+
+    def _runClass(self, x):
+        tmp_c = self._target(x, *self._args, **self._kwargs)
+        return tmp_c.run()
 
     def calSolver(self):
         '''
-        max(1000, 数据量的1%) 个数据一批的求解
+        max(500, 数据量的1%) 个数据一批的求解
         '''
-        def runClass(x):
-            tmp_c = self._target(x, *self._args, **self._kwargs)
-            return tmp_c.run()
         all_data_len = len(self._split_data)
-        step_n = max([1000, int(math.floor(all_data_len / 100))])
+        step_n = max([500, int(math.floor(all_data_len / 100))])
         split_step = int(math.ceil(all_data_len / step_n))
         t1 = time.time()
         for i in xrange(split_step):
@@ -83,7 +89,7 @@ class SubProcess(object):
             os.system(''' echo '( {0}/{1} )  {2}'  >>  run_log.log; '''.format( i*step_n, all_data_len, run_str))
             subSplitData = self._split_data[(i*step_n) : ((i+1)*step_n)]
             if self._is_class:
-                tmp_results = map(lambda x: runClass(x), subSplitData)
+                tmp_results = map(lambda x: self._runClass(x), subSplitData)
             else:
                 tmp_results = map(lambda x: self._target(x, *self._args, **self._kwargs), subSplitData)
             self._all_results.extend(tmp_results)
@@ -111,11 +117,11 @@ if len(sys.argv) > 1:
     dis_res = sys.argv[4]
     mon_num = sys.argv[5]
 else:
-    dis_py = 'test'
-    target = 'test'
+    dis_py = 'test'                     # py_offline_ipc_ioa_inv_loc_cost_cal_model_classify
+    target = 'test'                     # SubModelClassify
     dis_data = 'split_data.pkl'
     dis_res = 'split_result.pkl'
-    mon_num = 'test'
+    mon_num = 'test'                    # dis_0
 
 
 exec 'from {0} import {1} '.format(dis_py, target)
@@ -123,6 +129,7 @@ exec 'from {0} import {1} '.format(dis_py, target)
 
 def main():
     sub_model_solve = SubProcess(dis_data, dis_res, mon_num, eval(target))
+    # os.system('''echo 'PID [{0}]: {1}' >>  check.log '''.format(os.getpid(), eval(target)))
     sub_model_solve.run()
 
 
