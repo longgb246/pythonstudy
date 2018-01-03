@@ -40,7 +40,7 @@ class myTools(object):
 
 
 class Process(object):
-    def __init__(self, split_data=None, target=None, args=(), kwargs={}, logger='', dis_n=10, name='', keep_dis=False, dis_files=[], is_class=False, broadcast=[], run_py=''):
+    def __init__(self, split_data=None, target=None, args=(), kwargs={}, logger='', dis_n=10, save_path='', name='', keep_dis=False, dis_files=[], is_class=False, broadcast=[], run_py=''):
         self._target = target.__name__          # 目标函数
         self._split_data = split_data           # 拆分数据
         self._args = args                       # 函数参数
@@ -50,17 +50,17 @@ class Process(object):
         self._is_class = is_class
         # 设置路径
         self._root_path = os.getcwd()               # 运行脚本的路径
-        self._root_dis_path = self._root_path + os.sep + self._name
+        self._save_path = save_path + os.sep + self._name if save_path != '' else self._root_path + os.sep + self._name
         self._keep_dis = keep_dis                   # 保留中间文件
         # self._dis_py = sys.argv[0].split('.')[0]
-        self._dis_files = ['multi'] + dis_files     # 广播文件
-        self._broadcast = broadcast                  # 广播变量
+        self._broadcast = broadcast                 # 广播变量
         self._dis_run_py = 'multi_dis.py'
         self._dis_py = sys.argv[0].split('.')[0] if run_py == '' else run_py   # 调用的文件
         self._dis_data = 'split_data.pkl'
         self._dis_res = 'split_result.pkl'
         self.results = None
-        self._file_path = os.path.dirname(os.path.abspath(__file__))            # multi 路径
+        self._file_path = os.path.dirname(os.path.abspath(__file__))            # multi 的路径
+        self._dis_files = [self._file_path] + dis_files     # 广播文件
         if logger == '':
             self._setLogger()
         else:
@@ -121,7 +121,7 @@ class Process(object):
 
         check_dis = ['dis_{0}'.format(i) for i in range(dis_n)]
         check_dis_len = dis_n + 1
-        check_path = self._root_path + os.sep + dis_file
+        check_path = self._save_path
         check_file = check_path + os.sep + 'result_monitor.log'
         last_dis_len = 0
         while (check_dis_len > last_dis_len):
@@ -150,16 +150,16 @@ class Process(object):
 
     @_logger('Kill Sub Process')
     def _killSubProcess(self):
-        os.chdir(self._root_dis_path)
-        os.system(''' bash  {0}'''.format(self._root_dis_path + os.sep + 'process_monitor.sh'))
+        os.chdir(self._save_path)
+        os.system(''' bash  {0}'''.format(self._save_path + os.sep + 'process_monitor.sh'))
 
     @_logger('Make Monitor')
     def _mkMonitor(self):
         '''
         创建监控子进程文件
         '''
-        os.system(''' echo '-------------------------------' >  {0} '''.format(self._root_dis_path + os.sep + 'result_monitor.log'))
-        os.system(''' echo '#!/bin/bash' >  {0}'''.format(self._root_dis_path + os.sep + 'process_monitor.sh'))
+        os.system(''' echo '-------------------------------' >  {0} '''.format(self._save_path + os.sep + 'result_monitor.log'))
+        os.system(''' echo '#!/bin/bash' >  {0}'''.format(self._save_path + os.sep + 'process_monitor.sh'))
         return 0
 
     @_logger('Split the Data')
@@ -180,10 +180,10 @@ class Process(object):
                     2 - 分布式运行
         '''
         if run_mode != 2:
-            myTools.mkdir(self._root_dis_path, trash=True)
+            myTools.mkdir(self._save_path, trash=True)
         self._mkMonitor()
         for i in xrange(self._dis_n):
-            sub_path = self._root_dis_path + os.sep + 'dis_{0}'.format(i)
+            sub_path = self._save_path + os.sep + 'dis_{0}'.format(i)
             if run_mode != 2:
                 myTools.mkdir(sub_path)
                 tmp_split = [[self._split_data[i*self.split_step: (i+1)*self.split_step]] + self._broadcast,
@@ -193,14 +193,15 @@ class Process(object):
                              self._is_class]
                 with open(sub_path + os.sep + self._dis_data, 'wb') as f:
                     cPickle.dump(tmp_split, f)
-            myTools.cp(self._root_path + os.sep + '{0}.py'.format(self._dis_py), sub_path + '/.')
+            # myTools.cp(self._root_path + os.sep + '{0}.py'.format(self._dis_py), sub_path + '/.')
             myTools.cp(self._file_path + os.sep + self._dis_run_py, sub_path + '/.')
             myTools.cp(self._file_path + os.sep + '__init__.py', sub_path + '/.')
             for each in self._dis_files:
-                is_dir = os.path.isdir(self._root_path + os.sep + each)
-                myTools.cp(self._root_path + os.sep + each, sub_path + '/.', is_dir=is_dir)
-            self._disRunPython(sub_path, 'dis_{0}'.format(i))
-            self.logger.info('Run the Sub Process [ {0} ]'.format(i))
+                is_dir = os.path.isdir(each)
+                myTools.cp(each, sub_path + '/.', is_dir=is_dir)
+            if run_mode != 1:
+                self._disRunPython(sub_path, 'dis_{0}'.format(i))
+                self.logger.info('Run the Sub Process [ {0} ]'.format(i))
         return 0
 
     def _disRunPython(self, sub_path, mon_num):
@@ -218,9 +219,9 @@ class Process(object):
         读取分布的结果文件
         '''
         dis_res = []
-        for each in os.listdir(self._root_dis_path):
-            if os.path.isdir(self._root_dis_path + os.sep + each):
-                this_dis_path = self._root_dis_path + os.sep + each + os.sep + self._dis_res
+        for each in os.listdir(self._save_path):
+            if os.path.isdir(self._save_path + os.sep + each):
+                this_dis_path = self._save_path + os.sep + each + os.sep + self._dis_res
                 with open(this_dis_path, 'rb') as f:
                     this_dis_data = cPickle.load(f)
                     dis_res.extend(this_dis_data)
@@ -229,7 +230,7 @@ class Process(object):
 
     @_logger('Clean Dis Files')
     def _cleanDisFiles(self):
-        os.system(''' rm -rf {0} '''.format(self._name))
+        os.system(''' rm -rf {0} '''.format(self._save_path))
         return 0
 
     def start(self, dis_n=-1):
