@@ -1,7 +1,6 @@
 
 公共类 Public classes:
 
-
 SparkConf: For configuring Spark.
 SparkContext: Spark 的主入口.
 SparkFiles: Access files shipped with jobs.
