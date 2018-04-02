@@ -4,6 +4,8 @@ import numpy as np
 import sys
 import time
 import logging
+
+
 from multi.multi import Process
 
 
@@ -18,6 +20,8 @@ def main():
     print 'get Data'
     data = range(10000000)
     # data = map(lambda x: [x], data)
+
+    map(lambda x: aa(x), data)
 
     print 'Method 1 ...'
     t1 = time.time()
