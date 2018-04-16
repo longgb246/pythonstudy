@@ -62,14 +62,38 @@ class myTools(object):
     @staticmethod
     def dateRange(start_date, end_date):
         '''
-        返回日期函数。统一格式，%Y-%m-%d。
-        :param start_date: '2017-10-01' 开始日期
-        :param end_date: '2017-11-01' 结束日期
-        :return: 日期 list
+        Specifies the start date and end date to get a date list. Uniform format, %Y-%m-%d.
+        :param start_date: ( string ) start date, include
+        :param end_date: ( string ) end date, not include
+        :return: ( list<string> ) date list
+        (example)
+            In[1]: myTools.dateRange('2017-10-01', '2017-10-04')
+            Out[1]: ['2017-10-01', '2017-10-02', '2017-10-03']
         '''
         start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
         end_date_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
         date_range = map(lambda x: (start_date_dt + datetime.timedelta(x)).strftime('%Y-%m-%d'),range((end_date_dt - start_date_dt).days))
+        return date_range
+    @staticmethod
+    def dateCalculate(start_date, cal_date=0):
+        '''
+        From the start date to a certain direction to get a date list.
+        :param start_date: Start date to calculate
+        :param cal_date: From the start date to a certain direction.
+        :return: list
+        (example)
+            In[1]: myTools.dateCalculate('2017-03-04', 3)
+            Out[1]: ['2017-03-04', '2017-03-05', '2017-03-06', '2017-03-07']
+            In[2]: myTools.dateCalculate('2017-03-04', 0)
+            Out[2]: ['2017-03-04']
+            In[3]: myTools.dateCalculate('2017-03-04', -3)
+            Out[3]: ['2017-03-01', '2017-03-02', '2017-03-03', '2017-03-04']
+        '''
+        start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        end_date_dt = start_date_dt + datetime.timedelta(cal_date)
+        min_date = min(start_date_dt, end_date_dt)
+        max_date = max(start_date_dt, end_date_dt)
+        date_range = map(lambda x: (min_date + datetime.timedelta(x)).strftime('%Y-%m-%d'),range((max_date - min_date).days + 1))
         return date_range
 
 
