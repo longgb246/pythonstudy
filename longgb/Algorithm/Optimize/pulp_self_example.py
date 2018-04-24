@@ -136,6 +136,7 @@ def simplexMethod(Object_list, Subject_list, init_bases=[], it=100):
             bases = bases + [in_base_index]
             bases = sorted(bases)
             no_bases = list(set(all_var) - set(bases))
+    print Subject_m
     X_vector, func_str, object_v = outputSimplexMethod(Object_list_len, bases, res, no_base_delta, object_v)
     return X_vector, func_str, object_v
 

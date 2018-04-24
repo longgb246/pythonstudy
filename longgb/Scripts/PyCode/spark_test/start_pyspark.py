@@ -35,13 +35,16 @@ sc = SparkContext.getOrCreate()
 
 
 mm = sc.parallelize([[23,4],[43,33]])
-sc.parallelize([[23,4],[43,33]]).toDF(['col1','col2']).show()
+# sc.parallelize([[23,4],[43,33]]).toDF(['col1','col2']).show()
 sp1 = spark.createDataFrame(mm,['col1','col2'])
 mm = sc.parallelize([[23,4],[43,33]])
-sc.parallelize([[23,4],[43,33]]).toDF(['col1','col2']).show()
+# sc.parallelize([[23,4],[43,33]]).toDF(['col1','col2']).show()
 sp2 = spark.createDataFrame(mm,['col1','col3'])
 
 sp1.show()
+cc = sp1.collect()
+print str(cc).replace('Row', '\nRow')
+
 sp2.show()
 sp3 = spark.createDataFrame(zip([23,23,4,4],['[43,33,332]','[43,33,332]','[43,33,332]','[43,33,332]']), ['col1','col3'])
 # sp3.groupBy('col1').agg(F.udf(new_avg_udf)(F.collect_list('col3'), F.lit(3)).alias('tt')).show()
