@@ -17,9 +17,21 @@ def loadAndSave(url, name, save_path):
     '''
     Load the picture and save it.
     '''
-    url_contents = requests.get(url)
-    with open(save_path + os.sep + name + '.jpg', 'wb') as f:
-        f.write(url_contents.content)
+    i = 0
+    time_limit = 10
+    no_success = ''
+    while i <= time_limit:              # 尝试10次，不成功跳过
+        try:
+            url_contents = requests.get(url).content
+            i = time_limit*10
+            with open(save_path + os.sep + name + '.jpg', 'wb') as f:
+                f.write(url_contents)
+        except:
+            time.sleep(0.3)
+            i += 1
+    if i == (time_limit+1):
+        no_success = url
+    return no_success
 
 
 def loadStyleIdentifyData(read_path, save_path, columns):
@@ -34,12 +46,28 @@ def loadStyleIdentifyData(read_path, save_path, columns):
     url_list = style_pd['url'].values.tolist()
     name_list = style_pd['id'].values.tolist()
     all_len = len(url_list)
+    # start_i, end_i = 2000, 10000
+    # start_i, end_i = 10000, 20000
+    # start_i, end_i = 20000, 30000
+    # start_i, end_i = 30000, 40000
+    # start_i, end_i = 40000, 50000
+    start_i, end_i = 50000, (all_len+1)
+    no_success_list = []
     for i, each_url in enumerate(url_list):
+        if (i<start_i) or (i>=end_i):
+            continue
         if (divmod(i, 500)[1] == 0) or (i == (-1)):
-            print '[{2}] ( {0}/{1} )'.format(i, all_len, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
-        loadAndSave(each_url, name_list[i], save_path)
+            print_str = '[{2}] ( {0}/{1} )'.format(i, all_len, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+            print print_str
+            with open(save_path + os.sep + 'style_pd_1.txt', 'a') as f:
+                f.writelines(print_str + '\n')
+        no_success = loadAndSave(each_url, name_list[i], save_path)
+        if no_success != '':
+            no_success_list.append(no_success)
     style_pd.to_csv(save_path + os.sep + 'style_pd.csv', index=False)
     print 'loadStyleIdentifyData Finish!'
+    with open(save_path + os.sep + 'style_pd.csv', 'w') as f:
+        f.write('\n'.join(no_success_list))
 
 
 def loadProductSearchData(read_path, save_path, p_columns, s_columns):
@@ -94,12 +122,62 @@ style_identify_cols = ['id', 'url', 'sport', 'relax', 'ol', 'japan', 'korean', '
 
 loadStyleIdentifyData(style_identify_read_path, style_identify_save_path, style_identify_cols)
 
-# 2、单品搜索 ProductSearch
-product_search_read_path = u'D:/SelfLife/Competition/Ai_fashion/时尚单品搜索_train'
-product_search_save_path = u'D:/SelfLife/Competition/Ai_fashion/时尚单品搜索_train/pictures'
-# columns
-product_search_p_cols = ['cus_url', 'cus_left', 'cus_up', 'cus_right', 'cus_down', 'shop_url', 'shop_left', 'shop_up', 'shop_right', 'shop_down', 'type']
-product_search_s_cols = ['shop_url', 'shop_left', 'shop_up', 'shop_right', 'shop_down']
+# # 2、单品搜索 ProductSearch
+# product_search_read_path = u'D:/SelfLife/Competition/Ai_fashion/时尚单品搜索_train'
+# product_search_save_path = u'D:/SelfLife/Competition/Ai_fashion/时尚单品搜索_train/pictures'
+# # columns
+# product_search_p_cols = ['cus_url', 'cus_left', 'cus_up', 'cus_right', 'cus_down', 'shop_url', 'shop_left', 'shop_up', 'shop_right', 'shop_down', 'type']
+# product_search_s_cols = ['shop_url', 'shop_left', 'shop_up', 'shop_right', 'shop_down']
+#
+# loadProductSearchData(product_search_read_path, product_search_save_path, product_search_p_cols, product_search_s_cols)
 
-loadProductSearchData(product_search_read_path, product_search_save_path, product_search_p_cols, product_search_s_cols)
+
+'''
+create table dev.ipc_ioa_drop_class  
+    (  
+        drop_type       string,	
+        liu_type        string,	
+        date            string,	
+        sku_id          string,	
+        item_cate1      string,	
+        item_cate2      string,	
+        item_cate3      string,	
+        finance_cate1	string,
+        buying1         string,	
+        buying2         string,	
+        buying3         string,	
+        new_sku         string,	
+        gift_type       string,	
+        has_sale        string,	
+        is_sale         string,	
+        is_unsalable    string,	
+        is_zero_sale    string,	
+        is_slow_sale	string,
+        revenue         string,	
+        sale_cnt        string,	
+        end_inv         string,	
+        end_inv_money   string
+    )  
+    comment '滞销品类表' 
+    row format delimited 
+    fields terminated by '\t'  
+    stored as textfile
+;  
+load data local inpath 'drop_class.tsv' into table dev.ipc_ioa_drop_class;
+
+create table dev.ipc_ioa_type_vs
+    (  
+        cate1           string,
+        cate2           string,
+        item_cate       string,
+        liu_cate        string,
+        type            string
+    )  
+    comment '品类对换表' 
+    row format delimited 
+    fields terminated by '\t'  
+    stored as textfile
+;  
+load data local inpath 'type_vs.tsv' into table dev.ipc_ioa_type_vs;
+'''
 

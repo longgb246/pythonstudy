@@ -1,8 +1,10 @@
 #-*- coding:utf-8 -*-
 import os
+import pandas as pd
+from threading import Thread
+from Queue import Queue
 import time
 import requests
-import pandas as pd
 
 
 def mkdir(mkdir_path):
@@ -13,40 +15,21 @@ def mkdir(mkdir_path):
         os.mkdir(mkdir_path)
 
 
-def loadAndSave(url, name, save_path):
-    '''
-    Load the picture and save it.
-    '''
-    url_contents = requests.get(url)
-    with open(save_path + os.sep + name + '.jpg', 'wb') as f:
-        f.write(url_contents.content)
-
-
-def loadStyleIdentifyData(read_path, save_path, columns):
+def loadStyleIdentifyData(read_path, columns):
     '''
     Load the StyleIdentify data.
     '''
-    print 'loadStyleIdentifyData Start!'
     with open(read_path, 'r') as f:
         contents = f.readlines()
     style_pd = pd.DataFrame(map(lambda x: x.replace('\n', '').split(','), contents), columns=columns)
-    mkdir(save_path)
-    url_list = style_pd['url'].values.tolist()
-    name_list = style_pd['id'].values.tolist()
-    all_len = len(url_list)
-    for i, each_url in enumerate(url_list):
-        if (divmod(i, 500)[1] == 0) or (i == (-1)):
-            print '[{2}] ( {0}/{1} )'.format(i, all_len, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
-        loadAndSave(each_url, name_list[i], save_path)
-    style_pd.to_csv(save_path + os.sep + 'style_pd.csv', index=False)
-    print 'loadStyleIdentifyData Finish!'
+    url_list = style_pd.loc[:, ['id', 'url']].values.tolist()
+    return style_pd, url_list
 
 
 def loadProductSearchData(read_path, save_path, p_columns, s_columns):
     '''
     Load the ProductSearch data.
     '''
-    print 'loadProductSearchData Start!'
     p_data = read_path + os.sep + 'P.txt'
     s_data = read_path + os.sep + 'S.txt'
     p_path = save_path + os.sep + 'p_data'
@@ -82,22 +65,94 @@ def loadProductSearchData(read_path, save_path, p_columns, s_columns):
             print '[{2}] ( {0}/{1} )'.format(i, all_len, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
         loadAndSave(shop_url_list[i], id_list[i] + '_shop', s_path)
     s_pd.to_csv(s_path + os.sep + 'p_pd.csv', index=False)
-    print 'loadProductSearchData Finish!'
+
+
+class StyleIdentifySpider(Thread):
+    def __init__(self, url, q, save_path, i):
+        '''
+        Init class StyleIdentifySpider.
+        '''
+        super(StyleIdentifySpider, self).__init__()
+        self.name = url[0]
+        self.url = url[1]
+        self.q = q
+        self.save_path = save_path
+        self.contents = None
+        self.i = i
+    def saveData(self):
+        '''
+        Save the pictures.
+        '''
+        print '[{0}] Save the data! {1}'.format(self.i, self.name)
+        with open(self.save_path + os.sep + self.name + '.jpg', 'wb') as f:
+            f.write(self.contents)
+    def getRequest(self):
+        '''
+        Get the request of url.
+        '''
+        i = 0
+        print '[{0}] getRequest {1}'.format(self.i, self.name)
+        time_limit = 1000
+        while i <= time_limit:
+            try:
+                self.contents = requests.get(url=self.url).content
+                print '[{0}] getRequest Finish! {1}'.format(self.i, self.name)
+                i = time_limit*10
+            except:
+                time.sleep(0.5)
+                i += 1
+        if i == (time_limit+1):
+            raise Exception(''' url: {0}'''.format(self.url))
+    def run(self):
+        '''
+        Run method.
+        '''
+        self.getRequest()
+        self.saveData()
+        self.q.put(self.name)
 
 
 # 1、风格识别 StyleIdentify
 style_identify_read_path = u'D:/SelfLife/Competition/Ai_fashion/时尚风格识别_train/train+val.txt'
-style_identify_save_path = u'D:/SelfLife/Competition/Ai_fashion/时尚风格识别_train/pictures'
 style_identify_save_path2 = u'D:/SelfLife/Competition/Ai_fashion/时尚风格识别_train/pictures2'
 # 运动,    休闲,  OL/通勤,  日系,    韩版,     欧美,     英伦,  少女,  名媛/淑女,    简约,    自然,  街头/朋克,    民族
 # sport,  relax,      ol,  japan,  korean,  america,  england,  girl,       lady,  simple,  nature,       punk,  nation
 style_identify_cols = ['id', 'url', 'sport', 'relax', 'ol', 'japan', 'korean', 'america', 'england', 'girl', 'lady', 'simple', 'nature', 'punk', 'nation']
 
-# loadStyleIdentifyData(style_identify_read_path, style_identify_save_path, style_identify_cols)
+print '[{0}] loadStyleIdentifyData'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+style_pd, url_list = loadStyleIdentifyData(style_identify_read_path, style_identify_cols)
+
+print '[{0}] style_pd.to_csv'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+mkdir(style_identify_save_path2)
+style_pd.to_csv(style_identify_save_path2 + os.sep + 'style_pd.csv', index=False)
+
+
+q = Queue()
+Thread_list = []
+result_list = []
+url_len = len(url_list)
+# Thread to get the url data.
+print '[{0}] p.start()'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+for i, url in enumerate(url_list):
+    p = StyleIdentifySpider(url, q, style_identify_save_path2, i)
+    p.start()
+    Thread_list.append(p)
+    if (divmod(i, 500)[1] == 0) or (i == (url_len-1)):
+        time.sleep(10)
+# The main thread wait sub thread finish.
+for each in Thread_list:
+    each.join()
+# Get the data in the Queue.
+print '[{0}] get.q()'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+while not q.empty():
+    result_list.append(q.get())
+    tmp_len = len(result_list)
+    if (divmod(tmp_len, 500)[1] == 0) or (tmp_len == (url_len-1)):
+        print '[{2}] ( {0}/{1} )'.format(tmp_len, url_len, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+
 
 # 2、单品搜索 ProductSearch
 product_search_read_path = u'D:/SelfLife/Competition/Ai_fashion/时尚单品搜索_train'
-product_search_save_path = u'D:/SelfLife/Competition/Ai_fashion/时尚单品搜索_train/pictures'
 product_search_save_path2 = u'D:/SelfLife/Competition/Ai_fashion/时尚单品搜索_train/pictures2'
 # columns
 product_search_p_cols = ['cus_url', 'cus_left', 'cus_up', 'cus_right', 'cus_down', 'shop_url', 'shop_left', 'shop_up', 'shop_right', 'shop_down', 'type']
@@ -109,119 +164,4 @@ product_search_s_cols = ['shop_url', 'shop_left', 'shop_up', 'shop_right', 'shop
 
 
 
-
-import Queue
-
-Queue.Queue()
-
-
-
-
-import urllib2
-import urllib
-import json
-import time
-import threading
-import Queue
-import sys
-reload(sys)
-sys.setdefaultencoding( "utf-8" )
-
-
-def get_response(url):
-    for a in range(3):
-        try:
-            request = urllib2.Request(url)
-            response = urllib2.urlopen(request)
-            result= response.read()
-
-            return result
-
-        except Exception,e:
-            print e
-            time.sleep(2)
-            continue
-
-
-class ThreadPic(threading.Thread):
-    def __init__(self, queue_data, read_path, save_path, columns):
-        threading.Thread.__init__(self)
-        self.queue_data = queue_data
-        self.read_path = read_path
-        self.save_path = save_path
-        self.columns = columns
-    def _readUrl(self):
-        with open(self.read_path, 'r') as f:
-            contents = f.readlines()
-        style_pd = pd.DataFrame(map(lambda x: x.replace('\n', '').split(','), contents), columns=self.columns)
-        mkdir(self.save_path)
-        self.url_list = style_pd['url'].values.tolist()
-        self.name_list = style_pd['id'].values.tolist()
-        self.all_len = len(self.url_list)
-        style_pd.to_csv(self.save_path + os.sep + 'style_pd.csv', index=False)
-        # for i, each_url in enumerate(url_list):
-        #     if (divmod(i, 500)[1] == 0) or (i == (-1)):
-        #         print '[{2}] ( {0}/{1} )'.format(i, all_len, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
-        #     loadAndSave(each_url, name_list[i], save_path)
-    def run(self):
-        for i, each_url in enumerate(self.url_list):
-            try:
-                tmp_name = self.name_list[i]
-                url_contents = requests.get(each_url)
-                self.queue_data.put({'name': tmp_name, 'content': url_contents.content})
-                # with open(save_path + os.sep + name + '.jpg', 'wb') as f:
-                #     f.write(url_contents.content)
-            except:
-                raise
-
-
-class ThreadCityDB(threading.Thread):
-    def __init__(self, queue_data):
-        threading.Thread.__init__(self)
-        self.queue_data = queue_data
-    def run(self):
-        while True:
-            try:
-                if self.queue_zq_citys.empty(): #队列为空
-                    pass
-                else:
-                    citys=self.queue_zq_citys.get() #从队列中取出数据
-                    if  citys is not None:
-                        sql = "insert into Table(cityid,cityname) values(%s,'%s')" % (
-                            citys['cityid'], citys['cityname'])
-                        #print  sql
-                        DBHelper.SqlHelper.ms.ExecNonQuery(sql.encode('utf-8'))
-                        self.queue_zq_citys.task_done() #告诉线程我完成了这个任务 是否继续join阻塞 让线程向前执行或者退出
-                    else:
-                        pass
-            except Exception,e:
-                pass
-
-
-
-
-
-queue_data = Queue.Queue()              # 实例化存放抓取到的数据队列
-city = ThreadPic(queue_data, style_identify_read_path, style_identify_save_path2, style_identify_cols)            # 抓取线程，入队操作
-
-
-
-
-def main():
-    try:
-        queue_zq_citys=Queue.Queue()  # 实例化存放抓取到的城市队列
-
-        #创建线程
-        city=ThreadCity(queue_zq_citys) #抓取线程 入队操作
-        cityDB=ThreadCityDB(queue_zq_citys) #出队操作 存入数据库
-
-        #启动线程
-        city.start()
-        cityDB.start()
-
-        #阻塞等待子线程执行完毕后再执行主线程
-        city.join()
-        cityDB.join()
-    except Exception,e:
-        pass
 
