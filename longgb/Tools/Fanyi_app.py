@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from PyQt4 import QtGui, QtCore
+# from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 import httplib
 import md5
 import urllib

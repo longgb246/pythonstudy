@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------
 # 2.1 引入包
 import time
-import numpy as np
+import math
 import datetime
 import os
 # 2.2 主类
@@ -19,9 +19,9 @@ class myTools(object):
         runTime(t1, 'name')
         '''
         d = time.time() - t1
-        min_d = np.floor(d / 60)
+        min_d = math.floor(d / 60)
         sec_d = d % 60
-        hor_d = np.floor(min_d / 60)
+        hor_d = math.floor(min_d / 60)
         if name != "":
             name = " ( " + name + " )"
         if hor_d >0:
@@ -62,14 +62,38 @@ class myTools(object):
     @staticmethod
     def dateRange(start_date, end_date):
         '''
-        返回日期函数。统一格式，%Y-%m-%d。
-        :param start_date: '2017-10-01' 开始日期
-        :param end_date: '2017-11-01' 结束日期
-        :return: 日期 list
+        Specifies the start date and end date to get a date list. Uniform format, %Y-%m-%d.
+        :param start_date: ( string ) start date, include
+        :param end_date: ( string ) end date, not include
+        :return: ( list<string> ) date list
+        (example)
+            In[1]: myTools.dateRange('2017-10-01', '2017-10-04')
+            Out[1]: ['2017-10-01', '2017-10-02', '2017-10-03']
         '''
         start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
         end_date_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
         date_range = map(lambda x: (start_date_dt + datetime.timedelta(x)).strftime('%Y-%m-%d'),range((end_date_dt - start_date_dt).days))
+        return date_range
+    @staticmethod
+    def dateCalculate(start_date, cal_date=0):
+        '''
+        From the start date to a certain direction to get a date list.
+        :param start_date: Start date to calculate
+        :param cal_date: From the start date to a certain direction.
+        :return: list
+        (example)
+            In[1]: myTools.dateCalculate('2017-03-04', 3)
+            Out[1]: ['2017-03-04', '2017-03-05', '2017-03-06', '2017-03-07']
+            In[2]: myTools.dateCalculate('2017-03-04', 0)
+            Out[2]: ['2017-03-04']
+            In[3]: myTools.dateCalculate('2017-03-04', -3)
+            Out[3]: ['2017-03-01', '2017-03-02', '2017-03-03', '2017-03-04']
+        '''
+        start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        end_date_dt = start_date_dt + datetime.timedelta(cal_date)
+        min_date = min(start_date_dt, end_date_dt)
+        max_date = max(start_date_dt, end_date_dt)
+        date_range = map(lambda x: (min_date + datetime.timedelta(x)).strftime('%Y-%m-%d'),range((max_date - min_date).days + 1))
         return date_range
 
 
@@ -77,7 +101,7 @@ class myTools(object):
 # 2、排列组合
 # 2.1 引入包
 from copy import deepcopy
-import numpy as np
+import math
 # 2.2 主类
 class Combine(object):
     def __init__(self, arr_list=['0']):
@@ -91,7 +115,6 @@ class Combine(object):
         self.tree_n = len(arr_list) if type(arr_list)==list else arr_list
         self.arr_list = arr_list if type(arr_list)==list else range(self.tree_n)
         self.reverse = False
-
     def _combineTree(self, root, rest, depth):
         '''
         生成树函数
@@ -107,12 +130,11 @@ class Combine(object):
             root = sorted(root)
             if root not in self.tree_combine_List:
                 self.tree_combine_List.append(root)
-
     def CNM(self, m=0):
         '''
         C N 取 M 个的组合
         '''
-        if m > np.floor(len(self.arr_list)/2):
+        if m > math.floor(len(self.arr_list)/2):
             m = len(self.arr_list) - m
             self.reverse = True
         self.tree_q = m
@@ -120,7 +142,6 @@ class Combine(object):
         if self.reverse:
             self.tree_combine_List = map(lambda x: list(set(self.arr_list).difference(set(x))),self.tree_combine_List)
         return self.tree_combine_List
-
     def createTree(self):
         '''
         生成组合
@@ -215,7 +236,7 @@ class pdl(object):
         date_range = map(lambda x: str(x)[:10],pd.date_range(start_date, end_date, freq=freq).values)
         return date_range
     @staticmethod
-    def tranNum2Str(data, cols):
+    def trans2Str(data, cols):
         '''
         讲num类型转化成str类型
         '''
@@ -223,7 +244,7 @@ class pdl(object):
             data[col] = data.loc[:,[col]].applymap(str)
         return data
     @staticmethod
-    def tranStr2Num(data, cols):
+    def trans2Num(data, cols):
         '''
         讲str类型转化成num类型
         '''
@@ -231,11 +252,192 @@ class pdl(object):
             data[col] = data.loc[:,[col]].applymap(float)
         return data
     @staticmethod
-    def tranStr2Int(data, cols):
+    def trans2Int(data, cols):
         '''
         讲str类型转化成int类型
         '''
         for col in cols:
             data[col] = data.loc[:,[col]].applymap(int)
         return data
+    @staticmethod
+    def crossJoin(pda, pdb):
+        pda['tmp_cross_join'] = '1'
+        pdb['tmp_cross_join'] = '1'
+        pdc = pda.merge(pdb, on=['tmp_cross_join'])
+        pdc = pdc.drop(['tmp_cross_join'], axis=1)
+        return pdc
+
+
+# ---------------------------------------------------------------------------
+# 5、logger包
+# 5.1 引入包
+import logging
+# 5.2 主类
+class Logger(object):
+    def __init__(self, logger=''):
+        self.getOrCreate(logger)
+
+    @staticmethod
+    def _logger(mon_str):
+        def wrapper_func(func):
+            def wrapper_args(self, *args, **kwargs):
+                self.logger.info('{0} ...'.format(mon_str))
+                result = func(self, *args, **kwargs)
+                self.logger.info('{0} Finish !'.format(mon_str))
+                return result
+            return wrapper_args
+        return wrapper_func
+
+    def _getLogger(self, logger):
+        '''
+        取得log日志
+        '''
+        self.logger = logger
+
+    def _setLogger(self):
+        '''
+        设置log日志
+        '''
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s (%(filename)s) [line:%(lineno)d] [ %(levelname)s ] %(message)s',
+                            datefmt='%a, %d %b %Y %H:%M:%S',
+                            # filename='ModelSolve.log',
+                            # filemode='w'
+                            )
+        self.logger = logging.getLogger("ModelClassify")
+
+    def getOrCreate(self, logger=''):
+        if logger == '':
+            self._setLogger()
+        else:
+            self._getLogger(logger=logger)
+
+
+# ---------------------------------------------------------------------------
+# 6、平滑函数
+# 6.1 引入包
+import pandas as pd
+import statsmodels.api as sm
+import numpy as np
+import warnings
+warnings.filterwarnings('ignore')
+lowess = sm.nonparametric.lowess
+# 6.2 主类
+class SmoothMethod(object):
+    @staticmethod
+    def Lowess(x, y, theta=3, frac=0.3, it=2, int_method=''):
+        '''
+        Lowess Smooth
+        :param x: list | np.array | pd.Series
+        :param y: list | np.array | pd.Series
+        :param theta: x times of error
+        :param frac: Between 0 and 1. The fraction of the data used when estimating each y-value.
+        :param it: The number of residual-based reweightings to perform.
+        :param int_method: int methods '' | 'ceil' | 'floor' | 'int'
+        :return: np.array
+        '''
+        int_methods = {'ceil': np.ceil, 'floor': np.floor, 'int': np.int32}
+        x = np.array(x)
+        y = np.array(y)
+        lowes = lowess(y, x, frac=frac, it=it, return_sorted=False)
+        err = y - lowes
+        std_err = np.std(err)
+        choose = (np.abs(err) < theta * std_err)
+        if int_method == '':
+            result = np.where(choose, y, lowes)
+        elif int_method in ['ceil', 'floor', 'int']:
+            func = int_methods[int_method]
+            result = np.where(choose, func(y), func(lowes))
+        else:
+            raise ValueError('''int_method Must Be One Of : '' | 'ceil' | 'floor' | 'int' ! ''')
+        return result
+    @staticmethod
+    def EMSmooth(x, y, theta=2, threshold=10, int_method=''):
+        '''
+        EM Smooth
+        :param x: list | np.array | pd.Series
+        :param y: list | np.array | pd.Series
+        :param theta: x times of error
+        :param threshold: only higher than this can be thought as abnormal value
+        :param int_method: int methods '' | 'ceil' | 'floor' | 'int'
+        :return: np.array
+        '''
+        int_methods = {'ceil': np.ceil, 'floor': np.floor, 'int': np.int32}
+        y = np.array(y, dtype=np.float64)
+        y_sort = np.argsort(np.argsort(y)[::-1])
+        data = np.array([x, y, y_sort, range(len(x))]).T
+        data = npl.sort(data, [2])
+        flag = True
+        i = 0
+        while flag:
+            avg = np.nanmean(data[(i+1):, 1])
+            sigma = np.nanstd(data[(i+1):, 1])
+            if (data[i, 1] <= avg + theta * sigma) | (data[i, 1] <= threshold):
+                flag = False
+            data[i, 1] = np.nan
+            i += 1
+        data = npl.sort(data, [0])
+        result = pd.Series(data[:,1]).interpolate(limit=len(data)-1, limit_direction='both').values[np.argsort(data[:,-1])]
+        if int_method in ['ceil', 'floor', 'int']:
+            func = int_methods[int_method]
+            result = func(y)
+        elif int_method != '':
+            raise ValueError('''int_method Must Be One Of : '' | 'ceil' | 'floor' | 'int' ! ''')
+        return result
+    @staticmethod
+    def smooth(df, group_columns, target_columns, smooth_method='lowess', theta=-1.0, frac=-1.0, it=-1.0, threshold=-1.0, int_method=''):
+        '''
+        DataFrame Smooth Method include lowess and emsmooth
+        :param df: DataFrame
+        :param group_columns: column may contain different values which should treat individually
+        :param target_columns: column containing values needed to be smoothed
+        :param smooth_method:
+        :param theta: x times of error
+        :param frac: Between 0 and 1. The fraction of the data used when estimating each y-value.
+        :param it: The number of residual-based reweightings to perform.
+        :param threshold: only higher than this can be thought as abnormal value
+        :param int_method: int methods '' | 'ceil' | 'floor' | 'int'
+        :return: DataFrame
+        '''
+        kwargs_map = {  'lowess': [SmoothMethod.Lowess, {'theta':3, 'frac':0.3, 'it':2, 'int_method':''}],
+                        'emsmooth': [SmoothMethod.EMSmooth, {'theta':2, 'threshold':10, 'int_method':''}]}
+        smooth_method = smooth_method.lower()
+        if smooth_method in ['lowess', 'emsmooth']:
+            func = kwargs_map[smooth_method][0]
+            kwargs = kwargs_map[smooth_method][1]
+            for each in kwargs.keys():
+                tmp_arg = eval(each)
+                kwargs[each] = tmp_arg if tmp_arg != -1 else kwargs[each]
+        else:
+            raise ValueError(''' smooth_method Must Be One Of : 'lowess' | 'emsmooth' ! ''')
+        split_data = []
+        for key, grouped in df.groupby(group_columns):
+            for target in target_columns:
+                grouped['smoothed_{0}'.format(target)] = func(range(len(grouped)), grouped[target], **kwargs)
+            split_data.append(grouped)
+        result = pd.concat(split_data, ignore_index=True)
+        return result
+
+
+# 3.3 demo运行函数
+def smoothDemo():
+    def get_data():
+        x = np.sort(np.random.uniform(low = -2*np.pi, high = 2*np.pi, size=500))
+        y = []
+        for i in xrange(8):
+            y.append(np.sin(x) + np.random.normal(size=len(x)))
+        y = np.concatenate(y)
+        index_y = np.array(reduce(lambda m,n: m+n,[['data_{0}'.format(i)]*len(x) for i in range(8)]))
+        x = np.concatenate([x]*8)
+        data = pd.DataFrame(np.matrix([x, index_y, y]).T, columns=['dt', 'dc', 'sales'])
+        tmp_len = len(data)
+        data = pd.concat([data]*10)
+        data['sku'] = reduce(lambda m,n: m+n,[['sku_{0}'.format(i)]*tmp_len for i in range(10)])
+        data = pdl.trans2Num(data, ['dt','sales'])
+        return data
+    data = get_data()
+    data_smooth3 = SmoothMethod.smooth(data, ['dc', 'sku'], ['dt', 'sales'], smooth_method='lowess')
+    data_smooth3_1 = SmoothMethod.smooth(data, ['dc', 'sku'], ['dt', 'sales'], smooth_method='lowess', theta=3, frac=0.3, it=2)
+    data_smooth4 = SmoothMethod.smooth(data, ['dc', 'sku'], ['dt', 'sales'], smooth_method='emsmooth')
+    data_smooth4_1 = SmoothMethod.smooth(data, ['dc', 'sku'], ['dt', 'sales'], smooth_method='emsmooth', theta=2, threshold=10)
 
