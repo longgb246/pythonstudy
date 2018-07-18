@@ -1449,10 +1449,8 @@ def any_classifier(name):
         gradient_boosting(name + '.grad_boosting', loss='deviance'),
         sgd(name + '.sgd')
     ]
-
     if xgboost:
         classifiers.append(xgboost_classification(name + '.xgboost'))
-
     return hp.choice('%s' % name, classifiers)
 
 

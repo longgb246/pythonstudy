@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 """
 """
 import pickle
@@ -412,82 +413,45 @@ def _cost_fn(argd, X, y, EX_list, valid_size, n_folds, shuffle, random_state,
 
 
 class hyperopt_estimator(BaseEstimator):
-
-    def __init__(self,
-                 preprocessing=None,
-                 ex_preprocs=None,
-                 classifier=None,
-                 regressor=None,
-                 space=None,
-                 algo=None,
-                 max_evals=10,
-                 loss_fn=None,
-                 verbose=False,
-                 trial_timeout=None,
-                 fit_increment=1,
-                 fit_increment_dump_filename=None,
-                 seed=None,
-                 use_partial_fit=False,
-                 ):
+    def __init__(self, preprocessing=None, ex_preprocs=None, classifier=None, regressor=None, space=None, algo=None, max_evals=10,
+                 loss_fn=None, verbose=False, trial_timeout=None, fit_increment=1, fit_increment_dump_filename=None, seed=None, use_partial_fit=False, ):
         """
-        Parameters
-        ----------
-
         preprocessing: pyll.Apply node, default is None
-            This should evaluate to a list of sklearn-style preprocessing
-            modules (may include hyperparameters). When None, a random 
-            preprocessing module will be used.
-
+            This should evaluate to a list of sklearn-style preprocessing modules (may include hyperparameters). When None, a random preprocessing module will be used.
+            -- 这应该计算到sklearn风格的预处理模块列表(可能包含超参数)。当没有时，将使用随机预处理模块。
         ex_preprocs: pyll.Apply node, default is None
-            This should evaluate to a list of lists of sklearn-style 
-            preprocessing modules for each exogenous dataset. When None, no 
-            preprocessing will be applied to exogenous data.
-
+            This should evaluate to a list of lists of sklearn-style preprocessing modules for each exogenous dataset. When None, no preprocessing will be applied to exogenous data.
+            -- 这应该对每个外生数据集的sklearn风格的预处理模块列表进行评估。当没有时，对外源性数据不进行预处理。
         classifier: pyll.Apply node
-            This should evaluates to sklearn-style classifier (may include
-            hyperparameters).
-
+            This should evaluates to sklearn-style classifier (may include hyperparameters).
+            -- sklearn 风格的 分类器
         regressor: pyll.Apply node
-            This should evaluates to sklearn-style regressor (may include
-            hyperparameters).
-
+            This should evaluates to sklearn-style regressor (may include hyperparameters).
+            -- sklearn 风格的 regressor
         algo: hyperopt suggest algo (e.g. rand.suggest)
-
+            -- hyperopt 的搜索算法
         max_evals: int
-            Fit() will evaluate up to this-many configurations. Does not apply
-            to fit_iter, which continues to search indefinitely.
-
+            Fit() will evaluate up to this-many configurations. Does not apply to fit_iter, which continues to search indefinitely.
+            --
         loss_fn: callable
-            A function that takes the arguments (y_target, y_prediction)
-            and computes a loss value to be minimized. If no function is
-            specified, '1.0 - accuracy_score(y_target, y_prediction)' is used
-            for classification and '1.0 - r2_score(y_target, y_prediction)'
-            is used for regression
-
+            A function that takes the arguments (y_target, y_prediction) and computes a loss value to be minimized. If no function is specified, '1.0 - accuracy_score(y_target, y_prediction)' is used for classification and '1.0 - r2_score(y_target, y_prediction)' is used for regression
+            -- 接受参数(y_target, y_prediction)并计算要最小化的损失值，如果没有指定，分类：accuracy_score(y_target, y_prediction)，回归：r2_score(y_target, y_prediction)
         trial_timeout: float (seconds), or None for no timeout
             Kill trial evaluations after this many seconds.
-
+            -- 在 trial_timeout 秒后杀掉 trial
         fit_increment: int
-            Every this-many trials will be a synchronization barrier for
-            ongoing trials, and the hyperopt Trials object may be
-            check-pointed.  (Currently evaluations are done serially, but
-            that might easily change in future to allow e.g. MongoTrials)
-
+            Every this-many trials will be a synchronization barrier for ongoing trials, and the hyperopt Trials object may be check-pointed.  (Currently evaluations are done serially, but that might easily change in future to allow e.g. MongoTrials)
+            --
         fit_increment_dump_filename : str or None
-            Periodically dump self.trials to this file (via cPickle) during
-            fit()  Saves after every `fit_increment` trial evaluations.
-
+            Periodically dump self.trials to this file (via cPickle) during fit()  Saves after every `fit_increment` trial evaluations.
+            --
         seed: numpy.random.RandomState or int or None
-            If int, the integer will be used to seed a RandomState instance 
-            for use in hyperopt.fmin. Use None to make sure each run is 
-            independent. Default is None.
-
+            If int, the integer will be used to seed a RandomState instance for use in hyperopt.fmin. Use None to make sure each run is independent. Default is None.
+            -- 种子
         use_partial_fit : boolean
-            If the learner support partial fit, it can be used for online 
-            learning. However, the whole train set is not split into mini 
-            batches here. The partial fit is used to iteratively update 
-            parameters on the whole train set. Early stopping is used to kill 
-            the training when the validation score stops improving.
+            If the learner support partial fit, it can be used for online learning. However, the whole train set is not split into mini batches here.
+            The partial fit is used to iteratively update parameters on the whole train set. Early stopping is used to kill the training when the validation score stops improving.
+            --
         """
         self.max_evals = max_evals
         self.loss_fn = loss_fn
@@ -497,9 +461,9 @@ class hyperopt_estimator(BaseEstimator):
         self.fit_increment_dump_filename = fit_increment_dump_filename
         self.use_partial_fit = use_partial_fit
         if space is None:
-            if classifier is None and regressor is None:
+            if classifier is None and regressor is None:                # 默认是分类器
                 self.classification = True
-                classifier = components.any_classifier('classifier')
+                classifier = components.any_classifier('classifier')    # 随机选择一个分类器
             elif classifier is not None:
                 assert regressor is None
                 self.classification = True
@@ -508,7 +472,7 @@ class hyperopt_estimator(BaseEstimator):
                 self.classification = False
                 # classifier = components.any_classifier('classifier')
             if preprocessing is None:
-                preprocessing = components.any_preprocessing('preprocessing')
+                preprocessing = components.any_preprocessing('preprocessing')       # 随机选择一个预处理过程
             else:
                 # assert isinstance(preprocessing, (list, tuple))
                 pass
@@ -539,18 +503,14 @@ class hyperopt_estimator(BaseEstimator):
             else:
                 self.n_ex_pps = 0
                 self.ex_preprocs = []
-
         if algo is None:
-            self.algo = hyperopt.rand.suggest
+            self.algo = hyperopt.rand.suggest                                   # 默认使用随机搜索
         else:
             self.algo = algo
-
         if seed is not None:
-            self.rstate = (np.random.RandomState(seed) 
-                           if isinstance(seed, int) else seed)
+            self.rstate = (np.random.RandomState(seed) if isinstance(seed, int) else seed)
         else:
             self.rstate = np.random.RandomState()
-
         # Backwards compatibility with older version of hyperopt
         self.seed = seed
         if 'rstate' not in inspect.getargspec(hyperopt.fmin).args:
@@ -560,10 +520,8 @@ class hyperopt_estimator(BaseEstimator):
         if self.verbose:
             print(' '.join(map(str, args)))
 
-    def fit_iter(self, X, y, EX_list=None, valid_size=.2, n_folds=None, 
-                 cv_shuffle=False, warm_start=False,
-                 random_state=np.random.RandomState(),
-                 weights=None, increment=None):
+    def fit_iter(self, X, y, EX_list=None, valid_size=.2, n_folds=None, cv_shuffle=False, warm_start=False,
+                 random_state=np.random.RandomState(), weights=None, increment=None):
         """Generator of Trials after ever-increasing numbers of evaluations
         """
         assert weights is None

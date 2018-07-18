@@ -14,6 +14,7 @@ from hyperopt import hp
 from hyperopt import fmin, tpe
 
 
+# pip install networkx==1.11
 def noUse():
     def anySample1():
         # Download the data and split into training and test sets
