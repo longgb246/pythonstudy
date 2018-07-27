@@ -18,7 +18,8 @@
 
 import findspark
 # findspark.init(r'D:\Softwares\pyspark\spark-2.1.0-bin-hadoop2.7\spark-2.1.0-bin-hadoop2.7\bin')
-findspark.init(r'D:\Softwares\pyspark\spark-2.1.0-bin-hadoop2.7\spark-2.1.0-bin-hadoop2.7')
+# findspark.init(r'D:\Softwares\pyspark\spark-2.1.0-bin-hadoop2.7\spark-2.1.0-bin-hadoop2.7')
+findspark.init("/Users/longguangbin/SoftWare/spark-2.1.0-bin-hadoop2.7")
 
 from pyspark import SparkContext
 from pyspark.sql import SparkSession

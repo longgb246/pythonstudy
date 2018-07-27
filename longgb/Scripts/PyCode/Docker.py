@@ -80,6 +80,7 @@ is_211_sp.show()
 # " --conf spark.executorEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server" \
 # " --py-files {zip_files}" \
 # " {pyfile} "
+#### jdvl start -m /data0/mart_cib:/data0/mart_cib:rw -i bdp-docker.jd.com:5000/wise_mart_cib:latest -o='--net=host' -I bash
 # pyspark --master yarn \
 # --num-executors 10 \
 # --executor-memory 10g \
@@ -92,4 +93,6 @@ is_211_sp.show()
 # --conf spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.jd.com:5000/wise_mart_cib:latest \
 # --conf spark.yarn.appMasterEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server \
 # --conf spark.executorEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server
+
+# sys.path.append('/home/mart_cib/longguangbin/saas/dev_promotion_new/tt1')
 
