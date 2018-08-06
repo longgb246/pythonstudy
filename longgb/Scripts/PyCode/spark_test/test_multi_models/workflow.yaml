@@ -1,0 +1,28 @@
+### Mistral is the OpenStack Workflow Service
+### we use the workflow yaml format, but parse and implement ourselves
+### langurage reference: https://docs.openstack.org/mistral/latest/user/wf_lang_v2.html  
+saas_forecast:
+  description: saas-forecast workflow
+
+  tasks:
+
+    data-split:
+      action: python script_run.py component/run_feature.py src.zip component/daylevel_setting.yaml
+    
+    step-feature:
+      action: python script_run.py component/run_feature.py src.zip component/daylevel_setting.yaml
+      on-success:
+        - step-predict
+
+    step-promotion:
+      action: python script_run.py component/run_promo_feature.py src.zip component/promo_setting.yaml
+      on-success:
+        - step-predict
+
+    step-predict:
+      action: python script_run.py component/run_predict.py src.zip component/setting-step2.yaml
+      on-success:
+        - echo-finished
+
+    echo-finished:
+      action: echo finished

@@ -1,0 +1,37 @@
+spark_options:
+  master: yarn
+  deploy-mode: cluster
+  num-executors: 20
+  executor-memory: 15g
+  executor-cores: 4
+  driver-memory: 20g
+  driver-cores: 12
+
+spark_conf:
+  spark.yarn.appMasterEnv.yarn.nodemanager.container-executor.class: DockerLinuxContainer
+  spark.executorEnv.yarn.nodemanager.container-executor.class: DockerLinuxContainer
+  spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name: bdp-docker.jd.com:5000/wise_mart_cib:latest
+  spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name: bdp-docker.jd.com:5000/wise_mart_cib:latest
+  spark.yarn.appMasterEnv.LD_LIBRARY_PATH: /software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server
+  spark.executorEnv.LD_LIBRARY_PATH: /software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server
+  spark.hadoop.validateOutputSpecs: false
+  spark.task.cpus: 1
+
+algo_conf:
+  param_dict.sfs_dt: 2018-06-30
+  param_dict.end_date: 2018-07-01
+  param_dict.part_date:
+  param_dict.Valid_tenant_id: 3
+  param_dict.Valid_dimension_id: 1
+  alg_conf.MType_Sum: False
+  base_conf.Step_no: 1
+  inter_conf.Train_Data.SQL_INTERFACE_DICT: select range_sku_key as sku_id, dept as cate1, class as cate2, subclass as cate3, qty as sale, business_date as dt, cast(date_format(case when length(business_date) > 10 then substring(business_date, 1, 10) else business_date end,'u') as int)  as weekday from app.app_isc_offline_bbg_order_sum where business_date >='{start_date}' and business_date <= '{end_date}'
+  inter_conf.result_save.hive.table: dev.dev_saas_rst_test_result1
+  inter_conf.result_all_save.hive.table: dev.dev_saas_rst_test_result_all1
+  inter_conf.result_save.hdfs: /tmp/forecast/result_7fresh/dev_saas_rst_test_result1
+  inter_conf.result_all_save.hdfs: /tmp/forecast/result_7fresh/dev_saas_rst_test_result_all1
+  base_conf.train_df_name: two_step_train_df_sql1
+  base_conf.target_df_name: two_step_target_df_sql1
+  base_conf.preprocess_df_name: two_step_preprocess_df_sql1
+
+
