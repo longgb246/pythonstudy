@@ -37,30 +37,32 @@ spark = SparkSession.builder.enableHiveSupport().getOrCreate()
 
 conf = {
     'main': {
-        'cal_date': '2018-08-07',
+        'cal_date': '2018-08-09',
         'cal_method': 'week',  # day | week
         'cal_args': {
             'day_index': 2,  # index from 0，表示第三天的预测的 mape
             'day_len': 1,
         }},
     'real_data': {
-        'sql': ''' 
-                select 
-                    concat(sku_code, '_', coalesce(store_id, '-1'), '_', coalesce(channel_id, '-1')) as sku_id,
-                    sale,
-                    sale_date as dt
-                from 
-                    app.app_saas_sfs_model_input
-                where
-                    dt = 'ACTIVE'
-               ''',
+        'sql':  # concat(sku_code, '_', coalesce(store_id, '-1'), '_', coalesce(channel_id, '-1'), case when length(sale_date) > 10 then concat('_', substring(sale_date, 12)) else '' end)  as sku_id,
+            '''
+             select 
+                 concat(sku_code, '_', coalesce(store_id, '-1'))  as sku_id,
+                 sale,
+                 sale_date as dt
+             from 
+                 app.app_saas_sfs_model_input
+             where
+                 tenant_id=28 and dt = 'ACTIVE'
+            ''',
         'table': 'app.app_saas_sfs_model_input',
     },
     'pre_data': {
         'sku_id': 'sku_id',
         # 'sku_id': '''concat(sku_code, '_', coalesce(store_id, '-1'), '_', coalesce(channel_id, '-1')) ''',
-        'table': 'app.app_lgb_test_bca_forecast_result_try',
-        # 'app.app_saas_sfs_rst' | 'app.app_lgb_test_bca_forecast_result' | app_lgb_test_bca_forecast_result_try
+        'table': 'app.app_lgb_test_bca_forecast_result_all_try',
+        # 'app.app_saas_sfs_rst' | 'app.app_lgb_test_bca_forecast_result' | app_lgb_test_bca_forecast_result_try | app_lgb_test_bca_forecast_result_try_ts
+        'model': 'combine',  # __none__ | reg_single | hw | wma | combine
     },
     'kpi': {
         'gap': 5,
@@ -88,6 +90,8 @@ def get_real_data(start_date, end_date, conf=conf):
 def get_pre_data(sfs_date, date_list, index_list, conf=conf):
     sku_id = conf['pre_data']['sku_id']
     table = conf['pre_data']['table']
+    model = conf['pre_data']['model']
+    model_str = '' if model == '__none__' else " and sale_type = '{0}' ".format(model)
     sp_list = []
     for i, pre_date in enumerate(date_list):
         pre_sql = '''
@@ -97,10 +101,10 @@ def get_pre_data(sfs_date, date_list, index_list, conf=conf):
             from
                 {table}
             where 
-                dt='{sfs_date}'
+                tenant_id=28 and dt='{sfs_date}' {model_str}
             group by 
                 {sku_id}
-        '''.format(sfs_date=sfs_date, i=index_list[i], sku_id=sku_id, table=table)
+        '''.format(sfs_date=sfs_date, i=index_list[i], sku_id=sku_id, table=table, model_str=model_str)
         print(pre_sql)
         sp = spark.sql(pre_sql)
         sp = sp.withColumn('dt', F.lit(pre_date))
@@ -127,6 +131,10 @@ def get_mape(real_sp, pre_sp, conf=conf):
     return gap_sp, all_mape_sp, kpi
 
 
+def sku_split(sku_id):
+    return '_'.join(sku_id.split('_')[:2])
+
+
 def cal_kpi(cal_date, cal_method, conf=conf):
     if cal_method == 'week':
         day_len = 7
@@ -147,21 +155,112 @@ def cal_kpi(cal_date, cal_method, conf=conf):
     # calculate the mape
     real_sp = get_real_data(start_date, end_date, conf=conf)
     pre_sp = get_pre_data(sfs_date, date_list, index_list, conf=conf)
-    gap_sp, all_mape_sp, kpi = get_mape(real_sp, pre_sp, conf=conf)
-    print('\nThe kpi : {0}\nmape : '.format(kpi))
-    all_mape_sp.show()
+    pre_sp2 = pre_sp.select(F.udf(sku_split)(F.col('sku_id')).alias('sku_id'), 'pre_sale', 'dt')
+    gap_sp, all_mape_sp, kpi = get_mape(real_sp, pre_sp2, conf=conf)
+    # print('\nThe kpi : {0}\nmape : '.format(kpi))
+    # all_mape_sp.show()
+    return gap_sp, all_mape_sp, kpi, real_sp, pre_sp
 
 
-cal_kpi(conf['main']['cal_date'], conf['main']['cal_method'], conf=conf)
+gap_sp, all_mape_sp, kpi, real_sp, pre_sp = cal_kpi(conf['main']['cal_date'], conf['main']['cal_method'], conf=conf)
+gap_sp.groupBy('sku_id').agg(F.sum(F.col('real_sale')).alias('real_sale'), F.sum(F.col('pre_sale')).alias('pre_sale')). \
+    withColumn('gap', F.abs(F.col('real_sale') - F.col('pre_sale'))). \
+    agg(F.sum(F.col('real_sale')).alias('real'), F.sum(F.col('gap')).alias('gap')). \
+    withColumn('mape', F.col('gap') / F.col('real')).show()
+
+# 分析思路：现在做了一些调整（后处理方面的）。
+
+gap_sp.where(''' sku_id ''')
+
+gap_sp.where(''' sku_id = '15821204-3/2XL_KL00' ''').show()
+gap_sp.orderBy('gap', ascending=False).show()
+
+
+# 【数据问题】
+# 0.9675153257893531
+# 1.0389502151248264
+# 1.197038315147755
+# 1.1023901905776676 hw
+#
+# 1.2475909461093937
+# 1.2561724297809438
+#
+# 训练前，确定最优，输出模型。
+# 模型切换？模型 pk 等等。
+# 安踏线下的：促销信息
+
+# 服饰：spu 的维度
+
+# gap_sp.where(''' gap < 30 ''').groupBy('sku_id').agg(F.sum(F.col('real_sale')).alias('real_sale'),
+#                                                      F.sum(F.col('pre_sale')).alias('pre_sale')). \
+#     withColumn('gap', F.abs(F.col('real_sale') - F.col('pre_sale'))). \
+#     agg(F.sum(F.col('real_sale')).alias('real'), F.sum(F.col('gap')).alias('gap')). \
+#     withColumn('mape', F.col('gap') / F.col('real')).show()
+
+tmp_sp = gap_sp.groupBy('sku_id').agg(F.sum(F.col('real_sale')).alias('real_sale'),
+                                      F.sum(F.col('pre_sale')).alias('pre_sale')). \
+    withColumn('gap', F.abs(F.col('real_sale') - F.col('pre_sale'))).\
+    withColumn('mape', F.col('gap') / F.col('real_sale'))
+
+# 0 销量的 sku 已经解决 gap 关系
+tmp_sp.where(''' real_sale=0 ''').withColumn('gap', F.round('gap')).groupBy('gap').agg(F.count('gap').alias('cnt')). \
+    orderBy('cnt', ascending=False).show()
+
+# 问题解决：1、0 销量的 sku 已经解决 gap 关系
+# 74143.0 | 71734.48880000002 | 0.9675153257893533
+# 139902
+
+tmp_sp.show()
+
+tmp_sp.count()
+
+# gap > 5 : 480
+# real_sale > 5 : 521
+
+tmp_sp.where(''' real_sale > 5 ''').count()
+
+
+# 问题 sku ： XSTD(塑料袋 棕色) | FSTD(塑料袋 棕色)
+tmp_sp.orderBy('gap', ascending=False).show()
+
+
+def sku_filter(sku_id):
+    sku_list = ['XSTD', 'FSTD']
+    res_value = 1 if any(map(lambda x: x in sku_id, sku_list)) else 0
+    return res_value
+
+
+tmp_sp2 = tmp_sp.withColumn('flag', F.udf(sku_filter)(F.col('sku_id')))
+tmp_sp2.where(''' flag = 0 ''').agg(F.sum(F.col('real_sale')).alias('real'), F.sum(F.col('gap')).alias('gap')). \
+    withColumn('mape', F.col('gap') / F.col('real')).show()
+
+
+# 以下模型中剔除了塑料袋，计算 mape 时候，分别加上和不加塑料袋
+#            加上塑料袋    |     不计算塑料袋
+# reg - 1.048386517049641 | 1.0595368663138631
+# hw - 1.1791193421317077 | 1.220396196646718
+# wma - 1.454485044550142 | 1.5592180836506913
+# combine - 1.11819407248 | 1.1454311060553608
+
+tmp_sp2.where(''' flag = 0 ''').orderBy('gap', ascending=False).show()
+
+
+
+import pprint
+
+m1 = real_sp.select('sku_id').take(20)
+m2 = pre_sp.select('sku_id').take(20)
+
+pprint.pprint(m1)
+pprint.pprint(m2)
+
+all_data_sp = real_sp.select('sku_id', 'dt').union(pre_sp.select('sku_id', 'dt')).distinct()
+all_data_sp = all_data_sp.join(real_sp, on=['sku_id', 'dt'], how='left').join(pre_sp, on=['sku_id', 'dt'],
+                                                                              how='left').na.fill(0)
 
 ### ========================================================
 # 计算 kpi 的结果
 
-real_sp = []
-
-
-def direct_cal_kpi(real_sp, pre_sp):
-    pass
 
 
 # 07-30 - dev    - all_gap : 115193.23010000012, all_real : 78248.0, mape : 1.472155583529293, kpi: 0.999320397987
@@ -195,23 +294,27 @@ dev_sql = '''
 select 
     sku_id, sale_list, std_list
 from
-    app.app_lgb_test_bca_forecast_result_try
+    app.app_lgb_test_bca_forecast_result
 where 
     dt = '{dt}'
 '''
 
 
-def insert_overwrite_online(dt):
-    online_sp = spark.sql(online_sql.format(dt=dt))
-    dev_sp = spark.sql(dev_sql.format(dt='2018-08-07'))
-    # print('online_sp : {0}'.format(online_sp.count()))  # 181846
-    # print('dev_sp : {0}'.format(dev_sp.count()))  # 181846
+def get_join_online(online_dt, dev_dt):
+    online_sp = spark.sql(online_sql.format(dt=online_dt))
+    dev_sp = spark.sql(dev_sql.format(dt=dev_dt))
     join_sp = online_sp.join(dev_sp, on=['sku_id'])
-    # print('join_sp : {0}'.format(join_sp.count()))  # 181846
+    print('online_sp : {0}'.format(online_sp.count()))  # 181846
+    print('dev_sp : {0}'.format(dev_sp.count()))  # 181846
+    print('join_sp : {0}'.format(join_sp.count()))  # 181846
     join_sp = join_sp.select(
         *['sku_code', 'store_id', 'channel_id', 'dynamic_dims', 'sale_type', 'sale_list', 'std_list',
           'pre_target_dimension_id'])
-    join_sp.registerTempTable("_sparkTemp_partition_sp")
+    return join_sp
+
+
+def insert_online(sp, dt):
+    sp.registerTempTable("_sparkTemp_partition_sp")
     table = 'app.app_saas_sfs_rst'
     overwrite_str = 'overwrite'
     partition_str = ''' tenant_id='28', dt='{dt}' '''.format(dt=dt)
@@ -220,9 +323,13 @@ def insert_overwrite_online(dt):
         table=table, partition_str=partition_str, overwrite=overwrite_str))
 
 
-# dt1 = '2018-08-07'
-dt1 = 'ACTIVE'
-# insert_overwrite_online(dt=dt1)
+# online_dt = '2018-08-12'
+online_dt = 'ACTIVE'
+dev_dt = '2018-08-12'
+
+# join_sp = get_join_online(online_dt=online_dt, dev_dt=dev_dt)
+# join_sp.write.saveAsTable('app.app_lgb_tt_combine_try', mode='overwrite')
+# insert_online(sp=join_sp, dt=online_dt)
 
 ### ========================================================
 # ensemble 后的覆盖结果
@@ -329,17 +436,7 @@ end_date = (parse(start_date) + datetime.timedelta(90)).strftime('%Y-%m-%d')
 
 all_sp = get_ensemble_sp(sfs_date, start_date, end_date)
 
-
 all_sp.write.saveAsTable('app.app_lgb_tt_combine_try', mode='overwrite')
-
-def insert_online(sp, dt):
-    sp.registerTempTable("_sparkTemp_partition_sp")
-    table = 'app.app_saas_sfs_rst'
-    overwrite_str = 'overwrite'
-    partition_str = ''' tenant_id='28', dt='{dt}' '''.format(dt=dt)
-    spark.sql(Template(
-        """ insert ${overwrite} table ${table} partition(${partition_str}) select * from _sparkTemp_partition_sp """).substitute(
-        table=table, partition_str=partition_str, overwrite=overwrite_str))
 
 # insert_online(all_sp, dt='2018-08-09')
 # insert_online(all_sp, dt='ACTIVE')

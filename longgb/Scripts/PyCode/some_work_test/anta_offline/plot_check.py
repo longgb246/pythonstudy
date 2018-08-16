@@ -22,20 +22,20 @@ import numpy as np
 
 plt.style.use('seaborn-darkgrid')
 
-start_date = '2018-08-09'
+start_date = '2018-08-11'
 # start_date = '2018-07-30'
 day_len = 90
 conf = {
-    'sale_table': 'sale_sum_08_09.xls',
+    'sale_table': 'sale_sum_08_11.xls',
     # 'dev_table': 'dev_models_08_07.xls',
-    'dev_table': 'dev_models_08_09.xls',
+    'dev_table': 'dev_models_08_11.xls',
     # 'online_table': 'online_models_08_07.xls',
-    'online_table': 'online_models_08_09.xls',
+    'online_table': 'online_models_08_11.xls',
     'combine_table': 'combine_models_08_09.xls',
     'dev2_table': 'dev2_models_07_31.xls',
-    'data_list': ['dev_table', 'online_table', 'combine_table'],
+    'data_list': ['dev_table', 'online_table'],
     # 'data_list': ['combine_table'],
-    'name_list': ['dev', 'online', 'combine'],
+    'name_list': ['dev', 'online'],
     # 'name_list': ['combine'],
 }
 
