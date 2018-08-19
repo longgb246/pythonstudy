@@ -19,18 +19,20 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from dateutil.rrule import rrule, DAILY
 
-dt = '2018-08-01'
+dt = '2018-08-03'
 path = '/Users/longguangbin/Work/scripts/anta_offline/detail'
 sale_file = 'sale_active.tsv'
 pre_file = 'pred_{0}.tsv'.format(dt)
 
 # sku_code = '11721360-7/8.5'
-sku_code = '15821204-3/2XL'
+# 问题 sku：15821204-3/2XL - KL00 | 15821185-3/M_K50N |
+sku_code = '19837306R-1'
 # store_id = 'L611'
-store_id = 'KL00'  # '__all__'
+store_id = 'KL0C'  # '__all__'
 models = ['reg_single', 'hw', 'wma', 'combine']  # reg_single | hw | wma | combine
 pre_len = 7
 before_day = 180
+show_qty = True
 
 
 def get_date_range1(date_start, pre_len):
@@ -45,14 +47,6 @@ def get_all_date(date_begin, date_end):
     return [(date_begin_dt + datetime.timedelta(x)).strftime('%Y-%m-%d') for x in range(date_len)]
 
 
-
-
-def mm(l):
-    l_list = map(lambda x: eval(x), l.values)
-    return np.sum(l_list, axis=0).tolist()
-
-
-
 def get_data(dt, path, sale_file, pre_file, sku_code, store_id, pre_len, models):
     pre_data = pd.read_table(path + os.sep + pre_file)
     real_data = pd.read_table(path + os.sep + sale_file)
@@ -64,6 +58,7 @@ def get_data(dt, path, sale_file, pre_file, sku_code, store_id, pre_len, models)
     tmp_real = real_data[(real_data['sku_code'].apply(lambda x: sku_code in x)) & (
         real_data['store_id'].apply(lambda x: True if group_store else store_id == x))]
     tmp_real = tmp_real.groupby(['sku_code', 'dt']).agg({'qty': 'sum', 'sale': 'sum'}).reset_index()
+    tmp_real = tmp_real.groupby(['dt']).agg({'qty': 'sum', 'sale': 'sum'}).reset_index()
 
     dt_min, dt_max = min([np.min(tmp_real['dt'])] + date_range), max([np.max(tmp_real['dt'])] + date_range)
     all_date_range = get_all_date(dt_min, dt_max)
@@ -77,13 +72,13 @@ def get_data(dt, path, sale_file, pre_file, sku_code, store_id, pre_len, models)
         tmp_pre = tmp_pre.groupby(['sku_code']).agg(
             {'sale_list': lambda y: str(np.sum(map(lambda x: eval(x), y.values), axis=0).tolist())}).reset_index()
         tmp_value = tmp_pre['sale_list'].values
-        if len(tmp_value) != 1:
-            print(tmp_pre)
-            raise Exception()
+        if len(tmp_value) == 0:
+            tmp_value = [0] * pre_len
         else:
-            pre_values = eval(tmp_value[0])[:pre_len]
-            pre_df = pd.DataFrame(pre_values, columns=['sale'])
-            pre_df['dt'] = date_range
+            tmp_value = np.sum(map(lambda x: eval(x), tmp_value), axis=0).tolist()
+        pre_values = tmp_value[:pre_len]
+        pre_df = pd.DataFrame(pre_values, columns=['sale'])
+        pre_df['dt'] = date_range
         pre_list.append(pre_df)
 
     real_sale_df = date_range_df.merge(tmp_real.loc[:, ['sale', 'qty', 'dt']], on=['dt'], how='left').fillna(0)
@@ -179,4 +174,17 @@ def plot_func(start_date, before_day=30, real_sale=None, data_list=None, name_li
 real_sale_df, pre_list, dt_min, dt_max = get_data(dt, path, sale_file, pre_file, sku_code, store_id, pre_len, models)
 
 plot_func(start_date=dt, before_day=before_day, real_sale=real_sale_df, data_list=pre_list, name_list=models,
-          qty=True, dt_min=dt_min, dt_max=dt_max, sku_code=sku_code, store_id=store_id)
+          qty=show_qty, dt_min=dt_min, dt_max=dt_max, sku_code=sku_code, store_id=store_id)
+
+# 衡量数据 稀疏度+连续度+不平衡度
+# 稀疏度：有销量天数 / base_day
+# 连续度：max 有销量的连续长度
+# 不平衡度：sale_sum
+
+# base_day：45
+
+# 均销量高：((sale_sum / 有销量天数) > 4 )
+
+# 数据稀疏：((有销量天数 / base_day) < 0.2 )
+
+# sku 角度：

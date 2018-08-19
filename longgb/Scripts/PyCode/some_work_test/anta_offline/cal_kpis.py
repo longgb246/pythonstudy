@@ -25,6 +25,7 @@ from dateutil.rrule import rrule, DAILY
 import datetime
 from string import Template
 import pandas as pd
+import pprint
 
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
@@ -37,7 +38,7 @@ spark = SparkSession.builder.enableHiveSupport().getOrCreate()
 
 conf = {
     'main': {
-        'cal_date': '2018-08-09',
+        'cal_date': '2018-08-10',
         'cal_method': 'week',  # day | week
         'cal_args': {
             'day_index': 2,  # index from 0，表示第三天的预测的 mape
@@ -62,7 +63,7 @@ conf = {
         # 'sku_id': '''concat(sku_code, '_', coalesce(store_id, '-1'), '_', coalesce(channel_id, '-1')) ''',
         'table': 'app.app_lgb_test_bca_forecast_result_all_try',
         # 'app.app_saas_sfs_rst' | 'app.app_lgb_test_bca_forecast_result' | app_lgb_test_bca_forecast_result_try | app_lgb_test_bca_forecast_result_try_ts
-        'model': 'combine',  # __none__ | reg_single | hw | wma | combine
+        'models': ['reg_single', 'hw', 'wma', 'combine'],  # __none__ | reg_single | hw | wma | combine
     },
     'kpi': {
         'gap': 5,
@@ -90,45 +91,39 @@ def get_real_data(start_date, end_date, conf=conf):
 def get_pre_data(sfs_date, date_list, index_list, conf=conf):
     sku_id = conf['pre_data']['sku_id']
     table = conf['pre_data']['table']
-    model = conf['pre_data']['model']
-    model_str = '' if model == '__none__' else " and sale_type = '{0}' ".format(model)
-    sp_list = []
-    for i, pre_date in enumerate(date_list):
-        pre_sql = '''
-            select 
-                {sku_id} as sku_id,
-                sum(cast(split(substring(sale_list, 2, length(sale_list)-1),",")[{i}] as double)) as pre_sale
-            from
-                {table}
-            where 
-                tenant_id=28 and dt='{sfs_date}' {model_str}
-            group by 
-                {sku_id}
-        '''.format(sfs_date=sfs_date, i=index_list[i], sku_id=sku_id, table=table, model_str=model_str)
-        print(pre_sql)
-        sp = spark.sql(pre_sql)
-        sp = sp.withColumn('dt', F.lit(pre_date))
-        sp_list.append(sp)
-    res_sp = reduce(lambda x, y: x.union(y), sp_list)
-    return res_sp
+    models = conf['pre_data']['models']
+    pre_sp_list = []
+    for model in models:
+        model_str = '' if model == '__none__' else " and sale_type = '{0}' ".format(model)
+        sp_list = []
+        for i, pre_date in enumerate(date_list):
+            pre_sql = '''
+                select 
+                    {sku_id} as sku_id,
+                    sum(cast(split(substring(sale_list, 2, length(sale_list)-1),",")[{i}] as double)) as pre_sale
+                from
+                    {table}
+                where 
+                    tenant_id=28 and dt='{sfs_date}' {model_str}
+                group by 
+                    {sku_id}
+            '''.format(sfs_date=sfs_date, i=index_list[i], sku_id=sku_id, table=table, model_str=model_str)
+            if i == 0:
+                print(pre_sql)
+            sp = spark.sql(pre_sql)
+            sp = sp.withColumn('dt', F.lit(pre_date))
+            sp_list.append(sp)
+        res_sp = reduce(lambda x, y: x.union(y), sp_list)
+        pre_sp_list.append(res_sp)
+    return pre_sp_list
 
 
-def get_mape(real_sp, pre_sp, conf=conf):
-    gap_max = conf['kpi']['gap']
-    mape_max = conf['kpi']['mape']
+def get_join_mape(real_sp, pre_sp):
     # Get all the data
     all_data_sp = real_sp.select('sku_id', 'dt').union(pre_sp.select('sku_id', 'dt')).distinct()
-    all_data_sp = all_data_sp.join(real_sp, on=['sku_id', 'dt'], how='left').join(pre_sp, on=['sku_id', 'dt'],
-                                                                                  how='left').na.fill(0)
-    gap_sp = all_data_sp.withColumn('gap', F.abs(F.col('real_sale') - F.col('pre_sale')))
-    all_mape_sp = gap_sp.select(F.sum(F.col('gap')).alias('all_gap'), F.sum(F.col('real_sale')).alias('all_real'))
-    all_mape_sp = all_mape_sp.withColumn('mape', F.col('all_gap') / F.col('all_real'))
-    gap_sp = gap_sp.withColumn('mape', F.col('gap') / F.col('real_sale')).na.fill(0)
-    kpi_sp = gap_sp.where(''' gap <= {gap_max} or mape <= {mape_max} '''.format(gap_max=gap_max, mape_max=mape_max))
-    kpi_cnt = kpi_sp.select('sku_id').distinct().count()
-    all_cnt = gap_sp.select('sku_id').distinct().count()
-    kpi = kpi_cnt * 1.0 / all_cnt  # 0.9993203979871563
-    return gap_sp, all_mape_sp, kpi
+    gap_sp = all_data_sp.join(real_sp, on=['sku_id', 'dt'], how='left'). \
+        join(pre_sp, on=['sku_id', 'dt'], how='left').na.fill(0)
+    return gap_sp
 
 
 def sku_split(sku_id):
@@ -150,78 +145,35 @@ def cal_kpi(cal_date, cal_method, conf=conf):
     index_list = range(day_index, day_index + day_len)
     input_table = conf['real_data']['table']
     pre_table = conf['pre_data']['table']
+    models = conf['pre_data']['models']
     print('\nstart_date : {0}\nend_date : {1}\nsfs_date : {2}\ndate_list : {3}\nindex_list : {4}\ninput_table : {5}\n'
           'pre_table : {6}\n'.format(start_date, end_date, sfs_date, date_list, index_list, input_table, pre_table))
     # calculate the mape
     real_sp = get_real_data(start_date, end_date, conf=conf)
-    pre_sp = get_pre_data(sfs_date, date_list, index_list, conf=conf)
-    pre_sp2 = pre_sp.select(F.udf(sku_split)(F.col('sku_id')).alias('sku_id'), 'pre_sale', 'dt')
-    gap_sp, all_mape_sp, kpi = get_mape(real_sp, pre_sp2, conf=conf)
-    # print('\nThe kpi : {0}\nmape : '.format(kpi))
-    # all_mape_sp.show()
-    return gap_sp, all_mape_sp, kpi, real_sp, pre_sp
+    pre_sp_list = get_pre_data(sfs_date, date_list, index_list, conf=conf)
+    gap_sp_list = []
+    gap_sp_list2 = []
+    for i, pre_sp in enumerate(pre_sp_list):
+        model = models[i]
+        pre_sp2 = pre_sp.select(F.udf(sku_split)(F.col('sku_id')).alias('sku_id'), 'pre_sale', 'dt')
+        gap_sp = get_join_mape(real_sp, pre_sp2)
+        gap_sp_list.append(gap_sp)
+        gap_sp_list2.append(gap_sp.withColumnRenamed('pre_sale', model + '_sale'))
+    gap_sp = reduce(lambda x, y: x.join(y, on=['sku_id', 'dt', 'real_sale']), gap_sp_list2)
+    return gap_sp_list, gap_sp
 
 
-gap_sp, all_mape_sp, kpi, real_sp, pre_sp = cal_kpi(conf['main']['cal_date'], conf['main']['cal_method'], conf=conf)
-gap_sp.groupBy('sku_id').agg(F.sum(F.col('real_sale')).alias('real_sale'), F.sum(F.col('pre_sale')).alias('pre_sale')). \
-    withColumn('gap', F.abs(F.col('real_sale') - F.col('pre_sale'))). \
-    agg(F.sum(F.col('real_sale')).alias('real'), F.sum(F.col('gap')).alias('gap')). \
-    withColumn('mape', F.col('gap') / F.col('real')).show()
-
-# 分析思路：现在做了一些调整（后处理方面的）。
-
-gap_sp.where(''' sku_id ''')
-
-gap_sp.where(''' sku_id = '15821204-3/2XL_KL00' ''').show()
-gap_sp.orderBy('gap', ascending=False).show()
-
-
-# 【数据问题】
-# 0.9675153257893531
-# 1.0389502151248264
-# 1.197038315147755
-# 1.1023901905776676 hw
-#
-# 1.2475909461093937
-# 1.2561724297809438
-#
-# 训练前，确定最优，输出模型。
-# 模型切换？模型 pk 等等。
-# 安踏线下的：促销信息
-
-# 服饰：spu 的维度
-
-# gap_sp.where(''' gap < 30 ''').groupBy('sku_id').agg(F.sum(F.col('real_sale')).alias('real_sale'),
-#                                                      F.sum(F.col('pre_sale')).alias('pre_sale')). \
-#     withColumn('gap', F.abs(F.col('real_sale') - F.col('pre_sale'))). \
-#     agg(F.sum(F.col('real_sale')).alias('real'), F.sum(F.col('gap')).alias('gap')). \
-#     withColumn('mape', F.col('gap') / F.col('real')).show()
-
-tmp_sp = gap_sp.groupBy('sku_id').agg(F.sum(F.col('real_sale')).alias('real_sale'),
-                                      F.sum(F.col('pre_sale')).alias('pre_sale')). \
-    withColumn('gap', F.abs(F.col('real_sale') - F.col('pre_sale'))).\
-    withColumn('mape', F.col('gap') / F.col('real_sale'))
-
-# 0 销量的 sku 已经解决 gap 关系
-tmp_sp.where(''' real_sale=0 ''').withColumn('gap', F.round('gap')).groupBy('gap').agg(F.count('gap').alias('cnt')). \
-    orderBy('cnt', ascending=False).show()
-
-# 问题解决：1、0 销量的 sku 已经解决 gap 关系
-# 74143.0 | 71734.48880000002 | 0.9675153257893533
-# 139902
-
-tmp_sp.show()
-
-tmp_sp.count()
-
-# gap > 5 : 480
-# real_sale > 5 : 521
-
-tmp_sp.where(''' real_sale > 5 ''').count()
-
-
-# 问题 sku ： XSTD(塑料袋 棕色) | FSTD(塑料袋 棕色)
-tmp_sp.orderBy('gap', ascending=False).show()
+def cal_mape(gap_sp, conf):
+    models = conf['pre_data']['models']
+    gap_columns = gap_sp.columns
+    sum_cond = [F.sum(F.col(x)).alias(x) for x in list(set(gap_columns) - set(['sku_id', 'dt']))]
+    gap_cond = ['*'] + ['abs(real_sale - {0}_sale) as {0}_gap'.format(x) for x in models] + \
+               ['(real_sale - {0}_sale) as {0}_rel_gap'.format(x) for x in models]
+    gap_sp2 = gap_sp.groupBy('sku_id').agg(*sum_cond).selectExpr(*gap_cond)
+    agg_cond = [F.sum(F.col(y)).alias(y) for y in ['real_sale'] + map(lambda x: x + '_gap', models)]
+    mape_cond = ['({0}_gap / real_sale) as {0}_mape'.format(x) for x in models]
+    mape_sp = gap_sp2.agg(*agg_cond).selectExpr(*mape_cond)
+    return gap_sp2, mape_sp
 
 
 def sku_filter(sku_id):
@@ -230,38 +182,56 @@ def sku_filter(sku_id):
     return res_value
 
 
-tmp_sp2 = tmp_sp.withColumn('flag', F.udf(sku_filter)(F.col('sku_id')))
-tmp_sp2.where(''' flag = 0 ''').agg(F.sum(F.col('real_sale')).alias('real'), F.sum(F.col('gap')).alias('gap')). \
-    withColumn('mape', F.col('gap') / F.col('real')).show()
+gap_sp_list, gap_sp = cal_kpi(conf['main']['cal_date'], conf['main']['cal_method'], conf=conf)
+gap_sp2, mape_sp = cal_mape(gap_sp, conf)
+
+filter_sp = gap_sp.withColumn('flag', F.udf(sku_filter)(F.col('sku_id')))
+filter_sp2, mape_sp2 = cal_mape(filter_sp.where(''' flag = 0 '''), conf)
+
+mape_sp.show()
+mape_sp2.show()
+
+gap_sp2.persist()
+gap_sp2.show()
 
 
+def sku_filter_more(sku_id):
+    sku_list = ['15829177-1', '19827252-2', '15821185-3']
+    res_value = 1 if any(map(lambda x: x in sku_id, sku_list)) else 0
+    return res_value
+
+
+def get_min_gap(l):
+    return min(list(l))
+
+
+models = conf['pre_data']['models']
+min_gap = gap_sp2.withColumn('min_gap', F.udf(get_min_gap)(F.struct([F.col(x + '_gap') for x in models])))
+min_gap.select(F.sum('min_gap').alias('gap'), F.sum('real_sale').alias('real_sale')). \
+    withColumn('mape', F.col('gap') / F.col('real_sale')).show()
+
+# 分析思路：现在做了一些调整（后处理方面的）。
+# 1、将一些销量低的做拦截
+# 2、将近期仅有少数销量的，做（60）45天（一个半月）填充，求出 quantile
+
+# 最低：reg - 0.9675153257893531
+# 问题 sku ： XSTD(塑料袋 棕色) | FSTD(塑料袋 棕色)
 # 以下模型中剔除了塑料袋，计算 mape 时候，分别加上和不加塑料袋
 #            加上塑料袋    |     不计算塑料袋
 # reg - 1.048386517049641 | 1.0595368663138631
 # hw - 1.1791193421317077 | 1.220396196646718
 # wma - 1.454485044550142 | 1.5592180836506913
 # combine - 1.11819407248 | 1.1454311060553608
+# 61752.0 | 64643.97430000002 | 1.046832075074492
+# 5827.126400000001
 
-tmp_sp2.where(''' flag = 0 ''').orderBy('gap', ascending=False).show()
+# base_day：45
+# 均销量高：((sale_sum / 有销量天数) > 4 )
+# 数据稀疏：((有销量天数 / base_day) < 0.25 )
 
-
-
-import pprint
-
-m1 = real_sp.select('sku_id').take(20)
-m2 = pre_sp.select('sku_id').take(20)
-
-pprint.pprint(m1)
-pprint.pprint(m2)
-
-all_data_sp = real_sp.select('sku_id', 'dt').union(pre_sp.select('sku_id', 'dt')).distinct()
-all_data_sp = all_data_sp.join(real_sp, on=['sku_id', 'dt'], how='left').join(pre_sp, on=['sku_id', 'dt'],
-                                                                              how='left').na.fill(0)
 
 ### ========================================================
 # 计算 kpi 的结果
-
-
 
 # 07-30 - dev    - all_gap : 115193.23010000012, all_real : 78248.0, mape : 1.472155583529293, kpi: 0.999320397987
 # 07-30 - online - all_gap : 136006.36717854845, all_real : 78248.0, mape : 1.738144964453384, kpi: 0.999320397987
