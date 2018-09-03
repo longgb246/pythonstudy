@@ -5,3 +5,6 @@ pythonstudy.iml
 
 *.zip
 longgb/Scripts/PyCode/test_sphinx/test_jd/src
+longgb/Scripts/PyCode/test_sphinx/test_jd/src/*
+longgb/Scripts/PyCode/test_sphinx/test_jd/src_tt
+longgb/Scripts/PyCode/test_sphinx/test_jd/src_tt/*

@@ -5,6 +5,7 @@ findspark.init("/Users/longguangbin/SoftWare/spark-2.1.0-bin-hadoop2.7")
 
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
+import pyspark.sql.functions as F
 
 
 spark = SparkSession.builder.appName("test").enableHiveSupport().getOrCreate()
