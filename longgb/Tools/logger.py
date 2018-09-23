@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 @author: "longguangbin"
-@contact: longguangbin@jd.com
+@contact: longguangbin@163.com
 
 logger 自定义日志
 '''

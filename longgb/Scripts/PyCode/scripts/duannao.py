@@ -10,6 +10,10 @@ content.xpath('//*[@id="pic-list"]/img')
 content.xpath('//*[@id="pic-list"]')[0].attrib
 
 
+a = 0
+for i in range(16):
+    a = a + 18 + i
+
 
 
 print response.content

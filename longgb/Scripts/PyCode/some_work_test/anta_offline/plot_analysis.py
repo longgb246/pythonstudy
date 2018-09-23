@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 """
   Author  : 'longguangbin'
-  Contact : longguangbin@jd.com
+  Contact : longguangbin@163.com
   Date    : 2018/8/16
   Usage   : 
 """
@@ -20,17 +20,17 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from dateutil.rrule import rrule, DAILY
 
-dt = '2018-08-04'
+dt = '2018-09-16'
 path = '/Users/longguangbin/Work/scripts/anta_offline/detail'
 sale_file = 'sale_active.tsv'
 pre_file = 'pred_{0}.tsv'.format(dt)
 
 # sku_code = '11721360-7/8.5'
 # 问题 sku：15821204-3/2XL - KL00 | 15821185-3/M_K50N | 19827252-2_K50P
-sku_code = '19827252-2'
+sku_code = '__all__' # __all__ | 19827252-2
 # store_id = 'L611'
-store_id = 'K50P'  # '__all__'
-models = ['reg_single', 'hw', 'wma', 'combine']  # reg_single | hw | wma | combine
+store_id = '__all__'  # '__all__'
+models = ['combine']  # reg_single | hw | wma | combine
 pre_len = 7
 before_day = 90
 show_qty = True
@@ -53,15 +53,19 @@ def get_data(dt, path, sale_file, pre_file, sku_code, store_id, pre_len, models)
     real_data = pd.read_table(path + os.sep + sale_file)
 
     group_store = store_id.lower() == '__all__'
+    group_sku = sku_code.lower() == '__all__'
 
     date_range = get_date_range1(dt, pre_len)
 
-    tmp_real = real_data[(real_data['sku_code'].apply(lambda x: sku_code in x)) & (
-        real_data['store_id'].apply(lambda x: True if group_store else store_id == x))]
-    # tmp_real = tmp_real.groupby(['sku_code', 'dt']).agg({'qty': 'sum', 'sale': 'sum'}).reset_index()
-    tmp_real = tmp_real.groupby(['sku_code', 'dt']).agg({'sale': 'sum'}).reset_index()
-    # tmp_real = tmp_real.groupby(['dt']).agg({'qty': 'sum', 'sale': 'sum'}).reset_index()
-    tmp_real = tmp_real.groupby(['dt']).agg({'sale': 'sum'}).reset_index()
+    if group_store and group_sku:
+        tmp_real = real_data.groupby(['dt']).agg({'sale': 'sum'}).reset_index()
+    else:
+        tmp_real = real_data[(real_data['sku_code'].apply(lambda x: sku_code in x)) & (
+            real_data['store_id'].apply(lambda x: True if group_store else store_id == x))]
+        # tmp_real = tmp_real.groupby(['sku_code', 'dt']).agg({'qty': 'sum', 'sale': 'sum'}).reset_index()
+        tmp_real = tmp_real.groupby(['sku_code', 'dt']).agg({'sale': 'sum'}).reset_index()
+        # tmp_real = tmp_real.groupby(['dt']).agg({'qty': 'sum', 'sale': 'sum'}).reset_index()
+        tmp_real = tmp_real.groupby(['dt']).agg({'sale': 'sum'}).reset_index()
 
     if len(tmp_real) < 1:
         raise Exception(''' tmp_real is empty : {0} '''.format(tmp_real))
@@ -72,12 +76,16 @@ def get_data(dt, path, sale_file, pre_file, sku_code, store_id, pre_len, models)
 
     pre_list = []
     for model in models:
-        tmp_pre = pre_data[(pre_data['sku_code'].apply(lambda x: sku_code in x)) & (
-            pre_data['store_id'].apply(lambda x: True if group_store else store_id == x)) & (
-                               pre_data['sale_type'].apply(lambda x: model == x))]
-        tmp_pre = tmp_pre.groupby(['sku_code']).agg(
-            {'sale_list': lambda y: str(np.sum(map(lambda x: eval(x), y.values), axis=0).tolist())}).reset_index()
-        tmp_value = tmp_pre['sale_list'].values
+        if group_store and group_sku:
+            tmp_pre = pre_data[pre_data['sale_type'].apply(lambda x: model == x)]
+            tmp_value = np.sum(map(lambda x: eval(x), tmp_pre['sale_list'].values), axis=0)
+        else:
+            tmp_pre = pre_data[(pre_data['sku_code'].apply(lambda x: sku_code in x)) & (
+                pre_data['store_id'].apply(lambda x: True if group_store else store_id == x)) & (
+                                   pre_data['sale_type'].apply(lambda x: model == x))]
+            tmp_pre = tmp_pre.groupby(['sku_code']).agg(
+                {'sale_list': lambda y: str(np.sum(map(lambda x: eval(x), y.values), axis=0).tolist())}).reset_index()
+            tmp_value = tmp_pre['sale_list'].values
         if len(tmp_value) == 0:
             tmp_value = [0] * pre_len
         else:

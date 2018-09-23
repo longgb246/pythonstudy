@@ -1,7 +1,7 @@
 #-*- coding:utf-8 -*-
 """
   Author  : 'longguangbin'
-  Contact : longguangbin@jd.com
+  Contact : longguangbin@163.com
   Date    : 2018/7/9
   Usage   : 
 """

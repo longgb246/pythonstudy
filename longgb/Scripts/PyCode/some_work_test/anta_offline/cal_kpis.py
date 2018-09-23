@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 """
   Author  : 'longguangbin'
-  Contact : longguangbin@jd.com
+  Contact : longguangbin@163.com
   Date    : 2018/8/8
   Usage   : 
 """
@@ -111,7 +111,7 @@ print(raw_data.rdd.getNumPartitions())
 
 conf = {
     'main': {
-        'cal_date': '2018-08-07',  # 2018-08-03 start 2018-08-10 end
+        'cal_date': '2018-09-13',  # 2018-08-03 start 2018-08-10 end
         'cal_method': 'week',  # day | week
         'cal_args': {
             'day_index': 2,  # index from 0，表示第三天的预测的 mape
@@ -139,10 +139,10 @@ conf = {
         # 'table': 'app.app_lgb_test_bca_forecast_result_all_try',
         # 'app.app_saas_sfs_rst' | 'app.app_lgb_test_bca_forecast_result' | app_lgb_test_bca_forecast_result_all_try | app_lgb_test_bca_forecast_result_try_ts
         # | app_zhjs_test_bca_forecast_result_all_try_weekunion | app.app_zhjs_test_bca_forecast_result_all_try_weekunion07
-        'table': 'app.app_zhjs_test_bca_forecast_result_all_try_weekunion',
-        'models': ['wma', 'hw', 'reg_single', 'reg_sum', 'ma'],
+        'table': 'app.app_saas_sfs_rst',
+        # 'models': ['wma', 'hw', 'reg_single', 'reg_sum', 'ma'],
         # __none__ | reg_single | hw | wma | combine  | ['wma', 'hw', 'reg_single', 'reg_sum', 'ma']
-        # 'models': ['__none__'],  # __none__ | reg_single | hw | wma | combine | reg_sum
+        'models': ['__none__'],  # __none__ | reg_single | hw | wma | combine | reg_sum
     },
     'kpi': {
         'gap': 5,

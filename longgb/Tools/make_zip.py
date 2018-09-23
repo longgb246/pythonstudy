@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
 @author: longguangbin
-@contact: longguangbin@jd.com
+@contact: longguangbin@163.com
 
 将线上运行代码打包
 '''

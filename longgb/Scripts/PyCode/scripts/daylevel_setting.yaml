@@ -1,0 +1,40 @@
+spark_options:
+  master: yarn
+  deploy-mode: cluster
+  num-executors: 30
+  executor-memory: 20g
+  executor-cores: 5
+  driver-memory: 20g
+  driver-cores: 12
+
+spark_conf:
+  spark.yarn.appMasterEnv.yarn.nodemanager.container-executor.class: DockerLinuxContainer
+  spark.executorEnv.yarn.nodemanager.container-executor.class: DockerLinuxContainer
+  spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name: bdp-docker.jd.com:5000/wise_mart_cib:latest
+  spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name: bdp-docker.jd.com:5000/wise_mart_cib:latest
+  spark.yarn.appMasterEnv.LD_LIBRARY_PATH: /software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server
+  spark.executorEnv.LD_LIBRARY_PATH: /software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server
+  spark.hadoop.validateOutputSpecs: false
+  spark.task.cpus: 1
+  spark.sql.shuffle.partitions: 300
+
+algo_conf:
+  param_dict.sfs_dt: 2018-08-10
+  param_dict.end_date: 2018-08-11
+  param_dict.part_date:
+  inter_conf.Train_Data.PARAM_DICT.start_date: 2017-08-10
+  param_dict.Valid_tenant_id: 3
+  param_dict.Valid_dimension_id: 1
+  alg_conf.MType_Sum: True
+  base_conf.Step_no: 1
+  inter_conf.Train_Data.SQL_INTERFACE_DICT: select concat(sku_code, '_', coalesce(store_id, '-1'), '_', coalesce(channel_id, '-1'), case when length(sale_date) > 10 then concat('_', substring(sale_date, 12)) else '' end) as sku_id, case when category_code_1=477 then 1 else 0 end as Granu, category_code_1 as cate1, category_code_2 as cate2, category_code_3 as cate3, price, sale, case when length(sale_date) > 10 then substring(sale_date, 1, 10) else sale_date end as dt, uv, pv, cast(date_format(case when length(sale_date) > 10 then substring(sale_date, 1, 10) else sale_date end,'u') as int)  as weekday , pre_target_dimension_id, dynamic_dims from app.app_saas_sfs_model_input where tenant_id = {Tenant_id} and dt = '{sfs_dt}' and sale_date >='{start_date}' and sale_date <= '{end_date}' and (store_id like '%229' or store_id like '%231')
+  inter_conf.result_save.hive.table: dev.dev_7fresh_rst_test_yml
+  inter_conf.result_all_save.hive.table: dev.dev_7fresh_rst_test_all_yml
+  inter_conf.result_save.hdfs: /tmp/forecast/result_7fresh/dev_7fresh_rst_test_yml
+  inter_conf.result_all_save.hdfs: /tmp/forecast/result_7fresh/dev_7fresh_rst_test_all_yml
+  inter_conf.data_split.hive.table: app.app_yml_test_7fresh_band
+  base_conf.train_df_name: dev.two_step_train_df_sql_yml_7fresh
+  base_conf.target_df_name: dev.two_step_target_df_yml_7fresh
+  base_conf.preprocess_df_name: dev.two_step_preprocess_df_yml_7fresh
+
+

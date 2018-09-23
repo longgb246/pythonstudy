@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
 @author: longguangbin
-@contact: longguangbin@jd.com
+@contact: longguangbin@163.com
 
 用于检测哪些 python 包没有在集群节点上正确安装
 通过 spark-submit 来提交这个脚本
