@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 from __future__ import division
-__author__ = 'xugang&tanxiao'
 import matplotlib.pyplot as plt
 import os
 import numpy as np

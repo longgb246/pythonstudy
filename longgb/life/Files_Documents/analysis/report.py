@@ -1,10 +1,9 @@
 # encoding: utf8
-__author__ = 'sunwenxiu'
 import docx
 from docx import Document
 from docx.shared import Inches
 from docx.shared import RGBColor
-from pyh import *
+# from pyh import *
 import os
 
 class SimReport:
