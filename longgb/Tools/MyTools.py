@@ -86,8 +86,12 @@ class MyTools(object):
         >>> MyTools.date_range('2017-10-01', '2017-10-04')
         ['2017-10-01', '2017-10-02', '2017-10-03']
         """
-        start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-        end_date_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        # start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        # end_date_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        # date_range = map(lambda x: (start_date_dt + datetime.timedelta(x)).strftime('%Y-%m-%d'),
+        #                  range((end_date_dt - start_date_dt).days))
+        start_date_dt = parse(start_date)
+        end_date_dt = parse(end_date)
         date_range = map(lambda x: (start_date_dt + datetime.timedelta(x)).strftime('%Y-%m-%d'),
                          range((end_date_dt - start_date_dt).days))
         return date_range
