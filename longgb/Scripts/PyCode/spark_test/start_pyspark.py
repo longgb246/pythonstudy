@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 # jdvl start -i bdp-docker.jd.com:5000/wise_mart_cmo_ipc -o='--net=host' -I bash
 ##### Use the Pyspark
 # pyspark --master yarn  \
@@ -17,6 +17,7 @@
 
 
 import findspark
+
 # findspark.init(r'D:\Softwares\pyspark\spark-2.1.0-bin-hadoop2.7\spark-2.1.0-bin-hadoop2.7\bin')
 # findspark.init(r'D:\Softwares\pyspark\spark-2.1.0-bin-hadoop2.7\spark-2.1.0-bin-hadoop2.7')
 findspark.init("/Users/longguangbin/SoftWare/spark-2.1.0-bin-hadoop2.7")
@@ -30,35 +31,37 @@ import pyspark.sql.functions as F
 
 import datetime
 
+# mlp
+# spark = SparkSession.builder.appName("test").enableHiveSupport().getOrCreate()
+# local
 spark = SparkSession.builder.appName("test").getOrCreate()
 # conf = SparkConf().setAppName('data hive2hdfs')
 sc = SparkContext.getOrCreate()
 
-
-mm = sc.parallelize([[23,4],[43,33]])
+mm = sc.parallelize([[23, 4], [43, 33]])
 # sc.parallelize([[23,4],[43,33]]).toDF(['col1','col2']).show()
-sp1 = spark.createDataFrame(mm,['col1','col2'])
-mm = sc.parallelize([[23,4],[43,33]])
+sp1 = spark.createDataFrame(mm, ['col1', 'col2'])
+mm = sc.parallelize([[23, 4], [43, 33]])
 # sc.parallelize([[23,4],[43,33]]).toDF(['col1','col2']).show()
-sp2 = spark.createDataFrame(mm,['col1','col3'])
+sp2 = spark.createDataFrame(mm, ['col1', 'col3'])
 
 sp1.show()
 cc = sp1.collect()
-print str(cc).replace('Row', '\nRow')
+print(str(cc).replace('Row', '\nRow'))
 
 sp2.show()
-sp3 = spark.createDataFrame(zip([23,23,4,4],['[43,33,332]','[43,33,332]','[43,33,332]','[43,33,332]']), ['col1','col3'])
+sp3 = spark.createDataFrame(zip([23, 23, 4, 4], ['[43,33,332]', '[43,33,332]', '[43,33,332]', '[43,33,332]']),
+                            ['col1', 'col3'])
 # sp3.groupBy('col1').agg(F.udf(new_avg_udf)(F.collect_list('col3'), F.lit(3)).alias('tt')).show()
 # sp3.select('col1', F.split('col3', ',')[1].alias('tmp')).show()
 sp3.show()
 
-
 sp1.unionAll(sp2).show()
 
 type(mm)
-type(sp)
+type(sp1)
 isinstance(mm, RDD)
-isinstance(sp, DataFrame)
+isinstance(sp1, DataFrame)
 
 
 def date_diff(x):
@@ -71,16 +74,20 @@ def date_diff(x):
     return delta_dt
 
 
-mm2 = [['33', '2018-09-01 14:10:09'], ['32', '2018-09-01 14:10:19'], ['333', '2018-09-01 14:12:09'], ['34443', '2018-09-01 15:10:09']]
-logger_sp = spark.createDataFrame(mm2, ['col1','dt'])
+mm2 = [['33', '2018-09-01 14:10:09'], ['32', '2018-09-01 14:10:19'], ['333', '2018-09-01 14:12:09'],
+       ['34443', '2018-09-01 15:10:09']]
+logger_sp = spark.createDataFrame(mm2, ['col1', 'dt'])
 # logger_sp.show()
 windowspec_r = Window.orderBy('dt').rowsBetween(Window.currentRow, 1)
-logger_sp.select('col1', 'dt', F.udf(date_diff)(F.collect_list('dt').over(windowspec_r)).alias('date_diff')).orderBy(F.col('date_diff').desc()).show()
+logger_sp.select('col1', 'dt', F.udf(date_diff)(F.collect_list('dt').over(windowspec_r)).alias('date_diff')).orderBy(
+    F.col('date_diff').desc()).show()
 logger_sp.limit(2).rdd.collect()
-
 
 print mm.keys().collect()
 print mm.collect()
 print 'finish!'
-print sp.show()
+print sp1.show()
+
+sp1.show()
+sp1.where(F.col('col1').isin([23])).show()
 

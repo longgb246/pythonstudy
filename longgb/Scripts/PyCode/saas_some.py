@@ -8,6 +8,7 @@
 ## 2
 ## 2 个 spark.df join之前，最好做一次这个操作，具体 bug ，回忆一下就想起来了
 # pdcols = self.predict_df.columns
+# pdcols = self.predict_df.columns
 # self.predict_df = self.predict_df.rdd.toDF(pdcols)
 
 ## 3

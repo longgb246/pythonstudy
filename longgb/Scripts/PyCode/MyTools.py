@@ -5,6 +5,7 @@ import time
 import math
 import datetime
 import os
+from dateutil.parser import parse
 # 2.2 主类
 class myTools(object):
     @staticmethod
@@ -70,8 +71,10 @@ class myTools(object):
             In[1]: myTools.dateRange('2017-10-01', '2017-10-04')
             Out[1]: ['2017-10-01', '2017-10-02', '2017-10-03']
         '''
-        start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-        end_date_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+        start_date_dt = parse(start_date)
+        # start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        end_date_dt = parse(end_date)
+        # end_date_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
         date_range = map(lambda x: (start_date_dt + datetime.timedelta(x)).strftime('%Y-%m-%d'),range((end_date_dt - start_date_dt).days))
         return date_range
     @staticmethod
@@ -89,7 +92,8 @@ class myTools(object):
             In[3]: myTools.dateCalculate('2017-03-04', -3)
             Out[3]: ['2017-03-01', '2017-03-02', '2017-03-03', '2017-03-04']
         '''
-        start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        start_date_dt = parse(start_date)
+        # start_date_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
         end_date_dt = start_date_dt + datetime.timedelta(cal_date)
         min_date = min(start_date_dt, end_date_dt)
         max_date = max(start_date_dt, end_date_dt)
