@@ -56,6 +56,10 @@ sp3 = spark.createDataFrame(zip([23, 23, 4, 4], ['[43,33,332]', '[43,33,332]', '
 # sp3.select('col1', F.split('col3', ',')[1].alias('tmp')).show()
 sp3.show()
 
+sp4 = spark.createDataFrame([[1, 2, 3], [3, 4, 5], [6, 7, 8]], ['a', 'b', 'c'])
+sp4.show()
+sp4.drop(*['a', 'b']).show()
+
 sp1.unionAll(sp2).show()
 
 type(mm)
@@ -90,4 +94,3 @@ print sp1.show()
 
 sp1.show()
 sp1.where(F.col('col1').isin([23])).show()
-
