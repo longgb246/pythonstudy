@@ -46,6 +46,11 @@ mm = sc.parallelize([[23, 4], [43, 33]])
 sp2 = spark.createDataFrame(mm, ['col1', 'col3'])
 
 sp1.show()
+
+sp4 = spark.createDataFrame([['aa$11', 'bb'], ['cc$dd', 'ee']], ['a', 'b'])
+sp4.show()
+sp4.withColumn('d', F.split(F.col('a'), '\$')[1]).show()
+
 cc = sp1.collect()
 print(str(cc).replace('Row', '\nRow'))
 
