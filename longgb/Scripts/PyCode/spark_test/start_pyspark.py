@@ -54,6 +54,14 @@ sp4.withColumn('d', F.split(F.col('a'), '\$')[1]).show()
 cc = sp1.collect()
 print(str(cc).replace('Row', '\nRow'))
 
+from pyspark.sql.types import *
+
+schema = StructType([
+    StructField("name", StringType(), True),
+    StructField("age", StringType(), True)])
+
+sp4.rdd.toDF(schema).show()
+
 sp2.show()
 sp3 = spark.createDataFrame(zip([23, 23, 4, 4], ['[43,33,332]', '[43,33,332]', '[43,33,332]', '[43,33,332]']),
                             ['col1', 'col3'])

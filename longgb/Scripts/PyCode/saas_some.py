@@ -54,6 +54,7 @@
 # filter_sp = filter_sp.withColumn('date', F.explode(F.col('dates')))
 # filter_sp = filter_sp.drop('dates').drop('start_date').drop('end_date')
 
+# com_data.fillna(0, subset=['total', 'real'])
 
 # def groupSpark(sp, group_by, in_cols, out_cols, func=None, sep='|', kwargs=None):
 #     """
