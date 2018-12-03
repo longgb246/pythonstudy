@@ -1,9 +1,9 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
+# @Author  : 'longguangbin'
+# @Contact : lgb453476610@163.com
+# @Date    : 2018/12/3
 """
-  Author  : 'longguangbin'
-  Contact : longguangbin@163.com
-  Date    : 2018/7/9
-  Usage   : 
+Usage Of 'hyperopt_test1' :
 """
 
 from hpsklearn import HyperoptEstimator, any_classifier
