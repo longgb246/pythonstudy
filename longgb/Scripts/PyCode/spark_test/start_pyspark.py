@@ -62,6 +62,16 @@ schema = StructType([
 
 sp4.rdd.toDF(schema).show()
 
+sp4.show()
+sp4.rdd.getNumPartitions()
+
+def pp(x):
+    print(x)
+
+sp4.foreachPartition(lambda x: pp(x))
+sp4.rdd.mapPartitions(lambda x: pp(x))
+
+
 sp2.show()
 sp3 = spark.createDataFrame(zip([23, 23, 4, 4], ['[43,33,332]', '[43,33,332]', '[43,33,332]', '[43,33,332]']),
                             ['col1', 'col3'])
