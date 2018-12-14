@@ -46,10 +46,33 @@ mm = sc.parallelize([[23, 4], [43, 33]])
 sp2 = spark.createDataFrame(mm, ['col1', 'col3'])
 
 sp1.show()
+sp1_filter = sp1.where(F.col('col1') > 100)
+len(sp1_filter.head(1))
 
 sp4 = spark.createDataFrame([['aa|11', 'bb'], ['cc|dd', 'ee']], ['a', 'b'])
 sp4.show()
 sp4.withColumn('d', F.split(F.col('a'), '\|')[1]).show()
+
+sp5 = spark.createDataFrame([['aa', 'bb', '2018-01-01'], ['cc', 'ee', '2018-01-02'], ['aa', 'b', '2018-01-03']],
+                            ['a', 'b', 'dt'])
+
+sp5.show()
+sp5.select(F.max('dt').alias('end_date')).collect()[0]['end_date']
+
+
+def spark_get_first(sp, partition_by, order_y):
+    order_y = [F.col(x).desc() for x in order_y]
+    window = Window.partitionBy(partition_by).orderBy(*order_y)
+
+    first_sp = sp.select('*', F.row_number().over(window).alias('row_number')). \
+        where(F.col('row_number') <= 1). \
+        drop('row_number')
+    # df.select('*', rank().over(window).alias('rank')).filter(col('rank') <= 2)
+    return first_sp
+
+
+sp5.show()
+spark_get_first(sp5, ['a'], ['dt']).show()
 
 cc = sp1.collect()
 print(str(cc).replace('Row', '\nRow'))
@@ -65,12 +88,13 @@ sp4.rdd.toDF(schema).show()
 sp4.show()
 sp4.rdd.getNumPartitions()
 
+
 def pp(x):
     print(x)
 
+
 sp4.foreachPartition(lambda x: pp(x))
 sp4.rdd.mapPartitions(lambda x: pp(x))
-
 
 sp2.show()
 sp3 = spark.createDataFrame(zip([23, 23, 4, 4], ['[43,33,332]', '[43,33,332]', '[43,33,332]', '[43,33,332]']),
