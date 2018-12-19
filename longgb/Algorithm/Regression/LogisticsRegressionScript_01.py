@@ -182,8 +182,8 @@ def getDateWeek(start_date, end_date):
 
 
 def createDateTable():
-    sql = """drop table if exists dev.dev_lgb_date_range;
-    create table dev.dev_lgb_date_range
+    sql = """drop table if exists dev_lgb_date_range;
+    create table dev_lgb_date_range
     (
         date_string string,
         weekday     string
@@ -191,7 +191,7 @@ def createDateTable():
     row format delimited fields terminated by '\t'
     ;
     """
-    load_sql = """LOAD DATA local INPATH '/data0/cmo_ipc/inv_opt/Allocation_shell/longgb/date_range.csv' INTO TABLE dev.dev_lgb_date_range;
+    load_sql = """LOAD DATA local INPATH '/data/xxx/date_range.csv' INTO TABLE dev_lgb_date_range;
     """
     pass
 
