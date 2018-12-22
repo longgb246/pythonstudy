@@ -53,11 +53,34 @@ sp4 = spark.createDataFrame([['aa|11', 'bb'], ['cc|dd', 'ee']], ['a', 'b'])
 sp4.show()
 sp4.withColumn('d', F.split(F.col('a'), '\|')[1]).show()
 
-sp5 = spark.createDataFrame([['aa', 'bb', '2018-01-01'], ['cc', 'ee', '2018-01-02'], ['aa', 'b', '2018-01-03']],
+sp5 = spark.createDataFrame([['aa', 'bb', '2018-01-01'],
+                             ['cc', 'ee', '2018-01-02'],
+                             ['aa', 'b', '2018-01-03'],
+                             ['dd', 'b', '2018-01-03']],
                             ['a', 'b', 'dt'])
 
 sp5.show()
 sp5.select(F.max('dt').alias('end_date')).collect()[0]['end_date']
+
+
+sp5.show()
+sp6 = spark.createDataFrame([['aa', 'b1', '2018-01-01'],
+                             ['cc', 'ee2', '2018-01-02'],
+                             ['cc', 'ee3', '2018-01-02'],
+                             ['cd', 'e2e', '2018-01-04'],
+                             ['cd', 'b3', '2018-01-03']], ['a', 'b', 'dt'])
+sp6.show()
+# mm = sp5.join(sp6, (sp5['a'] == sp6['a']) & (sp5['dt'] == sp6['dt']), 'left')
+mm = sp5.join(sp6, ['a', 'dt'], 'left')
+mm.drop(sp6['a']).show()
+
+mm.withColumnRenamed('a', 'as').show()
+
+df_as1 = sp5.alias("df_as1")
+df_as2 = sp6.alias("df_as2")
+mm = df_as1.join(df_as2, (df_as1['a'] == df_as2['a']) & (df_as1['dt'] == df_as2['dt']), 'left')
+mm.drop(df_as2['a']).show()
+mm.drop('b').show()
 
 
 def spark_get_first(sp, partition_by, order_y):
