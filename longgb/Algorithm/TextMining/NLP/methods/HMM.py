@@ -369,7 +369,7 @@ class HMMLgb(object):
             return self.words_list
 
 
-if __name__ == '__main__':
+def main():
     gen_corpus_flag = False  # 是否重新创建 语料库
     cal_InitStatus_flag = False  # 是否重新计算 初始状态矩阵
     cal_TransProbMatrix_flag = False  # 是否重新计算 状态转移矩阵
@@ -386,11 +386,11 @@ if __name__ == '__main__':
 
     HMMLgbIns = HMMLgb()
     words = u'''报道称，日本一直拒绝与美国进行双边贸易谈判。此前路透社报道称，日本副首相麻生太郎3月29日
-    排除了与美国就双边贸易协议举行会谈的可能性，他强调这样的协议对日本没有好处。麻生表示，日本不应加入双边
-    自贸协定（FTA）谈判来换取豁免钢铝关税，“当两个国家谈判时，强者恒强，只会给日本带来不必要的痛苦。”菅义伟
-    也提醒称，关于美国重新加入TPP的任何谈判都可能面临挑战，因为11个签署国可能并不愿再与美国重启此前相关问题
-    的谈判。菅义伟称，TPP协议就像“易碎的玻璃”，“要把一部分提出来重新谈判，将会非常困难。”
-    '''
+        排除了与美国就双边贸易协议举行会谈的可能性，他强调这样的协议对日本没有好处。麻生表示，日本不应加入双边
+        自贸协定（FTA）谈判来换取豁免钢铝关税，“当两个国家谈判时，强者恒强，只会给日本带来不必要的痛苦。”菅义伟
+        也提醒称，关于美国重新加入TPP的任何谈判都可能面临挑战，因为11个签署国可能并不愿再与美国重启此前相关问题
+        的谈判。菅义伟称，TPP协议就像“易碎的玻璃”，“要把一部分提出来重新谈判，将会非常困难。”
+        '''
     # words = u'''这是一个测试！'''
 
     aa = HMMLgbIns.lcut(words)
@@ -403,9 +403,9 @@ if __name__ == '__main__':
             tmp_line = []
         else:
             tmp_line.append(each)
-        # for each_2 in tmp_line:
-        #     print(each_2)
-        # print('\n')
     # HMMLgbIns.statusSeries
 
-# 最大熵模型
+
+if __name__ == '__main__':
+    main()
+    # 最大熵马尔可夫模型 MEMM
