@@ -63,6 +63,74 @@ sp5.show()
 sp5.select(F.max('dt').alias('end_date')).collect()[0]['end_date']
 
 
+def spark_get_first(sp, partition_by, order_y):
+    order_y = [F.col(x) for i, x in enumerate(order_y)]
+    # order_y = [F.col(x).desc() for i, x in enumerate(order_y)]
+    window = Window.partitionBy(partition_by).orderBy(*order_y)
+
+    first_sp = sp.select('*', F.row_number().over(window).alias('row_number')). \
+        where(F.col('row_number') <= 1). \
+        drop('row_number')
+    # df.select('*', rank().over(window).alias('rank')).filter(col('rank') <= 2)
+    return first_sp
+
+
+sp5.show()
+
+sp4 = spark.createDataFrame([[1.0, 2.0, 9.0], [2.0, 4.0, 10.0], [1.0, 2.0, 9.0]], ['_granu_', '_order_', '_valid_cols_'])
+sp4.show()
+sp4.distinct().show()
+
+dt1 = '2018-01-03'
+dt2 = '2018-01-01'
+
+# dt2 = (datetime.datetime.strptime(dt1, '%Y-%m-%d') - datetime.timedelta(7)).strftime('%Y-%m-%d')
+filter_sp = sp5.where(''' dt != '{dt1}' '''.format(dt1=dt1))
+# replace_sp = sp.where(''' dt = '{dt2}' '''.format(dt2=dt2)).withColumn('dt', F.lit('{dt1}'.format(dt1=dt1)))
+fill_sp_1 = sp5.where(''' dt = '{dt1}' '''.format(dt1=dt1)).withColumn('b', F.lit(0.0))
+fill_sp_2 = sp5.where(''' dt = '{dt2}' '''.format(dt2=dt2))
+sp7_1 = fill_sp_1.union(fill_sp_2)
+sp7_1.show()
+sp7_2 = spark_get_first(sp7_1, ['a'], ['dt'])
+sp7_2.show()
+replace_sp = sp7_2.withColumn('dt', F.lit(dt1))
+sp7 = filter_sp.union(replace_sp)
+sp7.show()
+
+replace_sp = sp5.where(''' dt = '{dt1}' or dt = '{dt2}' '''.format(dt1=dt1, dt2=dt2))
+
+sp5_1 = sp5.where(''' dt = '{dt1}' or dt = '{dt2}' '''.format(dt1=dt1, dt2=dt2))
+
+sp5_1.show()
+
+# stop
+
+
+replace_sp = sp5.where(''' dt = '{dt2}' '''.format(dt2=dt2)).withColumn('dt', F.lit('{dt1}'.format(dt1=dt1)))
+
+sku_sp = sp5.where(''' dt = '{dt1}' or dt = '{dt2}' '''.format(dt1=dt1, dt2=dt2)).select('a').distinct()
+sku_sp.show()
+
+sku_sp.join(replace_sp, on=['a'], how='left').show()
+
+filter_sp.show()
+replace_sp.show()
+
+sp5.filter(F.col('mm') == 1).show()
+sp5.filter('mm').show()
+
+sp5.show()
+
+dt1 = '2018-01-02'
+dt2 = '2018-01-03'
+filter_sp = sp5.where(''' dt != '{dt1}' '''.format(dt1=dt1))
+replace_sp = sp5.where(''' dt = '{dt1}' '''.format(dt1=dt1)).withColumn('dt', F.lit('{dt2}'.format(dt2=dt2)))
+sp6 = filter_sp.union(replace_sp)
+sp6.show()
+
+dt1 = '2018-12-26'
+(datetime.datetime.strptime(dt1, '%Y-%m-%d') - datetime.timedelta(7)).strftime('%Y-%m-%d')
+
 sp5.show()
 sp6 = spark.createDataFrame([['aa', 'b1', '2018-01-01'],
                              ['cc', 'ee2', '2018-01-02'],
