@@ -77,7 +77,8 @@ def spark_get_first(sp, partition_by, order_y):
 
 sp5.show()
 
-sp4 = spark.createDataFrame([[1.0, 2.0, 9.0], [2.0, 4.0, 10.0], [1.0, 2.0, 9.0]], ['_granu_', '_order_', '_valid_cols_'])
+sp4 = spark.createDataFrame([[1.0, 2.0, 9.0], [2.0, 4.0, 10.0], [1.0, 2.0, 9.0]],
+                            ['_granu_', '_order_', '_valid_cols_'])
 sp4.show()
 sp4.distinct().show()
 
