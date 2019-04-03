@@ -718,6 +718,42 @@ def main():
     cnt_pd_pass = col2int(cnt_pd_pass, ['pass', 'nopass'])
     plot_bar2(cnt_pd, cnt_pd_pass, is_save=True, save_file=data_path + os.sep + 'figure2_2_split.jpg')
 
+    # 相关系数矩阵
+    from scipy.stats import pearsonr
+
+    def get_pearson_r_table(pearson_df):
+        cols = pearson_df.columns
+        res_table = [[''] + map(lambda x: '({0})'.format(int(x + 1)), range(len(cols.tolist())))]
+        for i, col1 in enumerate(cols):
+            tmp_table = [col1]
+            for j, col2 in enumerate(cols):
+                r_row, p_value = pearsonr(pearson_df[col1], pearson_df[col2])
+                if i == j:
+                    tmp_table.append('1' + '\n')
+                elif i < j:
+                    tmp_table.append('-' + '\n')
+                else:
+                    tmp_table.append(str(np.round(r_row, 2)) + '\n' + get_stars(p_value))
+            res_table.append(tmp_table)
+
+        asc_table = AsciiTable(res_table)
+
+        for i in range(len(cols) + 2):
+            asc_table.justify_columns[i] = 'right'
+
+        print(asc_table.table)
+        return asc_table
+
+    pearson_df = pd.concat([train_x, train_y], axis=1)
+    get_pearson_r_table(pearson_df.loc[:, ['Pass',
+                                           'Finance', 'Bank5', 'Bank_no5', 'Broker', 'Insurance', 'Trust',
+                                           'Asset', 'Roa', 'Cur', 'Dar', 'Ginc', 'Soe', 'Sti']])
+
+    pearson2_df = pd.concat([train_x2, train_y2], axis=1)
+    get_pearson_r_table(pearson2_df.loc[:, ['Y2',
+                                            'Finance', 'Bank5', 'Bank_no5', 'Broker', 'Insurance', 'Trust',
+                                            'Asset', 'Roa', 'Cur', 'Dar', 'Ginc', 'Soe', 'Sti']])
+
     # plot_kws=dict(s=50, edgecolor="b", linewidth=1),
 
     # model = discriminant_model(train_y, train_fin_x)
