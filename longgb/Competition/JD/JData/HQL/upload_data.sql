@@ -77,7 +77,7 @@ alter table dev.dev_lzt_train_sku_flow_city_daily set serdeproperties ('serializ
 drop table if exists dev.dev_lzt_train_sku_price_daily;
 create table dev.dev_lzt_train_sku_price_daily
 (
-jd_prc float,
+xxx_prc float,
 mkt_prc float,
 dt string,
 item_sku_id_hashed string
@@ -166,7 +166,7 @@ free_goods_flag string,
 item_sku_id_hashed string,
 main_sku_id_hashed string
 ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' TBLPROPERTIES ("skip.header.line.count"="1");
-LOAD DATA LOCAL INPATH '../JData_test/test_sku_basic_info.csv' OVERWRITE INTO TABLE dev.dev_lzt_test_sku_basic_info;
+LOAD DATA LOCAL INPATH '../xxxata_test/test_sku_basic_info.csv' OVERWRITE INTO TABLE dev.dev_lzt_test_sku_basic_info;
 alter table dev.dev_lzt_test_sku_basic_info set serdeproperties ('serialization.encoding'='GBK');
 
 -- 7.

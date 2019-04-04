@@ -70,7 +70,7 @@ class KinesisUtils(object):
         :return: A DStream object
         """
         jlevel = ssc._sc._getJavaStorageLevel(storageLevel)
-        jduration = ssc._jduration(checkpointInterval)
+        xxxuration = ssc._xxxuration(checkpointInterval)
 
         try:
             # Use KinesisUtilsPythonHelper to access Scala's KinesisUtils
@@ -80,7 +80,7 @@ class KinesisUtils(object):
                 KinesisUtils._printErrorMsg(ssc.sparkContext)
             raise
         jstream = helper.createStream(ssc._jssc, kinesisAppName, streamName, endpointUrl,
-                                      regionName, initialPositionInStream, jduration, jlevel,
+                                      regionName, initialPositionInStream, xxxuration, jlevel,
                                       awsAccessKeyId, awsSecretKey)
         stream = DStream(jstream, ssc, NoOpSerializer())
         return stream.map(lambda v: decoder(v))

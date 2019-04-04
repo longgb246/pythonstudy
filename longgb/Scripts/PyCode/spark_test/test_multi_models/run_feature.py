@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 @author: "Zhangjianshen"
-@contact: zhangjianshen@jd.com
+@contact: zhangjianshen@xxx.com
 """
 from pyspark import SparkContext,SparkConf,SQLContext
 from pyspark.sql import SparkSession

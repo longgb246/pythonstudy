@@ -27,8 +27,8 @@ __all__ = ["GroupedData"]
 def dfapi(f):
     def _api(self):
         name = f.__name__
-        jdf = getattr(self._jgd, name)()
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = getattr(self._jgd, name)()
+        return DataFrame(xxxf, self.sql_ctx)
     _api.__name__ = f.__name__
     _api.__doc__ = f.__doc__
     return _api
@@ -37,8 +37,8 @@ def dfapi(f):
 def df_varargs_api(f):
     def _api(self, *cols):
         name = f.__name__
-        jdf = getattr(self._jgd, name)(_to_seq(self.sql_ctx._sc, cols))
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = getattr(self._jgd, name)(_to_seq(self.sql_ctx._sc, cols))
+        return DataFrame(xxxf, self.sql_ctx)
     _api.__name__ = f.__name__
     _api.__doc__ = f.__doc__
     return _api
@@ -83,13 +83,13 @@ class GroupedData(object):
         """
         assert exprs, "exprs should not be empty"
         if len(exprs) == 1 and isinstance(exprs[0], dict):
-            jdf = self._jgd.agg(exprs[0])
+            xxxf = self._jgd.agg(exprs[0])
         else:
             # Columns
             assert all(isinstance(c, Column) for c in exprs), "all exprs should be Column"
-            jdf = self._jgd.agg(exprs[0]._jc,
+            xxxf = self._jgd.agg(exprs[0]._jc,
                                 _to_seq(self.sql_ctx._sc, [c._jc for c in exprs[1:]]))
-        return DataFrame(jdf, self.sql_ctx)
+        return DataFrame(xxxf, self.sql_ctx)
 
     @dfapi
     @since(1.3)

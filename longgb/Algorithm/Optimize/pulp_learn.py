@@ -303,7 +303,6 @@ def linearMatrix():
 
 
 # https://github.com/hyperopt/hyperopt-sklearn
-# http://source.jd.com/app/pop_sales_forecast/blob/dev/end-delimiter/on_line_model/model_pyspark_par_class_line.py
 # https://github.com/mabrek/kaggle-rossman-store-sales/blob/master/R/functions.R
 
 

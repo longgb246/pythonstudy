@@ -364,11 +364,11 @@ def splitSingle(x, arr_str):
     return arr_str
 
 
-# read_path = r'D:\Data\other\JData\2-JData_train'
-# save_path = r'D:\Data\other\JData\Analysis'
+# read_path = r'D:\Data\other\xxxata\2-xxxata_train'
+# save_path = r'D:\Data\other\xxxata\Analysis'
 # file_name = 'train_sku_basic_info.csv'
-read_path = r'D:\Data\other\JData\Run'
-save_path = r'D:\Data\other\JData\Run\Results'
+read_path = r'D:\Data\other\xxxata\Run'
+save_path = r'D:\Data\other\xxxata\Run\Results'
 file_name = 'cleaned_first_sales_df.csv'
 
 

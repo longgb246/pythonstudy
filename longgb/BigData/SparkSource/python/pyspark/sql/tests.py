@@ -1563,15 +1563,15 @@ class SQLTests(ReusedPySparkTestCase):
         df2 = self.spark.createDataFrame([(1, "1"), (2, "2")], ("key", "value"))
 
         # equijoin - should be converted into broadcast join
-        plan1 = df1.join(broadcast(df2), "key")._jdf.queryExecution().executedPlan()
+        plan1 = df1.join(broadcast(df2), "key")._xxxf.queryExecution().executedPlan()
         self.assertEqual(1, plan1.toString().count("BroadcastHashJoin"))
 
         # no join key -- should not be a broadcast join
-        plan2 = df1.crossJoin(broadcast(df2))._jdf.queryExecution().executedPlan()
+        plan2 = df1.crossJoin(broadcast(df2))._xxxf.queryExecution().executedPlan()
         self.assertEqual(0, plan2.toString().count("BroadcastHashJoin"))
 
         # planner should not crash without a join
-        broadcast(df1)._jdf.queryExecution().executedPlan()
+        broadcast(df1)._xxxf.queryExecution().executedPlan()
 
     def test_toDF_with_schema_string(self):
         data = [Row(key=i, value=str(i)) for i in range(100)]
@@ -1845,12 +1845,12 @@ class HiveSparkSubmitTests(SparkSubmitTests):
         # Hive metastore. If this derby dir exists, HiveContext is using
         # Hive metastore.
         metastore_path = os.path.join(tempfile.mkdtemp(), "spark16224_metastore_db")
-        metastore_URL = "jdbc:derby:;databaseName=" + metastore_path + ";create=true"
+        metastore_URL = "xxxbc:derby:;databaseName=" + metastore_path + ";create=true"
         hive_site_dir = os.path.join(self.programDir, "conf")
         hive_site_file = self.createTempFile("hive-site.xml", ("""
             |<configuration>
             |  <property>
-            |  <name>javax.jdo.option.ConnectionURL</name>
+            |  <name>javax.xxxo.option.ConnectionURL</name>
             |  <value>%s</value>
             |  </property>
             |</configuration>

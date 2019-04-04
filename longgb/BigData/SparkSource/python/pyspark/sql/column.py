@@ -330,8 +330,8 @@ class Column(object):
         elif isinstance(dataType, DataType):
             from pyspark.sql import SparkSession
             spark = SparkSession.builder.getOrCreate()
-            jdt = spark._jsparkSession.parseDataType(dataType.json())
-            jc = self._jc.cast(jdt)
+            xxxt = spark._jsparkSession.parseDataType(dataType.json())
+            jc = self._jc.cast(xxxt)
         else:
             raise TypeError("unexpected type: %s" % type(dataType))
         return Column(jc)

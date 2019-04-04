@@ -8,7 +8,6 @@
 #  REQUIREMENTS: ---
 #         NOTES: ---
 #        AUTHOR: longguangbin@163.com
-#       COMPANY: jd.com
 #       VERSION: 1.0
 #       CREATED: 2017-11-06
 #        MODIFY: ---

@@ -61,11 +61,11 @@ class Catalog(object):
         iter = self._jcatalog.listDatabases().toLocalIterator()
         databases = []
         while iter.hasNext():
-            jdb = iter.next()
+            xxxb = iter.next()
             databases.append(Database(
-                name=jdb.name(),
-                description=jdb.description(),
-                locationUri=jdb.locationUri()))
+                name=xxxb.name(),
+                description=xxxb.description(),
+                locationUri=xxxb.locationUri()))
         return databases
 
     @ignore_unicode_prefix

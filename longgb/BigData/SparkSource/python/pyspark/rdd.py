@@ -2289,8 +2289,8 @@ class RDD(object):
         True
         """
         jrdd = self.mapPartitions(lambda it: [float(sum(it))])._to_java_object_rdd()
-        jdrdd = self.ctx._jvm.JavaDoubleRDD.fromRDD(jrdd.rdd())
-        r = jdrdd.sumApprox(timeout, confidence).getFinalValue()
+        xxxrdd = self.ctx._jvm.JavaDoubleRDD.fromRDD(jrdd.rdd())
+        r = xxxrdd.sumApprox(timeout, confidence).getFinalValue()
         return BoundedFloat(r.mean(), r.confidence(), r.low(), r.high())
 
     def meanApprox(self, timeout, confidence=0.95):
@@ -2306,8 +2306,8 @@ class RDD(object):
         True
         """
         jrdd = self.map(float)._to_java_object_rdd()
-        jdrdd = self.ctx._jvm.JavaDoubleRDD.fromRDD(jrdd.rdd())
-        r = jdrdd.meanApprox(timeout, confidence).getFinalValue()
+        xxxrdd = self.ctx._jvm.JavaDoubleRDD.fromRDD(jrdd.rdd())
+        r = xxxrdd.meanApprox(timeout, confidence).getFinalValue()
         return BoundedFloat(r.mean(), r.confidence(), r.low(), r.high())
 
     def countApproxDistinct(self, relativeSD=0.05):

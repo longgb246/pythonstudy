@@ -40,7 +40,7 @@ promotion_on = True
 
 data_key_columns_map_sales = \
     {'salesForecast': 'sale_num', \
-     'priceBeforeDiscount': 'avg_jd_unit_price', \
+     'priceBeforeDiscount': 'avg_xxx_unit_price', \
      'priceAfterDiscount': 'avg_sale_unit_price', \
      'stockQuantity': 'stock_qtty', \
      'vendibility': 'vendibility', \
@@ -303,7 +303,7 @@ def str_to_datetime(d_str):
 
 
 order_features = ['sku_id', 'dc_id', 'order_date', \
-                  'sale_num', 'stock_qtty', 'avg_sale_unit_price', 'avg_jd_unit_price']
+                  'sale_num', 'stock_qtty', 'avg_sale_unit_price', 'avg_xxx_unit_price']
 
 
 def feature_index(f_str):
@@ -514,9 +514,9 @@ def order_clean_by_price(df, debug):
     if df.shape[0] <= records_num_threshold:
         return df
     org_columns = df.columns
-    df['avg_jd_unit_price'] = np.where(df['avg_jd_unit_price'] < 0.0, 0.0, df['avg_jd_unit_price'])
+    df['avg_xxx_unit_price'] = np.where(df['avg_xxx_unit_price'] < 0.0, 0.0, df['avg_xxx_unit_price'])
     df['avg_sale_unit_price'] = np.where(df['avg_sale_unit_price'] < 0.0, 0.0, df['avg_sale_unit_price'])
-    df['jd_price_log'] = np.log(df['avg_jd_unit_price'] + 1)
+    df['xxx_price_log'] = np.log(df['avg_xxx_unit_price'] + 1)
     df['sale_price_log'] = np.log(df['avg_sale_unit_price'] + 1)
     df['sale_num_log'] = np.log(df['sale_num'] + 1)
     A = np.vstack([df['sale_price_log'].tolist()]).T
@@ -589,40 +589,40 @@ def remove_outliers(ls, ratio=2.0):
 recent_day_num = 28
 
 
-# To check whether JD price is changed permanently
+# To check whether xxx price is changed permanently
 # If yes and sales are affected remarkably,
-# time series corresponding to old JD prices will be truncated
-def jd_price_clean(df, predict_cur_date, debug=False):
-    recent_jd_price_mean = df.loc[df.order_date >= predict_cur_date - timedelta(7), \
-                                  'avg_jd_unit_price'].mean()
-    jd_price_sale_list = df.loc[(df.order_date >= predict_cur_date - timedelta(56)) \
-                                & (df.avg_jd_unit_price <= 1.2 * recent_jd_price_mean) \
-                                & (df.avg_jd_unit_price >= 0.8 * recent_jd_price_mean) \
+# time series corresponding to old xxx prices will be truncated
+def xxx_price_clean(df, predict_cur_date, debug=False):
+    recent_xxx_price_mean = df.loc[df.order_date >= predict_cur_date - timedelta(7), \
+                                  'avg_xxx_unit_price'].mean()
+    xxx_price_sale_list = df.loc[(df.order_date >= predict_cur_date - timedelta(56)) \
+                                & (df.avg_xxx_unit_price <= 1.2 * recent_xxx_price_mean) \
+                                & (df.avg_xxx_unit_price >= 0.8 * recent_xxx_price_mean) \
                                 & ((df.sale_num > 0) | (df.stock_qtty > 0)), 'sale_num']
-    debug_print('jd_price_sale_list', debug)
-    debug_print(jd_price_sale_list, debug)
-    debug_print('recent_jd_price: {0}'.format(recent_jd_price_mean), debug)
-    if jd_price_sale_list.shape[0] <= 7:
+    debug_print('xxx_price_sale_list', debug)
+    debug_print(xxx_price_sale_list, debug)
+    debug_print('recent_xxx_price: {0}'.format(recent_xxx_price_mean), debug)
+    if xxx_price_sale_list.shape[0] <= 7:
         return df  # df.loc[df.order_date >= predict_cur_date - timedelta(21), :]
-    jd_price_sale_list = baseline_smooth(list(jd_price_sale_list), step=28)
-    sale_mean = np.nanmean(jd_price_sale_list)
-    df.loc[(df.avg_jd_unit_price > 1.2 * recent_jd_price_mean), 'sale_num'] \
-        = df.loc[(df.avg_jd_unit_price > 1.2 * recent_jd_price_mean), 'sale_num'].map(lambda x: max(x, sale_mean))
-    df.loc[(df.avg_jd_unit_price < 0.8 * recent_jd_price_mean), 'sale_num'] \
-        = df.loc[(df.avg_jd_unit_price < 0.8 * recent_jd_price_mean), 'sale_num'].map(lambda x: min(x, sale_mean))
-    debug_print('recent_jd_price: {0}, jd_price_sale_mean: {1}'.format(recent_jd_price_mean, sale_mean), debug)
+    xxx_price_sale_list = baseline_smooth(list(xxx_price_sale_list), step=28)
+    sale_mean = np.nanmean(xxx_price_sale_list)
+    df.loc[(df.avg_xxx_unit_price > 1.2 * recent_xxx_price_mean), 'sale_num'] \
+        = df.loc[(df.avg_xxx_unit_price > 1.2 * recent_xxx_price_mean), 'sale_num'].map(lambda x: max(x, sale_mean))
+    df.loc[(df.avg_xxx_unit_price < 0.8 * recent_xxx_price_mean), 'sale_num'] \
+        = df.loc[(df.avg_xxx_unit_price < 0.8 * recent_xxx_price_mean), 'sale_num'].map(lambda x: min(x, sale_mean))
+    debug_print('recent_xxx_price: {0}, xxx_price_sale_mean: {1}'.format(recent_xxx_price_mean, sale_mean), debug)
     return df
 
 
 def forecast_result_ensemble(keys, df_agg, df_promotion, predict_cur_date, \
-                             debug=False, jd_price_adjusted=False, \
+                             debug=False, xxx_price_adjusted=False, \
                              ratio_info=None, calendar=None):
-    jd_price_adjusted = apply_price_adjusted(keys)
-    debug_print('price adjusted: {0}'.format(jd_price_adjusted), debug)
-    if jd_price_adjusted:
-        df_agg = jd_price_clean(df_agg, predict_cur_date, debug)
+    xxx_price_adjusted = apply_price_adjusted(keys)
+    debug_print('price adjusted: {0}'.format(xxx_price_adjusted), debug)
+    if xxx_price_adjusted:
+        df_agg = xxx_price_clean(df_agg, predict_cur_date, debug)
     return sale_forecast_lr(keys, df_agg, df_promotion, predict_cur_date, debug, \
-                            jd_price_adjusted, \
+                            xxx_price_adjusted, \
                             ratio_info, calendar)
 
 
@@ -1239,7 +1239,7 @@ def result_ensemble_by_mapd(predict_list, accuracy_list):
 
 
 def sale_forecast_lr(keys, df_agg, df_promotion, predict_cur_date, \
-                     debug=False, jd_price_adjusted=False, \
+                     debug=False, xxx_price_adjusted=False, \
                      ratio_info=None, calendar=None):
     lr_period = 7
     if predict_cur_date <= datetime(predict_cur_date.year, 6, 18):
@@ -1648,11 +1648,11 @@ def extract_sales_promotion_info(record):
         df_agg['vendibility'].fillna(method='ffill', inplace=True)
         df_agg.loc[:, 'stock_qtty'] = df_agg['vendibility']
         # df_agg.loc[df_agg['vendibility'] == 0,'stock_qtty'] = 0
-    df_agg.avg_jd_unit_price.fillna(method='pad', inplace=True)
-    df_agg.avg_jd_unit_price.fillna(method='ffill', inplace=True)
-    jd_price_mean = harmonious_mean(df_agg['avg_jd_unit_price'])
-    df_agg.avg_jd_unit_price.fillna(jd_price_mean, inplace=True)
-    df_agg.avg_sale_unit_price.fillna(df_agg.avg_jd_unit_price, inplace=True)
+    df_agg.avg_xxx_unit_price.fillna(method='pad', inplace=True)
+    df_agg.avg_xxx_unit_price.fillna(method='ffill', inplace=True)
+    xxx_price_mean = harmonious_mean(df_agg['avg_xxx_unit_price'])
+    df_agg.avg_xxx_unit_price.fillna(xxx_price_mean, inplace=True)
+    df_agg.avg_sale_unit_price.fillna(df_agg.avg_xxx_unit_price, inplace=True)
     df_agg.stock_qtty.fillna(method='ffill', inplace=True)
     return keys, df_agg, df_promotion
 
@@ -1676,7 +1676,7 @@ def features_generator(record, predict_cur_date, \
 # sku_id,dc_id,predict results in @predict_periods_num periods, r2, mapd
 def sale_forecast_adjusted(record, predict_cur_date, \
                            fr_period=7, fr_predict_periods_num=13, \
-                           debug=False, jd_price_adjusted=False,
+                           debug=False, xxx_price_adjusted=False,
                            calendar=None, sc=None, \
                            weather=None, reset_weather_flag=True):
     if reset_weather_flag:
@@ -1728,7 +1728,7 @@ def sale_forecast_adjusted(record, predict_cur_date, \
                     .saveAsTextFile('/tmp/sl/lr/{0}/{1}'.format(record[0], name))
     predict_results = forecast_result_ensemble(keys, df_agg, df_promotion, \
                                                predict_cur_date, debug, \
-                                               jd_price_adjusted, \
+                                               xxx_price_adjusted, \
                                                ratio_info=ratio, \
                                                calendar=calendar_info)
     return record[0].split('#')[:2] + predict_results
@@ -2308,8 +2308,8 @@ def sale_flat(record, debug=False):
                               right_on=['sku_id', 'dc_id', 'order_date'], how='inner')
     df_agg = df_agg[order_features]
     try:
-        df_agg.loc['avg_jd_unit_price'] = df_agg['avg_jd_unit_price'].interpolate(method='nearest')
-        df_agg['avg_sale_unit_price'].fillna(df_agg['avg_jd_unit_price'], inplace=True)
+        df_agg.loc['avg_xxx_unit_price'] = df_agg['avg_xxx_unit_price'].interpolate(method='nearest')
+        df_agg['avg_sale_unit_price'].fillna(df_agg['avg_xxx_unit_price'], inplace=True)
     except:
         pass
     values = record[0].split('#')

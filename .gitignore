@@ -4,7 +4,7 @@ pythonstudy.iml
 .idea/*
 
 *.zip
-longgb/Scripts/PyCode/test_sphinx/test_jd/src
-longgb/Scripts/PyCode/test_sphinx/test_jd/src/*
-longgb/Scripts/PyCode/test_sphinx/test_jd/src_tt
-longgb/Scripts/PyCode/test_sphinx/test_jd/src_tt/*
+longgb/Scripts/PyCode/test_sphinx/test_xxx/src
+longgb/Scripts/PyCode/test_sphinx/test_xxx/src/*
+longgb/Scripts/PyCode/test_sphinx/test_xxx/src_tt
+longgb/Scripts/PyCode/test_sphinx/test_xxx/src_tt/*

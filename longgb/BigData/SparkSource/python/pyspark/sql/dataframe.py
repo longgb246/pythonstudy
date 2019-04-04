@@ -67,8 +67,8 @@ class DataFrame(object):
     .. versionadded:: 1.3
     """
 
-    def __init__(self, jdf, sql_ctx):
-        self._jdf = jdf
+    def __init__(self, xxxf, sql_ctx):
+        self._xxxf = xxxf
         self.sql_ctx = sql_ctx
         self._sc = sql_ctx and sql_ctx._sc
         self.is_cached = False
@@ -81,7 +81,7 @@ class DataFrame(object):
         """Returns the content as an :class:`pyspark.RDD` of :class:`Row`.
         """
         if self._lazy_rdd is None:
-            jrdd = self._jdf.javaToPython()
+            jrdd = self._xxxf.javaToPython()
             self._lazy_rdd = RDD(jrdd, self.sql_ctx._sc, BatchedSerializer(PickleSerializer()))
         return self._lazy_rdd
 
@@ -109,7 +109,7 @@ class DataFrame(object):
         >>> df.toJSON().first()
         u'{"age":2,"name":"Alice"}'
         """
-        rdd = self._jdf.toJSON()
+        rdd = self._xxxf.toJSON()
         return RDD(rdd.toJavaRDD(), self._sc, UTF8Deserializer(use_unicode))
 
     @since(1.3)
@@ -127,7 +127,7 @@ class DataFrame(object):
 
         .. note:: Deprecated in 2.0, use createOrReplaceTempView instead.
         """
-        self._jdf.createOrReplaceTempView(name)
+        self._xxxf.createOrReplaceTempView(name)
 
     @since(2.0)
     def createTempView(self, name):
@@ -149,7 +149,7 @@ class DataFrame(object):
         >>> spark.catalog.dropTempView("people")
 
         """
-        self._jdf.createTempView(name)
+        self._xxxf.createTempView(name)
 
     @since(2.0)
     def createOrReplaceTempView(self, name):
@@ -167,7 +167,7 @@ class DataFrame(object):
         >>> spark.catalog.dropTempView("people")
 
         """
-        self._jdf.createOrReplaceTempView(name)
+        self._xxxf.createOrReplaceTempView(name)
 
     @since(2.1)
     def createGlobalTempView(self, name):
@@ -188,7 +188,7 @@ class DataFrame(object):
         >>> spark.catalog.dropGlobalTempView("people")
 
         """
-        self._jdf.createGlobalTempView(name)
+        self._xxxf.createGlobalTempView(name)
 
     @property
     @since(1.4)
@@ -224,7 +224,7 @@ class DataFrame(object):
         """
         if self._schema is None:
             try:
-                self._schema = _parse_datatype_json_string(self._jdf.schema().json())
+                self._schema = _parse_datatype_json_string(self._xxxf.schema().json())
             except AttributeError as e:
                 raise Exception(
                     "Unable to parse datatype from schema. %s" % e)
@@ -240,7 +240,7 @@ class DataFrame(object):
          |-- name: string (nullable = true)
         <BLANKLINE>
         """
-        print(self._jdf.schema().treeString())
+        print(self._xxxf.schema().treeString())
 
     @since(1.3)
     def explain(self, extended=False):
@@ -263,16 +263,16 @@ class DataFrame(object):
         ...
         """
         if extended:
-            print(self._jdf.queryExecution().toString())
+            print(self._xxxf.queryExecution().toString())
         else:
-            print(self._jdf.queryExecution().simpleString())
+            print(self._xxxf.queryExecution().simpleString())
 
     @since(1.3)
     def isLocal(self):
         """Returns ``True`` if the :func:`collect` and :func:`take` methods can be run locally
         (without any Spark executors).
         """
-        return self._jdf.isLocal()
+        return self._xxxf.isLocal()
 
     @property
     @since(2.0)
@@ -286,7 +286,7 @@ class DataFrame(object):
 
         .. note:: Experimental
         """
-        return self._jdf.isStreaming()
+        return self._xxxf.isStreaming()
 
     @since(1.3)
     def show(self, n=20, truncate=True):
@@ -315,9 +315,9 @@ class DataFrame(object):
         +---+----+
         """
         if isinstance(truncate, bool) and truncate:
-            print(self._jdf.showString(n, 20))
+            print(self._xxxf.showString(n, 20))
         else:
-            print(self._jdf.showString(n, int(truncate)))
+            print(self._xxxf.showString(n, int(truncate)))
 
     def __repr__(self):
         return "DataFrame[%s]" % (", ".join("%s: %s" % c for c in self.dtypes))
@@ -333,8 +333,8 @@ class DataFrame(object):
 
         .. note:: Experimental
         """
-        jdf = self._jdf.checkpoint(eager)
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.checkpoint(eager)
+        return DataFrame(xxxf, self.sql_ctx)
 
     @since(2.1)
     def withWatermark(self, eventTime, delayThreshold):
@@ -367,8 +367,8 @@ class DataFrame(object):
             raise TypeError("eventTime should be provided as a string")
         if not delayThreshold or type(delayThreshold) is not str:
             raise TypeError("delayThreshold should be provided as a string interval")
-        jdf = self._jdf.withWatermark(eventTime, delayThreshold)
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.withWatermark(eventTime, delayThreshold)
+        return DataFrame(xxxf, self.sql_ctx)
 
     @since(1.3)
     def count(self):
@@ -377,7 +377,7 @@ class DataFrame(object):
         >>> df.count()
         2
         """
-        return int(self._jdf.count())
+        return int(self._xxxf.count())
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -388,7 +388,7 @@ class DataFrame(object):
         [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
         """
         with SCCallSiteSync(self._sc) as css:
-            port = self._jdf.collectToPython()
+            port = self._xxxf.collectToPython()
         return list(_load_from_socket(port, BatchedSerializer(PickleSerializer())))
 
     @ignore_unicode_prefix
@@ -402,7 +402,7 @@ class DataFrame(object):
         [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
         """
         with SCCallSiteSync(self._sc) as css:
-            port = self._jdf.toPythonIterator()
+            port = self._xxxf.toPythonIterator()
         return _load_from_socket(port, BatchedSerializer(PickleSerializer()))
 
     @ignore_unicode_prefix
@@ -415,8 +415,8 @@ class DataFrame(object):
         >>> df.limit(0).collect()
         []
         """
-        jdf = self._jdf.limit(num)
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.limit(num)
+        return DataFrame(xxxf, self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -460,7 +460,7 @@ class DataFrame(object):
         .. note:: The default storage level has changed to C{MEMORY_AND_DISK} to match Scala in 2.0.
         """
         self.is_cached = True
-        self._jdf.cache()
+        self._xxxf.cache()
         return self
 
     @since(1.3)
@@ -474,7 +474,7 @@ class DataFrame(object):
         """
         self.is_cached = True
         javaStorageLevel = self._sc._getJavaStorageLevel(storageLevel)
-        self._jdf.persist(javaStorageLevel)
+        self._xxxf.persist(javaStorageLevel)
         return self
 
     @property
@@ -489,7 +489,7 @@ class DataFrame(object):
         >>> df2.persist(StorageLevel.DISK_ONLY_2).storageLevel
         StorageLevel(True, False, False, False, 2)
         """
-        java_storage_level = self._jdf.storageLevel()
+        java_storage_level = self._xxxf.storageLevel()
         storage_level = StorageLevel(java_storage_level.useDisk(),
                                      java_storage_level.useMemory(),
                                      java_storage_level.useOffHeap(),
@@ -505,7 +505,7 @@ class DataFrame(object):
         .. note:: `blocking` default has changed to False to match Scala in 2.0.
         """
         self.is_cached = False
-        self._jdf.unpersist(blocking)
+        self._xxxf.unpersist(blocking)
         return self
 
     @since(1.4)
@@ -521,7 +521,7 @@ class DataFrame(object):
         >>> df.coalesce(1).rdd.getNumPartitions()
         1
         """
-        return DataFrame(self._jdf.coalesce(numPartitions), self.sql_ctx)
+        return DataFrame(self._xxxf.coalesce(numPartitions), self.sql_ctx)
 
     @since(1.3)
     def repartition(self, numPartitions, *cols):
@@ -574,13 +574,13 @@ class DataFrame(object):
         """
         if isinstance(numPartitions, int):
             if len(cols) == 0:
-                return DataFrame(self._jdf.repartition(numPartitions), self.sql_ctx)
+                return DataFrame(self._xxxf.repartition(numPartitions), self.sql_ctx)
             else:
                 return DataFrame(
-                    self._jdf.repartition(numPartitions, self._jcols(*cols)), self.sql_ctx)
+                    self._xxxf.repartition(numPartitions, self._jcols(*cols)), self.sql_ctx)
         elif isinstance(numPartitions, (basestring, Column)):
             cols = (numPartitions, ) + cols
-            return DataFrame(self._jdf.repartition(self._jcols(*cols)), self.sql_ctx)
+            return DataFrame(self._xxxf.repartition(self._jcols(*cols)), self.sql_ctx)
         else:
             raise TypeError("numPartitions should be an int or Column")
 
@@ -591,7 +591,7 @@ class DataFrame(object):
         >>> df.distinct().count()
         2
         """
-        return DataFrame(self._jdf.distinct(), self.sql_ctx)
+        return DataFrame(self._xxxf.distinct(), self.sql_ctx)
 
     @since(1.3)
     def sample(self, withReplacement, fraction, seed=None):
@@ -605,7 +605,7 @@ class DataFrame(object):
         """
         assert fraction >= 0.0, "Negative fraction value: %s" % fraction
         seed = seed if seed is not None else random.randint(0, sys.maxsize)
-        rdd = self._jdf.sample(withReplacement, fraction, long(seed))
+        rdd = self._xxxf.sample(withReplacement, fraction, long(seed))
         return DataFrame(rdd, self.sql_ctx)
 
     @since(1.5)
@@ -642,7 +642,7 @@ class DataFrame(object):
                 raise ValueError("key must be float, int, long, or string, but got %r" % type(k))
             fractions[k] = float(v)
         seed = seed if seed is not None else random.randint(0, sys.maxsize)
-        return DataFrame(self._jdf.stat().sampleBy(col, self._jmap(fractions), seed), self.sql_ctx)
+        return DataFrame(self._xxxf.stat().sampleBy(col, self._jmap(fractions), seed), self.sql_ctx)
 
     @since(1.4)
     def randomSplit(self, weights, seed=None):
@@ -663,7 +663,7 @@ class DataFrame(object):
             if w < 0.0:
                 raise ValueError("Weights must be positive. Found weight value: %s" % w)
         seed = seed if seed is not None else random.randint(0, sys.maxsize)
-        rdd_array = self._jdf.randomSplit(_to_list(self.sql_ctx._sc, weights), long(seed))
+        rdd_array = self._xxxf.randomSplit(_to_list(self.sql_ctx._sc, weights), long(seed))
         return [DataFrame(rdd, self.sql_ctx) for rdd in rdd_array]
 
     @property
@@ -699,7 +699,7 @@ class DataFrame(object):
         [Row(name=u'Bob', name=u'Bob', age=5), Row(name=u'Alice', name=u'Alice', age=2)]
         """
         assert isinstance(alias, basestring), "alias should be a string"
-        return DataFrame(getattr(self._jdf, "as")(alias), self.sql_ctx)
+        return DataFrame(getattr(self._xxxf, "as")(alias), self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(2.1)
@@ -717,8 +717,8 @@ class DataFrame(object):
          Row(age=5, name=u'Bob', height=80), Row(age=5, name=u'Bob', height=85)]
         """
 
-        jdf = self._jdf.crossJoin(other._jdf)
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.crossJoin(other._xxxf)
+        return DataFrame(xxxf, self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -764,13 +764,13 @@ class DataFrame(object):
                 on = on._jc
 
         if on is None and how is None:
-            jdf = self._jdf.join(other._jdf)
+            xxxf = self._xxxf.join(other._xxxf)
         else:
             if how is None:
                 how = "inner"
             assert isinstance(how, basestring), "how should be basestring"
-            jdf = self._jdf.join(other._jdf, on, how)
-        return DataFrame(jdf, self.sql_ctx)
+            xxxf = self._xxxf.join(other._xxxf, on, how)
+        return DataFrame(xxxf, self.sql_ctx)
 
     @since(1.6)
     def sortWithinPartitions(self, *cols, **kwargs):
@@ -789,8 +789,8 @@ class DataFrame(object):
         |  5|  Bob|
         +---+-----+
         """
-        jdf = self._jdf.sortWithinPartitions(self._sort_cols(cols, kwargs))
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.sortWithinPartitions(self._sort_cols(cols, kwargs))
+        return DataFrame(xxxf, self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -816,8 +816,8 @@ class DataFrame(object):
         >>> df.orderBy(["age", "name"], ascending=[0, 1]).collect()
         [Row(age=5, name=u'Bob'), Row(age=2, name=u'Alice')]
         """
-        jdf = self._jdf.sort(self._sort_cols(cols, kwargs))
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.sort(self._sort_cols(cols, kwargs))
+        return DataFrame(xxxf, self.sql_ctx)
 
     orderBy = sort
 
@@ -890,8 +890,8 @@ class DataFrame(object):
         """
         if len(cols) == 1 and isinstance(cols[0], list):
             cols = cols[0]
-        jdf = self._jdf.describe(self._jseq(cols))
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.describe(self._jseq(cols))
+        return DataFrame(xxxf, self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -940,14 +940,14 @@ class DataFrame(object):
         [Row(age=5, name=u'Bob')]
         """
         if isinstance(item, basestring):
-            jc = self._jdf.apply(item)
+            jc = self._xxxf.apply(item)
             return Column(jc)
         elif isinstance(item, Column):
             return self.filter(item)
         elif isinstance(item, (list, tuple)):
             return self.select(*item)
         elif isinstance(item, int):
-            jc = self._jdf.apply(self.columns[item])
+            jc = self._xxxf.apply(self.columns[item])
             return Column(jc)
         else:
             raise TypeError("unexpected item type: %s" % type(item))
@@ -962,7 +962,7 @@ class DataFrame(object):
         if name not in self.columns:
             raise AttributeError(
                 "'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
-        jc = self._jdf.apply(name)
+        jc = self._xxxf.apply(name)
         return Column(jc)
 
     @ignore_unicode_prefix
@@ -981,8 +981,8 @@ class DataFrame(object):
         >>> df.select(df.name, (df.age + 10).alias('age')).collect()
         [Row(name=u'Alice', age=12), Row(name=u'Bob', age=15)]
         """
-        jdf = self._jdf.select(self._jcols(*cols))
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.select(self._jcols(*cols))
+        return DataFrame(xxxf, self.sql_ctx)
 
     @since(1.3)
     def selectExpr(self, *expr):
@@ -995,8 +995,8 @@ class DataFrame(object):
         """
         if len(expr) == 1 and isinstance(expr[0], list):
             expr = expr[0]
-        jdf = self._jdf.selectExpr(self._jseq(expr))
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.selectExpr(self._jseq(expr))
+        return DataFrame(xxxf, self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -1019,12 +1019,12 @@ class DataFrame(object):
         [Row(age=2, name=u'Alice')]
         """
         if isinstance(condition, basestring):
-            jdf = self._jdf.filter(condition)
+            xxxf = self._xxxf.filter(condition)
         elif isinstance(condition, Column):
-            jdf = self._jdf.filter(condition._jc)
+            xxxf = self._xxxf.filter(condition._jc)
         else:
             raise TypeError("condition should be string or Column")
-        return DataFrame(jdf, self.sql_ctx)
+        return DataFrame(xxxf, self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -1047,7 +1047,7 @@ class DataFrame(object):
         >>> sorted(df.groupBy(['name', df.age]).count().collect())
         [Row(name=u'Alice', age=2, count=1), Row(name=u'Bob', age=5, count=1)]
         """
-        jgd = self._jdf.groupBy(self._jcols(*cols))
+        jgd = self._xxxf.groupBy(self._jcols(*cols))
         from pyspark.sql.group import GroupedData
         return GroupedData(jgd, self.sql_ctx)
 
@@ -1068,7 +1068,7 @@ class DataFrame(object):
         |  Bob|   5|    1|
         +-----+----+-----+
         """
-        jgd = self._jdf.rollup(self._jcols(*cols))
+        jgd = self._xxxf.rollup(self._jcols(*cols))
         from pyspark.sql.group import GroupedData
         return GroupedData(jgd, self.sql_ctx)
 
@@ -1091,7 +1091,7 @@ class DataFrame(object):
         |  Bob|   5|    1|
         +-----+----+-----+
         """
-        jgd = self._jdf.cube(self._jcols(*cols))
+        jgd = self._xxxf.cube(self._jcols(*cols))
         from pyspark.sql.group import GroupedData
         return GroupedData(jgd, self.sql_ctx)
 
@@ -1116,7 +1116,7 @@ class DataFrame(object):
         This is equivalent to `UNION ALL` in SQL. To do a SQL-style set union
         (that does deduplication of elements), use this function followed by a distinct.
         """
-        return DataFrame(self._jdf.union(other._jdf), self.sql_ctx)
+        return DataFrame(self._xxxf.union(other._xxxf), self.sql_ctx)
 
     @since(1.3)
     def unionAll(self, other):
@@ -1134,7 +1134,7 @@ class DataFrame(object):
 
         This is equivalent to `INTERSECT` in SQL.
         """
-        return DataFrame(self._jdf.intersect(other._jdf), self.sql_ctx)
+        return DataFrame(self._xxxf.intersect(other._xxxf), self.sql_ctx)
 
     @since(1.3)
     def subtract(self, other):
@@ -1143,7 +1143,7 @@ class DataFrame(object):
 
         This is equivalent to `EXCEPT` in SQL.
         """
-        return DataFrame(getattr(self._jdf, "except")(other._jdf), self.sql_ctx)
+        return DataFrame(getattr(self._xxxf, "except")(other._xxxf), self.sql_ctx)
 
     @since(1.4)
     def dropDuplicates(self, subset=None):
@@ -1173,10 +1173,10 @@ class DataFrame(object):
         +---+------+-----+
         """
         if subset is None:
-            jdf = self._jdf.dropDuplicates()
+            xxxf = self._xxxf.dropDuplicates()
         else:
-            jdf = self._jdf.dropDuplicates(self._jseq(subset))
-        return DataFrame(jdf, self.sql_ctx)
+            xxxf = self._xxxf.dropDuplicates(self._jseq(subset))
+        return DataFrame(xxxf, self.sql_ctx)
 
     @since("1.3.1")
     def dropna(self, how='any', thresh=None, subset=None):
@@ -1211,7 +1211,7 @@ class DataFrame(object):
         if thresh is None:
             thresh = len(subset) if how == 'any' else 1
 
-        return DataFrame(self._jdf.na().drop(thresh, self._jseq(subset)), self.sql_ctx)
+        return DataFrame(self._xxxf.na().drop(thresh, self._jseq(subset)), self.sql_ctx)
 
     @since("1.3.1")
     def fillna(self, value, subset=None):
@@ -1255,16 +1255,16 @@ class DataFrame(object):
             value = float(value)
 
         if isinstance(value, dict):
-            return DataFrame(self._jdf.na().fill(value), self.sql_ctx)
+            return DataFrame(self._xxxf.na().fill(value), self.sql_ctx)
         elif subset is None:
-            return DataFrame(self._jdf.na().fill(value), self.sql_ctx)
+            return DataFrame(self._xxxf.na().fill(value), self.sql_ctx)
         else:
             if isinstance(subset, basestring):
                 subset = [subset]
             elif not isinstance(subset, (list, tuple)):
                 raise ValueError("subset should be a list or tuple of column names")
 
-            return DataFrame(self._jdf.na().fill(value, self._jseq(subset)), self.sql_ctx)
+            return DataFrame(self._xxxf.na().fill(value, self._jseq(subset)), self.sql_ctx)
 
     @since(1.4)
     def replace(self, to_replace, value, subset=None):
@@ -1334,7 +1334,7 @@ class DataFrame(object):
             rep_dict = to_replace
 
         if subset is None:
-            return DataFrame(self._jdf.na().replace('*', rep_dict), self.sql_ctx)
+            return DataFrame(self._xxxf.na().replace('*', rep_dict), self.sql_ctx)
         elif isinstance(subset, basestring):
             subset = [subset]
 
@@ -1342,7 +1342,7 @@ class DataFrame(object):
             raise ValueError("subset should be a list or tuple of column names")
 
         return DataFrame(
-            self._jdf.na().replace(self._jseq(subset), self._jmap(rep_dict)), self.sql_ctx)
+            self._xxxf.na().replace(self._jseq(subset), self._jmap(rep_dict)), self.sql_ctx)
 
     @since(2.0)
     def approxQuantile(self, col, probabilities, relativeError):
@@ -1390,7 +1390,7 @@ class DataFrame(object):
             raise ValueError("relativeError should be numerical (float, int, long) >= 0.")
         relativeError = float(relativeError)
 
-        jaq = self._jdf.stat().approxQuantile(col, probabilities, relativeError)
+        jaq = self._xxxf.stat().approxQuantile(col, probabilities, relativeError)
         return list(jaq)
 
     @since(1.4)
@@ -1413,7 +1413,7 @@ class DataFrame(object):
         if not method == "pearson":
             raise ValueError("Currently only the calculation of the Pearson Correlation " +
                              "coefficient is supported.")
-        return self._jdf.stat().corr(col1, col2, method)
+        return self._xxxf.stat().corr(col1, col2, method)
 
     @since(1.4)
     def cov(self, col1, col2):
@@ -1428,7 +1428,7 @@ class DataFrame(object):
             raise ValueError("col1 should be a string.")
         if not isinstance(col2, str):
             raise ValueError("col2 should be a string.")
-        return self._jdf.stat().cov(col1, col2)
+        return self._xxxf.stat().cov(col1, col2)
 
     @since(1.4)
     def crosstab(self, col1, col2):
@@ -1450,7 +1450,7 @@ class DataFrame(object):
             raise ValueError("col1 should be a string.")
         if not isinstance(col2, str):
             raise ValueError("col2 should be a string.")
-        return DataFrame(self._jdf.stat().crosstab(col1, col2), self.sql_ctx)
+        return DataFrame(self._xxxf.stat().crosstab(col1, col2), self.sql_ctx)
 
     @since(1.4)
     def freqItems(self, cols, support=None):
@@ -1474,7 +1474,7 @@ class DataFrame(object):
             raise ValueError("cols must be a list or tuple of column names as strings.")
         if not support:
             support = 0.01
-        return DataFrame(self._jdf.stat().freqItems(_to_seq(self._sc, cols), support), self.sql_ctx)
+        return DataFrame(self._xxxf.stat().freqItems(_to_seq(self._sc, cols), support), self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -1490,7 +1490,7 @@ class DataFrame(object):
         [Row(age=2, name=u'Alice', age2=4), Row(age=5, name=u'Bob', age2=7)]
         """
         assert isinstance(col, Column), "col should be Column"
-        return DataFrame(self._jdf.withColumn(colName, col._jc), self.sql_ctx)
+        return DataFrame(self._xxxf.withColumn(colName, col._jc), self.sql_ctx)
 
     @ignore_unicode_prefix
     @since(1.3)
@@ -1504,7 +1504,7 @@ class DataFrame(object):
         >>> df.withColumnRenamed('age', 'age2').collect()
         [Row(age2=2, name=u'Alice'), Row(age2=5, name=u'Bob')]
         """
-        return DataFrame(self._jdf.withColumnRenamed(existing, new), self.sql_ctx)
+        return DataFrame(self._xxxf.withColumnRenamed(existing, new), self.sql_ctx)
 
     @since(1.4)
     @ignore_unicode_prefix
@@ -1533,18 +1533,18 @@ class DataFrame(object):
         if len(cols) == 1:
             col = cols[0]
             if isinstance(col, basestring):
-                jdf = self._jdf.drop(col)
+                xxxf = self._xxxf.drop(col)
             elif isinstance(col, Column):
-                jdf = self._jdf.drop(col._jc)
+                xxxf = self._xxxf.drop(col._jc)
             else:
                 raise TypeError("col should be a string or a Column")
         else:
             for col in cols:
                 if not isinstance(col, basestring):
                     raise TypeError("each col in the param list should be a string")
-            jdf = self._jdf.drop(self._jseq(cols))
+            xxxf = self._xxxf.drop(self._jseq(cols))
 
-        return DataFrame(jdf, self.sql_ctx)
+        return DataFrame(xxxf, self.sql_ctx)
 
     @ignore_unicode_prefix
     def toDF(self, *cols):
@@ -1555,8 +1555,8 @@ class DataFrame(object):
         >>> df.toDF('f1', 'f2').collect()
         [Row(f1=2, f2=u'Alice'), Row(f1=5, f2=u'Bob')]
         """
-        jdf = self._jdf.toDF(self._jseq(cols))
-        return DataFrame(jdf, self.sql_ctx)
+        xxxf = self._xxxf.toDF(self._jseq(cols))
+        return DataFrame(xxxf, self.sql_ctx)
 
     @since(1.3)
     def toPandas(self):

@@ -319,4 +319,4 @@ class ReportWord:
 if __name__ == '__main__':
     datas = [1,2,3,4]
     report = SimReport('手机-655-6', '655', '2016-07-01-2016-10-24')
-    report.print_report(datas, r'D:\jd\Inventory\project\Clothes2\RealityAnalysis\report')
+    report.print_report(datas, r'D:\xxx\Inventory\project\Clothes2\RealityAnalysis\report')

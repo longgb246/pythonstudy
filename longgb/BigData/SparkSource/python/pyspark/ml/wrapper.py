@@ -230,7 +230,7 @@ class JavaEstimator(JavaParams, Estimator):
         :return: fitted Java model
         """
         self._transfer_params_to_java()
-        return self._java_obj.fit(dataset._jdf)
+        return self._java_obj.fit(dataset._xxxf)
 
     def _fit(self, dataset):
         java_model = self._fit_java(dataset)
@@ -249,7 +249,7 @@ class JavaTransformer(JavaParams, Transformer):
 
     def _transform(self, dataset):
         self._transfer_params_to_java()
-        return DataFrame(self._java_obj.transform(dataset._jdf), dataset.sql_ctx)
+        return DataFrame(self._java_obj.transform(dataset._xxxf), dataset.sql_ctx)
 
 
 @inherit_doc

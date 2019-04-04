@@ -410,7 +410,7 @@ class pyspark.sql.UDFRegistration(sqlContext)
 
 
 ## 五、DataFrame类
-class pyspark.sql.DataFrame(jdf, sql_ctx)
+class pyspark.sql.DataFrame(xxxf, sql_ctx)
         以列命名的分布式的数据集.
         DataFrame相当于Spark SQL中的关系表，可以使用SQLContext中的各种函数创建
 people = sqlContext.read.parquet("...")
@@ -1769,20 +1769,20 @@ format(source)                      Specifies the input data source format.
         [('age', 'bigint'), ('name', 'string')]
         ```
         New in version 1.4.
-jdbc(url, table, column=None, lowerBound=None, upperBound=None, numPartitions=None, predicates=None, properties=None)
-        Construct a DataFrame representing the database table named table accessible via JDBC URL url and connection properties.
+xxxbc(url, table, column=None, lowerBound=None, upperBound=None, numPartitions=None, predicates=None, properties=None)
+        Construct a DataFrame representing the database table named table accessible via xxxBC URL url and connection properties.
         Partitions of the table will be retrieved in parallel if either column or predicates is specified. lowerBound, upperBound and numPartitions is needed when column is specified.
         If both column and predicates are specified, column will be used.
         Note Don’t create too many partitions in parallel on a large cluster; otherwise Spark might crash your external database systems.
         Parameters:
-        url – a JDBC URL of the form jdbc:subprotocol:subname
+        url – a xxxBC URL of the form xxxbc:subprotocol:subname
         table – the name of the table
         column – the name of an integer column that will be used for partitioning; if this parameter is specified, then numPartitions, lowerBound (inclusive), and upperBound (exclusive) will form partition strides for generated WHERE clause expressions used to split the column column evenly
         lowerBound – the minimum value of column used to decide partition stride
         upperBound – the maximum value of column used to decide partition stride
         numPartitions – the number of partitions
         predicates – a list of expressions suitable for inclusion in WHERE clauses; each one defines one partition of the DataFrame
-        properties – a dictionary of JDBC database connection arguments. Normally at least properties “user” and “password” with their corresponding values. For example { ‘user’ : ‘SYSTEM’, ‘password’ : ‘mypassword’ }
+        properties – a dictionary of xxxBC database connection arguments. Normally at least properties “user” and “password” with their corresponding values. For example { ‘user’ : ‘SYSTEM’, ‘password’ : ‘mypassword’ }
         Returns:
         a DataFrame
         New in version 1.4.
@@ -1926,17 +1926,17 @@ insertInto(tableName, overwrite=False)
         It requires that the schema of the class:DataFrame is the same as the schema of the table.
         Optionally overwriting any existing data.
         New in version 1.4.
-jdbc(url, table, mode=None, properties=None)            Saves the content of the DataFrame to an external database table via JDBC.
+xxxbc(url, table, mode=None, properties=None)            Saves the content of the DataFrame to an external database table via xxxBC.
         Note Don’t create too many partitions in parallel on a large cluster; otherwise Spark might crash your external database systems.
         Parameters:
-        url – a JDBC URL of the form jdbc:subprotocol:subname
+        url – a xxxBC URL of the form xxxbc:subprotocol:subname
         table – Name of the table in the external database.
         mode – specifies the behavior of the save operation when data already exists.
         append: Append contents of this DataFrame to existing data.
         overwrite: Overwrite existing data.
         ignore: Silently ignore this operation if data already exists.
         error (default case): Throw an exception if data already exists.
-        properties – a dictionary of JDBC database connection arguments. Normally at least properties “user” and “password” with their corresponding values. For example { ‘user’ : ‘SYSTEM’, ‘password’ : ‘mypassword’ }
+        properties – a dictionary of xxxBC database connection arguments. Normally at least properties “user” and “password” with their corresponding values. For example { ‘user’ : ‘SYSTEM’, ‘password’ : ‘mypassword’ }
         New in version 1.4.
 json(path, mode=None, compression=None, dateFormat=None, timestampFormat=None)
         Saves the content of the DataFrame in JSON format (JSON Lines text format or newline-delimited JSON) at the specified path.

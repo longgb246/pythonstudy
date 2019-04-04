@@ -96,7 +96,7 @@ class JavaEvaluator(JavaParams, Evaluator):
         :return: evaluation metric
         """
         self._transfer_params_to_java()
-        return self._java_obj.evaluate(dataset._jdf)
+        return self._java_obj.evaluate(dataset._xxxf)
 
     def isLargerBetter(self):
         self._transfer_params_to_java()

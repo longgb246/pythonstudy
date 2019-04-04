@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-# jdvl start -i bdp-docker.jd.com:5000/wise_mart_cmo_ipc -o='--net=host' -I bash
+# xxxvl start -i bdp-docker.xxx.com:5000/wise_mart_cmo_ipc -o='--net=host' -I bash
 ##### Use the Pyspark
 # pyspark --master yarn  \
 # --num-executors 15 \
@@ -9,10 +9,10 @@
 # --conf spark.driver.maxResultSize=20g \
 # --conf spark.yarn.appMasterEnv.yarn.nodemanager.container-executor.class=DockerLinuxContainer \
 # --conf spark.executorEnv.yarn.nodemanager.container-executor.class=DockerLinuxContainer \
-# --conf spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.jd.com:5000/wise_mart_cmo_ipc:latest \
-# --conf spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.jd.com:5000/wise_mart_cmo_ipc:latest \
-# --conf spark.yarn.appMasterEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server \
-# --conf spark.executorEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server \
+# --conf spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.xxx.com:5000/wise_mart_cmo_ipc:latest \
+# --conf spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.xxx.com:5000/wise_mart_cmo_ipc:latest \
+# --conf spark.yarn.appMasterEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/xxxk1.8.0_121/jre/lib/amd64/server \
+# --conf spark.executorEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/xxxk1.8.0_121/jre/lib/amd64/server \
 # --files $HIVE_CONF_DIR/hive-site.xml
 
 

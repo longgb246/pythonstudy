@@ -296,11 +296,11 @@ class SparkSession(object):
             numPartitions = self._sc.defaultParallelism
 
         if end is None:
-            jdf = self._jsparkSession.range(0, int(start), int(step), int(numPartitions))
+            xxxf = self._jsparkSession.range(0, int(start), int(step), int(numPartitions))
         else:
-            jdf = self._jsparkSession.range(int(start), int(end), int(step), int(numPartitions))
+            xxxf = self._jsparkSession.range(int(start), int(end), int(step), int(numPartitions))
 
-        return DataFrame(jdf, self._wrapped)
+        return DataFrame(xxxf, self._wrapped)
 
     def _inferSchemaFromList(self, data):
         """
@@ -521,8 +521,8 @@ class SparkSession(object):
         else:
             rdd, schema = self._createFromLocal(map(prepare, data), schema)
         jrdd = self._jvm.SerDeUtil.toJavaArray(rdd._to_java_object_rdd())
-        jdf = self._jsparkSession.applySchemaToPythonRDD(jrdd.rdd(), schema.json())
-        df = DataFrame(jdf, self._wrapped)
+        xxxf = self._jsparkSession.applySchemaToPythonRDD(jrdd.rdd(), schema.json())
+        df = DataFrame(xxxf, self._wrapped)
         df._schema = schema
         return df
 

@@ -223,10 +223,10 @@ class SQLContext(object):
         [Row(UDF(test)=4)]
 
         """
-        jdt = None
+        xxxt = None
         if returnType is not None:
-            jdt = self.sparkSession._jsparkSession.parseDataType(returnType.json())
-        self.sparkSession._jsparkSession.udf().registerJava(name, javaClassName, jdt)
+            xxxt = self.sparkSession._jsparkSession.parseDataType(returnType.json())
+        self.sparkSession._jsparkSession.udf().registerJava(name, javaClassName, xxxt)
 
     # TODO(andrew): delete this once we refactor things to take in SparkSession
     def _inferSchema(self, rdd, samplingRatio=None):

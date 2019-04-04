@@ -220,7 +220,7 @@ def broadcast(df):
     """Marks a DataFrame as small enough for use in broadcast joins."""
 
     sc = SparkContext._active_spark_context
-    return DataFrame(sc._jvm.functions.broadcast(df._jdf), df.sql_ctx)
+    return DataFrame(sc._jvm.functions.broadcast(df._xxxf), df.sql_ctx)
 
 
 @since(1.4)
@@ -1830,12 +1830,12 @@ class UserDefinedFunction(object):
         sc = SparkContext.getOrCreate()
         wrapped_func = _wrap_function(sc, self.func, self.returnType)
         spark = SparkSession.builder.getOrCreate()
-        jdt = spark._jsparkSession.parseDataType(self.returnType.json())
+        xxxt = spark._jsparkSession.parseDataType(self.returnType.json())
         if name is None:
             f = self.func
             name = f.__name__ if hasattr(f, '__name__') else f.__class__.__name__
         judf = sc._jvm.org.apache.spark.sql.execution.python.UserDefinedPythonFunction(
-            name, wrapped_func, jdt)
+            name, wrapped_func, xxxt)
         return judf
 
     def __del__(self):

@@ -84,7 +84,7 @@
 #     order_list = cols_name
 #     print(df)
 #     return [[1, 1]]
-# bundle_date_sp.groupBy(['item_sku_id', 'Date']).agg(F.udf(test2)(F.collect_list(F.struct(F.col('amount_jd_jd'), F.col('amount_jd_sgp'))), F.lit(str(t1_cols)))).show()
+# bundle_date_sp.groupBy(['item_sku_id', 'Date']).agg(F.udf(test2)(F.collect_list(F.struct(F.col('amount_xxx_xxx'), F.col('amount_xxx_sgp'))), F.lit(str(t1_cols)))).show()
 
 
 # for i, each_col in enumerate(out_cols_name):

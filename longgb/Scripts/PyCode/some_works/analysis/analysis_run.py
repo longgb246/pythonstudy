@@ -10,16 +10,16 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def uppath(n=1):
-    # __file__ = r'D:\Lgb\ipc_inv_opt\src\com\jd\pbs\analysis\test.py'
+    # __file__ = r'D:\Lgb\ipc_inv_opt\src\com\xxx\pbs\analysis\test.py'
     if n == 0:
         return os.path.abspath(os.path.dirname(__file__))
     return os.path.abspath(os.path.join(os.path.dirname(__file__), (os.pardir + os.sep) * (n - 1) + os.pardir))
 
-sys.path.append(uppath(4))  # 当前文件所在目录的上4级目录。 [analysis]-pbs-jd-com-src，定位到src目录。
+sys.path.append(uppath(4))  # 当前文件所在目录的上4级目录。 [analysis]-pbs-xxx-com-src，定位到src目录。
 # 标准包导入
-# from com.jd.pbs.analysis import calKpi
-# from com.jd.pbs.analysis import plotData
-# from com.jd.pbs.analysis import report as rep
+# from com.xxx.pbs.analysis import calKpi
+# from com.xxx.pbs.analysis import plotData
+# from com.xxx.pbs.analysis import report as rep
 
 # test包路径导入
 sys.path.append(os.path.dirname(__file__))

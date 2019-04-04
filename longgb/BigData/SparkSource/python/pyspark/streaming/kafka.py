@@ -135,7 +135,7 @@ class KafkaUtils(object):
                 ssc._jssc, kafkaParams, set(topics), jfromOffsets)
 
         stream = DStream(jstream, ssc, ser).map(func)
-        return KafkaDStream(stream._jdstream, ssc, stream._jrdd_deserializer)
+        return KafkaDStream(stream._xxxstream, ssc, stream._jrdd_deserializer)
 
     @staticmethod
     def createRDD(sc, kafkaParams, offsetRanges, leaders=None,
@@ -334,8 +334,8 @@ class KafkaDStream(DStream):
     A Python wrapper of KafkaDStream
     """
 
-    def __init__(self, jdstream, ssc, jrdd_deserializer):
-        DStream.__init__(self, jdstream, ssc, jrdd_deserializer)
+    def __init__(self, xxxstream, ssc, jrdd_deserializer):
+        DStream.__init__(self, xxxstream, ssc, jrdd_deserializer)
 
     def foreachRDD(self, func):
         """
@@ -347,7 +347,7 @@ class KafkaDStream(DStream):
         jfunc = TransformFunction(self._sc, func, self._jrdd_deserializer) \
             .rdd_wrapper(lambda jrdd, ctx, ser: KafkaRDD(jrdd, ctx, ser))
         api = self._ssc._jvm.PythonDStream
-        api.callForeachRDD(self._jdstream, jfunc)
+        api.callForeachRDD(self._xxxstream, jfunc)
 
     def transform(self, func):
         """
@@ -374,15 +374,15 @@ class KafkaTransformedDStream(TransformedDStream):
         TransformedDStream.__init__(self, prev, func)
 
     @property
-    def _jdstream(self):
-        if self._jdstream_val is not None:
-            return self._jdstream_val
+    def _xxxstream(self):
+        if self._xxxstream_val is not None:
+            return self._xxxstream_val
 
         jfunc = TransformFunction(self._sc, self.func, self.prev._jrdd_deserializer) \
             .rdd_wrapper(lambda jrdd, ctx, ser: KafkaRDD(jrdd, ctx, ser))
-        dstream = self._sc._jvm.PythonTransformedDStream(self.prev._jdstream.dstream(), jfunc)
-        self._jdstream_val = dstream.asJavaDStream()
-        return self._jdstream_val
+        dstream = self._sc._jvm.PythonTransformedDStream(self.prev._xxxstream.dstream(), jfunc)
+        self._xxxstream_val = dstream.asJavaDStream()
+        return self._xxxstream_val
 
 
 class KafkaMessageAndMetadata(object):

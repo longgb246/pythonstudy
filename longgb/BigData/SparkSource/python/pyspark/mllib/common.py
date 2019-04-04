@@ -74,7 +74,7 @@ def _py2java(sc, obj):
     if isinstance(obj, RDD):
         obj = _to_java_object_rdd(obj)
     elif isinstance(obj, DataFrame):
-        obj = obj._jdf
+        obj = obj._xxxf
     elif isinstance(obj, SparkContext):
         obj = obj._jsc
     elif isinstance(obj, list):

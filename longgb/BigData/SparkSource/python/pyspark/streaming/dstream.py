@@ -54,8 +54,8 @@ class DStream(object):
      - A time interval at which the DStream generates an RDD
      - A function that is used to generate an RDD after each time interval
     """
-    def __init__(self, jdstream, ssc, jrdd_deserializer):
-        self._jdstream = jdstream
+    def __init__(self, xxxstream, ssc, jrdd_deserializer):
+        self._xxxstream = xxxstream
         self._ssc = ssc
         self._sc = ssc._sc
         self._jrdd_deserializer = jrdd_deserializer
@@ -159,7 +159,7 @@ class DStream(object):
             func = lambda t, rdd: old_func(rdd)
         jfunc = TransformFunction(self._sc, func, self._jrdd_deserializer)
         api = self._ssc._jvm.PythonDStream
-        api.callForeachRDD(self._jdstream, jfunc)
+        api.callForeachRDD(self._xxxstream, jfunc)
 
     def pprint(self, num=10):
         """
@@ -220,7 +220,7 @@ class DStream(object):
         """
         self.is_cached = True
         javaStorageLevel = self._sc._getJavaStorageLevel(storageLevel)
-        self._jdstream.persist(javaStorageLevel)
+        self._xxxstream.persist(javaStorageLevel)
         return self
 
     def checkpoint(self, interval):
@@ -231,7 +231,7 @@ class DStream(object):
                          RDD will be checkpointed
         """
         self.is_checkpointed = True
-        self._jdstream.checkpoint(self._ssc._jduration(interval))
+        self._xxxstream.checkpoint(self._ssc._xxxuration(interval))
         return self
 
     def groupByKey(self, numPartitions=None):
@@ -309,8 +309,8 @@ class DStream(object):
             func = lambda t, a, b: oldfunc(a, b)
         assert func.__code__.co_argcount == 3, "func should take two or three arguments"
         jfunc = TransformFunction(self._sc, func, self._jrdd_deserializer, other._jrdd_deserializer)
-        dstream = self._sc._jvm.PythonTransformed2DStream(self._jdstream.dstream(),
-                                                          other._jdstream.dstream(), jfunc)
+        dstream = self._sc._jvm.PythonTransformed2DStream(self._xxxstream.dstream(),
+                                                          other._xxxstream.dstream(), jfunc)
         jrdd_serializer = self._jrdd_deserializer if keepSerializer else self._sc.serializer
         return DStream(dstream.asJavaDStream(), self._ssc, jrdd_serializer)
 
@@ -325,7 +325,7 @@ class DStream(object):
         """
         Return the slideDuration in seconds of this DStream
         """
-        return self._jdstream.dstream().slideDuration().milliseconds() / 1000.0
+        return self._xxxstream.dstream().slideDuration().milliseconds() / 1000.0
 
     def union(self, other):
         """
@@ -410,11 +410,11 @@ class DStream(object):
 
         `begin`, `end` could be datetime.datetime() or unix_timestamp
         """
-        jrdds = self._jdstream.slice(self._jtime(begin), self._jtime(end))
+        jrdds = self._xxxstream.slice(self._jtime(begin), self._jtime(end))
         return [RDD(jrdd, self._sc, self._jrdd_deserializer) for jrdd in jrdds]
 
     def _validate_window_param(self, window, slide):
-        duration = self._jdstream.dstream().slideDuration().milliseconds()
+        duration = self._xxxstream.dstream().slideDuration().milliseconds()
         if int(window * 1000) % duration != 0:
             raise ValueError("windowDuration must be multiple of the slide duration (%d ms)"
                              % duration)
@@ -434,11 +434,11 @@ class DStream(object):
                               DStream's batching interval
         """
         self._validate_window_param(windowDuration, slideDuration)
-        d = self._ssc._jduration(windowDuration)
+        d = self._ssc._xxxuration(windowDuration)
         if slideDuration is None:
-            return DStream(self._jdstream.window(d), self._ssc, self._jrdd_deserializer)
-        s = self._ssc._jduration(slideDuration)
-        return DStream(self._jdstream.window(d, s), self._ssc, self._jrdd_deserializer)
+            return DStream(self._xxxstream.window(d), self._ssc, self._jrdd_deserializer)
+        s = self._ssc._xxxuration(slideDuration)
+        return DStream(self._xxxstream.window(d, s), self._ssc, self._jrdd_deserializer)
 
     def reduceByWindow(self, reduceFunc, invReduceFunc, windowDuration, slideDuration):
         """
@@ -563,10 +563,10 @@ class DStream(object):
             if slideDuration is None:
                 slideDuration = self._slideDuration
             dstream = self._sc._jvm.PythonReducedWindowedDStream(
-                reduced._jdstream.dstream(),
+                reduced._xxxstream.dstream(),
                 jreduceFunc, jinvReduceFunc,
-                self._ssc._jduration(windowDuration),
-                self._ssc._jduration(slideDuration))
+                self._ssc._xxxuration(windowDuration),
+                self._ssc._xxxuration(slideDuration))
             return DStream(dstream.asJavaDStream(), self._ssc, self._sc.serializer)
         else:
             return reduced.window(windowDuration, slideDuration).reduceByKey(func, numPartitions)
@@ -598,10 +598,10 @@ class DStream(object):
                                         self._sc.serializer, self._jrdd_deserializer)
         if initialRDD:
             initialRDD = initialRDD._reserialize(self._jrdd_deserializer)
-            dstream = self._sc._jvm.PythonStateDStream(self._jdstream.dstream(), jreduceFunc,
+            dstream = self._sc._jvm.PythonStateDStream(self._xxxstream.dstream(), jreduceFunc,
                                                        initialRDD._jrdd)
         else:
-            dstream = self._sc._jvm.PythonStateDStream(self._jdstream.dstream(), jreduceFunc)
+            dstream = self._sc._jvm.PythonStateDStream(self._xxxstream.dstream(), jreduceFunc)
 
         return DStream(dstream.asJavaDStream(), self._ssc, self._sc.serializer)
 
@@ -620,7 +620,7 @@ class TransformedDStream(DStream):
         self._jrdd_deserializer = self._sc.serializer
         self.is_cached = False
         self.is_checkpointed = False
-        self._jdstream_val = None
+        self._xxxstream_val = None
 
         # Using type() to avoid folding the functions and compacting the DStreams which is not
         # not strictly an object of TransformedDStream.
@@ -635,11 +635,11 @@ class TransformedDStream(DStream):
             self.func = func
 
     @property
-    def _jdstream(self):
-        if self._jdstream_val is not None:
-            return self._jdstream_val
+    def _xxxstream(self):
+        if self._xxxstream_val is not None:
+            return self._xxxstream_val
 
         jfunc = TransformFunction(self._sc, self.func, self.prev._jrdd_deserializer)
-        dstream = self._sc._jvm.PythonTransformedDStream(self.prev._jdstream.dstream(), jfunc)
-        self._jdstream_val = dstream.asJavaDStream()
-        return self._jdstream_val
+        dstream = self._sc._jvm.PythonTransformedDStream(self.prev._xxxstream.dstream(), jfunc)
+        self._xxxstream_val = dstream.asJavaDStream()
+        return self._xxxstream_val

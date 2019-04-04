@@ -10,10 +10,10 @@ spark_options:
 spark_conf:
   spark.yarn.appMasterEnv.yarn.nodemanager.container-executor.class: DockerLinuxContainer
   spark.executorEnv.yarn.nodemanager.container-executor.class: DockerLinuxContainer
-  spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name: bdp-docker.jd.com:5000/wise_mart_cib:latest
-  spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name: bdp-docker.jd.com:5000/wise_mart_cib:latest
-  spark.yarn.appMasterEnv.LD_LIBRARY_PATH: /software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server
-  spark.executorEnv.LD_LIBRARY_PATH: /software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server
+  spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name: bdp-docker.xxx.com:5000/wise_mart_cib:latest
+  spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name: bdp-docker.xxx.com:5000/wise_mart_cib:latest
+  spark.yarn.appMasterEnv.LD_LIBRARY_PATH: /software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/xxxk1.8.0_121/jre/lib/amd64/server
+  spark.executorEnv.LD_LIBRARY_PATH: /software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/xxxk1.8.0_121/jre/lib/amd64/server
   spark.hadoop.validateOutputSpecs: false
   spark.task.cpus: 1
   spark.sql.shuffle.partitions: 300

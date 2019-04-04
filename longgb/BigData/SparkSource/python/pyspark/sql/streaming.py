@@ -330,9 +330,9 @@ class DataStreamReader(OptionUtils):
         self._jreader = spark._ssql_ctx.readStream()
         self._spark = spark
 
-    def _df(self, jdf):
+    def _df(self, xxxf):
         from pyspark.sql.dataframe import DataFrame
-        return DataFrame(jdf, self._spark)
+        return DataFrame(xxxf, self._spark)
 
     @since(2.0)
     def format(self, source):
@@ -649,7 +649,7 @@ class DataStreamWriter(object):
     def __init__(self, df):
         self._df = df
         self._spark = df.sql_ctx
-        self._jwrite = df._jdf.writeStream()
+        self._jwrite = df._xxxf.writeStream()
 
     def _sq(self, jsq):
         from pyspark.sql.streaming import StreamingQuery

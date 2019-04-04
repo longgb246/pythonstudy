@@ -62,9 +62,9 @@ class StreamingContext(object):
 
     def _initialize_context(self, sc, duration):
         self._ensure_initialized()
-        return self._jvm.JavaStreamingContext(sc._jsc, self._jduration(duration))
+        return self._jvm.JavaStreamingContext(sc._jsc, self._xxxuration(duration))
 
-    def _jduration(self, seconds):
+    def _xxxuration(self, seconds):
         """
         Create Duration object given number of seconds
         """
@@ -243,7 +243,7 @@ class StreamingContext(object):
         @param duration: Minimum duration (in seconds) that each DStream
                         should remember its RDDs
         """
-        self._jssc.remember(self._jduration(duration))
+        self._jssc.remember(self._xxxuration(duration))
 
     def checkpoint(self, directory):
         """
@@ -323,10 +323,10 @@ class StreamingContext(object):
         queue = self._jvm.PythonDStream.toRDDQueue([r._jrdd for r in rdds])
         if default:
             default = default._reserialize(rdds[0]._jrdd_deserializer)
-            jdstream = self._jssc.queueStream(queue, oneAtATime, default._jrdd)
+            xxxstream = self._jssc.queueStream(queue, oneAtATime, default._jrdd)
         else:
-            jdstream = self._jssc.queueStream(queue, oneAtATime)
-        return DStream(jdstream, self, rdds[0]._jrdd_deserializer)
+            xxxstream = self._jssc.queueStream(queue, oneAtATime)
+        return DStream(xxxstream, self, rdds[0]._jrdd_deserializer)
 
     def transform(self, dstreams, transformFunc):
         """
@@ -335,14 +335,14 @@ class StreamingContext(object):
         the transform function parameter will be the same as the order
         of corresponding DStreams in the list.
         """
-        jdstreams = [d._jdstream for d in dstreams]
+        xxxstreams = [d._xxxstream for d in dstreams]
         # change the final serializer to sc.serializer
         func = TransformFunction(self._sc,
                                  lambda t, *rdds: transformFunc(rdds).map(lambda x: x),
                                  *[d._jrdd_deserializer for d in dstreams])
         jfunc = self._jvm.TransformFunction(func)
-        jdstream = self._jssc.transform(jdstreams, jfunc)
-        return DStream(jdstream, self, self._sc.serializer)
+        xxxstream = self._jssc.transform(xxxstreams, jfunc)
+        return DStream(xxxstream, self, self._sc.serializer)
 
     def union(self, *dstreams):
         """
@@ -358,8 +358,8 @@ class StreamingContext(object):
         if len(set(s._slideDuration for s in dstreams)) > 1:
             raise ValueError("All DStreams should have same slide duration")
         first = dstreams[0]
-        jrest = [d._jdstream for d in dstreams[1:]]
-        return DStream(self._jssc.union(first._jdstream, jrest), self, first._jrdd_deserializer)
+        jrest = [d._xxxstream for d in dstreams[1:]]
+        return DStream(self._jssc.union(first._xxxstream, jrest), self, first._jrdd_deserializer)
 
     def addStreamingListener(self, streamingListener):
         """

@@ -1,5 +1,4 @@
 # encoding:utf-8
-__author__ = 'xugang&tanxiao'
 import numpy as np
 import pandas as pd
 import ast

@@ -53,8 +53,8 @@ def transforVarCols(df, column_names):
     return df, categories_list
 
 
-read_path = r'D:\Work\Codes\inventory_optimization\personal\longguangbin\Test\JData\datasets'
-save_path = r'D:\Work\Codes\inventory_optimization\personal\longguangbin\Test\JData\datasets\combine'
+read_path = r'D:\Work\Codes\inventory_optimization\personal\longguangbin\Test\xxxata\datasets'
+save_path = r'D:\Work\Codes\inventory_optimization\personal\longguangbin\Test\xxxata\datasets\combine'
 info_file_name = 'cleaned_first_sales_price_df.csv'
 attr_files = 'sku_basic_info_{0}.csv'
 cate_list = [655, 672, 866, 867, 1049]

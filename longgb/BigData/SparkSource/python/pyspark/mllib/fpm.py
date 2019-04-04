@@ -137,7 +137,7 @@ class PrefixSpan(object):
 
     @classmethod
     @since("1.6.0")
-    def train(cls, data, minSupport=0.1, maxPatternLength=10, maxLocalProjDBSize=32000000):
+    def train(cls, data, minSupport=0.1, maxPatternLength=10, maxLocalProxxxBSize=32000000):
         """
         Finds the complete set of frequent sequential patterns in the
         input sequences of itemsets.
@@ -154,7 +154,7 @@ class PrefixSpan(object):
           The maximal length of the sequential pattern, any pattern
           that appears less than maxPatternLength will be output.
           (default: 10)
-        :param maxLocalProjDBSize:
+        :param maxLocalProxxxBSize:
           The maximum number of items (including delimiters used in the
           internal storage format) allowed in a projected database before
           local processing. If a projected database exceeds this size,
@@ -162,7 +162,7 @@ class PrefixSpan(object):
           (default: 32000000)
         """
         model = callMLlibFunc("trainPrefixSpanModel",
-                              data, minSupport, maxPatternLength, maxLocalProjDBSize)
+                              data, minSupport, maxPatternLength, maxLocalProxxxBSize)
         return PrefixSpanModel(model)
 
     class FreqSequence(namedtuple("FreqSequence", ["sequence", "freq"])):

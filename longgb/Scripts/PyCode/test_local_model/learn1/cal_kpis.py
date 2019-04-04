@@ -6,7 +6,7 @@
   Usage   : 
 """
 
-#### jdvl start -m /data0/mart_bca:/data0/mart_bca:rw -i bdp-docker.jd.com:5000/wise_mart_bca:latest -o='--net=host' -I bash
+#### xxxvl start -m /data0/mart_bca:/data0/mart_bca:rw -i bdp-docker.xxx.com:5000/wise_mart_bca:latest -o='--net=host' -I bash
 # pyspark --master yarn \
 # --num-executors 10 \
 # --executor-memory 10g \
@@ -15,10 +15,10 @@
 # --conf spark.driver.maxResultSize=20g \
 # --conf spark.yarn.appMasterEnv.yarn.nodemanager.container-executor.class=DockerLinuxContainer \
 # --conf spark.executorEnv.yarn.nodemanager.container-executor.class=DockerLinuxContainer \
-# --conf spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.jd.com:5000/wise_mart_cib:latest \
-# --conf spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.jd.com:5000/wise_mart_cib:latest \
-# --conf spark.yarn.appMasterEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server \
-# --conf spark.executorEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server
+# --conf spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.xxx.com:5000/wise_mart_cib:latest \
+# --conf spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.xxx.com:5000/wise_mart_cib:latest \
+# --conf spark.yarn.appMasterEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/xxxk1.8.0_121/jre/lib/amd64/server \
+# --conf spark.executorEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/xxxk1.8.0_121/jre/lib/amd64/server
 
 # spark-submit --master yarn --deploy-mode cluster \
 # --num-executors 10 \
@@ -28,10 +28,10 @@
 # --conf spark.driver.maxResultSize=20g \
 # --conf spark.yarn.appMasterEnv.yarn.nodemanager.container-executor.class=DockerLinuxContainer \
 # --conf spark.executorEnv.yarn.nodemanager.container-executor.class=DockerLinuxContainer \
-# --conf spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.jd.com:5000/wise_mart_cib:latest \
-# --conf spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.jd.com:5000/wise_mart_cib:latest \
-# --conf spark.yarn.appMasterEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server \
-# --conf spark.executorEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/jdk1.8.0_121/jre/lib/amd64/server \
+# --conf spark.yarn.appMasterEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.xxx.com:5000/wise_mart_cib:latest \
+# --conf spark.executorEnv.yarn.nodemanager.docker-container-executor.image-name=bdp-docker.xxx.com:5000/wise_mart_cib:latest \
+# --conf spark.yarn.appMasterEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/xxxk1.8.0_121/jre/lib/amd64/server \
+# --conf spark.executorEnv.LD_LIBRARY_PATH=/software/servers/hadoop-2.7.1/lib/native:/software/servers/yarn-2.7.1/lib/native:/software/servers/xxxk1.8.0_121/jre/lib/amd64/server \
 # test_little_files.py
 
 from dateutil.parser import parse

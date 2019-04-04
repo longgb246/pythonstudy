@@ -2,7 +2,7 @@
 # coding:utf-8
 """
 @author: "Zhangjianshen"
-@contact: zhangjianshen@jd.com
+@contact: zhangjianshen@xxx.com
 
 脚本使用实例
 运行脚本a.py 从2016-01-01到2016-01-30，左闭右开，不包含结束日期: run_file_by_day.py a.py 2016-01-01 2016-01-30

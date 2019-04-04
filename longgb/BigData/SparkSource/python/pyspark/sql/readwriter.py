@@ -70,9 +70,9 @@ class DataFrameReader(OptionUtils):
         self._jreader = spark._ssql_ctx.read()
         self._spark = spark
 
-    def _df(self, jdf):
+    def _df(self, xxxf):
         from pyspark.sql.dataframe import DataFrame
-        return DataFrame(jdf, self._spark)
+        return DataFrame(xxxf, self._spark)
 
     @since(1.4)
     def format(self, source):
@@ -392,11 +392,11 @@ class DataFrameReader(OptionUtils):
         return self._df(self._jreader.orc(path))
 
     @since(1.4)
-    def jdbc(self, url, table, column=None, lowerBound=None, upperBound=None, numPartitions=None,
+    def xxxbc(self, url, table, column=None, lowerBound=None, upperBound=None, numPartitions=None,
              predicates=None, properties=None):
         """
         Construct a :class:`DataFrame` representing the database table named ``table``
-        accessible via JDBC URL ``url`` and connection ``properties``.
+        accessible via xxxBC URL ``url`` and connection ``properties``.
 
         Partitions of the table will be retrieved in parallel if either ``column`` or
         ``predicates`` is specified.
@@ -406,7 +406,7 @@ class DataFrameReader(OptionUtils):
         .. note:: Don't create too many partitions in parallel on a large cluster; \
         otherwise Spark might crash your external database systems.
 
-        :param url: a JDBC URL of the form ``jdbc:subprotocol:subname``
+        :param url: a xxxBC URL of the form ``xxxbc:subprotocol:subname``
         :param table: the name of the table
         :param column: the name of an integer column that will be used for partitioning;
                        if this parameter is specified, then ``numPartitions``, ``lowerBound``
@@ -418,7 +418,7 @@ class DataFrameReader(OptionUtils):
         :param numPartitions: the number of partitions
         :param predicates: a list of expressions suitable for inclusion in WHERE clauses;
                            each one defines one partition of the :class:`DataFrame`
-        :param properties: a dictionary of JDBC database connection arguments. Normally at
+        :param properties: a dictionary of xxxBC database connection arguments. Normally at
                            least properties "user" and "password" with their corresponding values.
                            For example { 'user' : 'SYSTEM', 'password' : 'mypassword' }
         :return: a DataFrame
@@ -431,13 +431,13 @@ class DataFrameReader(OptionUtils):
         if column is not None:
             if numPartitions is None:
                 numPartitions = self._spark._sc.defaultParallelism
-            return self._df(self._jreader.jdbc(url, table, column, int(lowerBound), int(upperBound),
+            return self._df(self._jreader.xxxbc(url, table, column, int(lowerBound), int(upperBound),
                                                int(numPartitions), jprop))
         if predicates is not None:
             gateway = self._spark._sc._gateway
             jpredicates = utils.toJArray(gateway, gateway.jvm.java.lang.String, predicates)
-            return self._df(self._jreader.jdbc(url, table, jpredicates, jprop))
-        return self._df(self._jreader.jdbc(url, table, jprop))
+            return self._df(self._jreader.xxxbc(url, table, jpredicates, jprop))
+        return self._df(self._jreader.xxxbc(url, table, jprop))
 
 
 class DataFrameWriter(OptionUtils):
@@ -451,7 +451,7 @@ class DataFrameWriter(OptionUtils):
     def __init__(self, df):
         self._df = df
         self._spark = df.sql_ctx
-        self._jwrite = df._jdf.write()
+        self._jwrite = df._xxxf.write()
 
     def _sq(self, jsq):
         from pyspark.sql.streaming import StreamingQuery
@@ -739,13 +739,13 @@ class DataFrameWriter(OptionUtils):
         self._jwrite.orc(path)
 
     @since(1.4)
-    def jdbc(self, url, table, mode=None, properties=None):
-        """Saves the content of the :class:`DataFrame` to an external database table via JDBC.
+    def xxxbc(self, url, table, mode=None, properties=None):
+        """Saves the content of the :class:`DataFrame` to an external database table via xxxBC.
 
         .. note:: Don't create too many partitions in parallel on a large cluster; \
         otherwise Spark might crash your external database systems.
 
-        :param url: a JDBC URL of the form ``jdbc:subprotocol:subname``
+        :param url: a xxxBC URL of the form ``xxxbc:subprotocol:subname``
         :param table: Name of the table in the external database.
         :param mode: specifies the behavior of the save operation when data already exists.
 
@@ -753,7 +753,7 @@ class DataFrameWriter(OptionUtils):
             * ``overwrite``: Overwrite existing data.
             * ``ignore``: Silently ignore this operation if data already exists.
             * ``error`` (default case): Throw an exception if data already exists.
-        :param properties: a dictionary of JDBC database connection arguments. Normally at
+        :param properties: a dictionary of xxxBC database connection arguments. Normally at
                            least properties "user" and "password" with their corresponding values.
                            For example { 'user' : 'SYSTEM', 'password' : 'mypassword' }
         """
@@ -762,7 +762,7 @@ class DataFrameWriter(OptionUtils):
         jprop = JavaClass("java.util.Properties", self._spark._sc._gateway._gateway_client)()
         for k in properties:
             jprop.setProperty(k, properties[k])
-        self._jwrite.mode(mode).jdbc(url, table, jprop)
+        self._jwrite.mode(mode).xxxbc(url, table, jprop)
 
 
 def _test():

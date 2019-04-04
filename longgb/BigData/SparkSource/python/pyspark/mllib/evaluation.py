@@ -51,7 +51,7 @@ class BinaryClassificationMetrics(JavaModelWrapper):
             StructField("score", DoubleType(), nullable=False),
             StructField("label", DoubleType(), nullable=False)]))
         java_class = sc._jvm.org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-        java_model = java_class(df._jdf)
+        java_model = java_class(df._xxxf)
         super(BinaryClassificationMetrics, self).__init__(java_model)
 
     @property
@@ -110,7 +110,7 @@ class RegressionMetrics(JavaModelWrapper):
             StructField("prediction", DoubleType(), nullable=False),
             StructField("observation", DoubleType(), nullable=False)]))
         java_class = sc._jvm.org.apache.spark.mllib.evaluation.RegressionMetrics
-        java_model = java_class(df._jdf)
+        java_model = java_class(df._xxxf)
         super(RegressionMetrics, self).__init__(java_model)
 
     @property
@@ -202,7 +202,7 @@ class MulticlassMetrics(JavaModelWrapper):
             StructField("prediction", DoubleType(), nullable=False),
             StructField("label", DoubleType(), nullable=False)]))
         java_class = sc._jvm.org.apache.spark.mllib.evaluation.MulticlassMetrics
-        java_model = java_class(df._jdf)
+        java_model = java_class(df._xxxf)
         super(MulticlassMetrics, self).__init__(java_model)
 
     @since('1.4.0')
@@ -356,7 +356,7 @@ class RankingMetrics(JavaModelWrapper):
         sql_ctx = SQLContext.getOrCreate(sc)
         df = sql_ctx.createDataFrame(predictionAndLabels,
                                      schema=sql_ctx._inferSchema(predictionAndLabels))
-        java_model = callMLlibFunc("newRankingMetrics", df._jdf)
+        java_model = callMLlibFunc("newRankingMetrics", df._xxxf)
         super(RankingMetrics, self).__init__(java_model)
 
     @since('1.4.0')
@@ -443,7 +443,7 @@ class MultilabelMetrics(JavaModelWrapper):
         df = sql_ctx.createDataFrame(predictionAndLabels,
                                      schema=sql_ctx._inferSchema(predictionAndLabels))
         java_class = sc._jvm.org.apache.spark.mllib.evaluation.MultilabelMetrics
-        java_model = java_class(df._jdf)
+        java_model = java_class(df._xxxf)
         super(MultilabelMetrics, self).__init__(java_model)
 
     @since('1.4.0')
