@@ -2,6 +2,7 @@ pythonstudy.iml
 .idea/
 .idea
 .idea/*
+.vscode
 
 *.zip
 longgb/Scripts/PyCode/test_sphinx/test_xxx/src
